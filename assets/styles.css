@@ -1,72 +1,89 @@
+/* ===== Cozy Knit – Theme System (Morandi) ===== */
 
-/* ===== Theme System (Morandi) ===== */
+/* 預設主題：莫蘭迪紫 */
 :root {
-  --bg-main: #fdfbf7;
+  --bg-color: #f4f2f7;
   --card-bg: #ffffff;
-  --border-main: #e5e7eb;
-  --text-main: #4b5563;
-  --accent: #c4a484;
+  --border-color: #e3dfea;
+
+  --text-main: #5d5666;
+  --text-muted: #8a8194;
+
+  --primary-color: #8e8499;
+  --accent-color: #dcd3e3;
+
+  --brand-text: var(--text-main);
 }
 
-.theme-purple { --bg-main: #f5f2f6; --accent: #8a7aa8; }
-.theme-blue   { --bg-main: #f2f6f8; --accent: #6f8fa3; }
-.theme-green  { --bg-main: #f2f6f4; --accent: #5f7f78; }
-.theme-mono   { --bg-main: #f4f4f4; --accent: #444444; }
+/* 莫蘭迪藍 */
+.theme-blue {
+  --bg-color: #f0f5f9;
+  --border-color: #dbe6ee;
+  --text-main: #4e6173;
+  --text-muted: #7b8fa3;
+  --primary-color: #7da1c4;
+  --accent-color: #cfe0eb;
+}
 
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Nunito:wght@600;800&display=swap');
-        
-        body {
-            font-family: 'Nunito', 'Noto Sans TC', sans-serif;
-            background-color: var(--bg-main); /* wool-50 */
-            color: #4b5563;
-            -webkit-tap-highlight-color: transparent;
-        }
+/* 墨綠 */
+.theme-green {
+  --bg-color: #f2f6f4;
+  --border-color: #dbe7e2;
+  --text-main: #2f4f4a;
+  --text-muted: #5f7f78;
+  --primary-color: #5f7f78;
+  --accent-color: #dbe7e2;
+}
 
-        /* 隱藏捲軸但保留功能 */
-        .scrollbar-hide::-webkit-scrollbar {
-            display: none;
-        }
-        .scrollbar-hide {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
+/* 黑灰白 */
+.theme-mono {
+  --bg-color: #f4f4f4;
+  --border-color: #e5e7eb;
+  --text-main: #1f2937;
+  --text-muted: #6b7280;
+  --primary-color: #444444;
+  --accent-color: #e5e7eb;
+}
 
-        /* 針織背景紋理 (CSS Pattern) */
-        .bg-knit-pattern {
-            background-color: var(--bg-main);
-            background-image: url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1h2v2H1V1zm4 0h2v2H5V1zm4 0h2v2H9V1zm4 0h2v2h-2V1zm4 0h2v2h-2V1zM1 5h2v2H1V5zm4 0h2v2H5V5zm4 0h2v2H9V5zm4 0h2v2h-2V5zm4 0h2v2h-2V5zM1 9h2v2H1V9zm4 0h2v2H5V9zm4 0h2v2H9V9zm4 0h2v2h-2V9zm4 0h2v2h-2V9zM1 13h2v2H1v-2zm4 0h2v2H5v-2zm4 0h2v2H9v-2zm4 0h2v2h-2v-2zm4 0h2v2h-2v-2z' fill='%23e5d3b0' fill-opacity='0.15' fill-rule='evenodd'/%3E%3C/svg%3E");
-        }
+/* ===== 全站套用 ===== */
 
-        .grid-cell {
-            transition: all 0.1s ease;
-        }
-        .grid-cell:active {
-            transform: scale(0.9);
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(5px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-fade-in {
-            animation: fadeIn 0.3s ease-out forwards;
-        }
+body {
+  background-color: var(--bg-color);
+  color: var(--text-main);
+  transition: background-color 0.35s ease, color 0.35s ease;
+}
 
-        @keyframes bounce-gentle {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-5px); }
-        }
-        .alert-active {
-            animation: bounce-gentle 1s infinite;
-        }
-        
-        /* Modal Overlay */
-        .modal-overlay {
-            background-color: rgba(122, 82, 48, 0.2); /* wool-800 with opacity */
-            backdrop-filter: blur(4px);
-        }
+/* 卡片 */
+.card,
+.bg-white {
+  background-color: var(--card-bg);
+}
 
-        /* Mobile Bottom Nav Fix */
-        .pb-safe {
-            padding-bottom: env(safe-area-inset-bottom);
-        }
+/* 邊框 */
+.border,
+.border-gray-100,
+.border-gray-200 {
+  border-color: var(--border-color) !important;
+}
+
+/* 主色文字 */
+.text-brand,
+.text-wool-700 {
+  color: var(--primary-color);
+}
+
+/* ===== 主題圓點（切換用） ===== */
+
+.theme-dot {
+  width: 26px;
+  height: 26px;
+  border-radius: 9999px;
+  cursor: pointer;
+  border: 3px solid rgba(255,255,255,0.85);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.12);
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.theme-dot:hover {
+  transform: scale(1.15);
+}
