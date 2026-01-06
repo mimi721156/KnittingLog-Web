@@ -17,10 +17,10 @@ const { useState, useEffect, useRef, useMemo } = React;
             if (!open) return null;
             return (
                 <div className="fixed inset-0 z-50 modal-overlay flex items-end md:items-center justify-center p-4">
-                    <div className="bg-white w-full md:max-w-xl rounded-t-3xl md:rounded-3xl shadow-xl border border-wool-100 overflow-hidden">
+                    <div className="bg-white w-full md:max-w-xl rounded-t-3xl md:rounded-3xl shadow-xl border border-brand-100 overflow-hidden">
                         <div className="p-4 border-b border-wool-50 flex items-center justify-between">
                             <div>
-                                <h3 className="font-bold text-wool-800">雲端同步設定</h3>
+                                <h3 className="font-bold text-[rgb(var(--brand-text))]">雲端同步設定</h3>
                                 <p className="text-xs text-gray-400">資料存在私有 repo 的 JSON（需要 Fine-grained PAT）</p>
                             </div>
                             <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-600">✕</button>
@@ -56,15 +56,15 @@ const { useState, useEffect, useRef, useMemo } = React;
                             </div>
 
                             <div className="flex gap-2 pt-1">
-                                <button onClick={onLoad} className="flex-1 py-3 bg-wool-100 text-wool-800 rounded-xl font-bold border border-wool-200">
+                                <button onClick={onLoad} className="flex-1 py-3 bg-brand-100 text-[rgb(var(--brand-text))] rounded-xl font-bold border border-brand-200">
                                     從 GitHub 載入
                                 </button>
-                                <button onClick={onSave} className="flex-1 py-3 bg-wool-800 text-white rounded-xl font-bold">
+                                <button onClick={onSave} className="flex-1 py-3 bg-brand-800 text-white rounded-xl font-bold">
                                     存到 GitHub
                                 </button>
                             </div>
 
-                            <div className="text-xs text-gray-600 whitespace-pre-wrap bg-wool-50 border border-wool-100 rounded-xl p-3 min-h-[44px]">
+                            <div className="text-xs text-gray-600 whitespace-pre-wrap bg-wool-50 border border-brand-100 rounded-xl p-3 min-h-[44px]">
                                 {status || '小提醒：第一次先「載入」確認連線，再存檔。若開兩個分頁同時存，可能需要重新載入。'}
                             </div>
                         </div>
@@ -91,6 +91,36 @@ const { useState, useEffect, useRef, useMemo } = React;
             M1L:      { id: 'M1L',  label: '左加針', symbol: 'λ', color: 'bg-green-50' },
             NO_STITCH:{ id: 'NO_STITCH', label: '無針', symbol: '✕', color: 'bg-gray-200 text-gray-400' }
         };
+
+        // Parse rows string like: "1,3,5-8, every 4" (supports: numbers, ranges, "every N")
+        const parseRowSpec = (spec, max = 9999) => {
+            if (!spec) return [];
+            const s = String(spec).toLowerCase().replaceAll('，', ',');
+            const out = new Set();
+
+            const everyMatch = s.match(/every\s*(\d+)/);
+            if (everyMatch) {
+                const step = Math.max(1, Number(everyMatch[1]));
+                for (let i = step; i <= max; i += step) out.add(i);
+            }
+
+            s.split(',').map(x => x.trim()).filter(Boolean).forEach(part => {
+                if (part.startsWith('every')) return;
+                const range = part.split('-').map(x => x.trim());
+                if (range.length === 2) {
+                    const a = Number(range[0]); const b = Number(range[1]);
+                    if (!Number.isFinite(a) || !Number.isFinite(b)) return;
+                    const lo = Math.min(a,b); const hi = Math.max(a,b);
+                    for (let i = lo; i <= hi && i <= max; i++) out.add(i);
+                } else {
+                    const n = Number(part);
+                    if (Number.isFinite(n) && n >= 1 && n <= max) out.add(n);
+                }
+            });
+
+            return Array.from(out).sort((a,b)=>a-b);
+        };
+
 
         const CATEGORIES = ['未分類', '毛帽', '毛衣', '圍巾', '手套', '襪子', '家飾'];
 
@@ -123,7 +153,8 @@ const { useState, useEffect, useRef, useMemo } = React;
                     castOn: 10,
                     rows: 6,
                     cols: 10,
-                    grid: Array(6).fill().map(() => Array(10).fill('KNIT'))
+                    grid: Array(6).fill().map(() => Array(10).fill('KNIT')),
+                    rowRules: []
                 }
             ]
         });
@@ -134,14 +165,16 @@ const { useState, useEffect, useRef, useMemo } = React;
             patternName: patternName,
             currentRow: 1,
             startDate: new Date().toISOString(),
-            lastActive: new Date().toISOString()
+            lastActive: new Date().toISOString(),
+            needles: [],
+            yarnsUsed: []
         });
 
         // --- 2. 頁面元件：教學 ---
         const TutorialView = () => (
             <div className="max-w-4xl mx-auto space-y-6 animate-fade-in p-4 pb-24 md:pb-8">
-                <header className="border-b border-wool-200 pb-4">
-                    <h2 className="text-2xl font-bold text-wool-800">教學與說明</h2>
+                <header className="border-b border-brand-200 pb-4">
+                    <h2 className="text-2xl font-bold text-[rgb(var(--brand-text))]">教學與說明</h2>
                     <p className="text-gray-500">JIS 記號對照與 App 使用指南</p>
                 </header>
 
@@ -154,7 +187,7 @@ const { useState, useEffect, useRef, useMemo } = React;
                             <p className="text-sm text-gray-600 mb-2">設定「起針數」、「針號」等固定資訊，並將織圖拆分成多個區段。支援快捷插入常用術語。</p>
                         </div>
                         <div className="bg-white p-5 rounded-3xl shadow-sm border border-wool-50">
-                            <h4 className="font-bold text-wool-800 mb-2">🔔 智能提醒</h4>
+                            <h4 className="font-bold text-[rgb(var(--brand-text))] mb-2">🔔 智能提醒</h4>
                             <p className="text-sm text-gray-600">在編輯模式設定提醒（如：第6段加針），編織時計數器會自動跳出通知。</p>
                         </div>
                     </div>
@@ -165,7 +198,7 @@ const { useState, useEffect, useRef, useMemo } = React;
                     <h3 className="text-lg font-bold text-wool-600 uppercase tracking-widest">基礎符號與織法 (JIS)</h3>
                     
                     {/* Visual Grid */}
-                    <div className="bg-white rounded-3xl shadow-sm border border-wool-100 overflow-hidden">
+                    <div className="bg-white rounded-3xl shadow-sm border border-brand-100 overflow-hidden">
                         <div className="grid grid-cols-3 md:grid-cols-4 divide-x divide-y divide-wool-50">
                             {Object.values(SYMBOLS).map(s => (
                                 <div key={s.id} className="p-4 flex flex-col items-center text-center">
@@ -180,9 +213,9 @@ const { useState, useEffect, useRef, useMemo } = React;
                     </div>
 
                     {/* RESTORED: Detailed Explanations */}
-                    <div className="bg-white p-6 rounded-3xl shadow-sm border border-wool-100 space-y-6">
+                    <div className="bg-white p-6 rounded-3xl shadow-sm border border-brand-100 space-y-6">
                         <div>
-                            <h4 className="font-bold text-wool-800 mb-2 flex items-center">
+                            <h4 className="font-bold text-[rgb(var(--brand-text))] mb-2 flex items-center">
                                 <span className="w-2 h-2 bg-blue-400 rounded-full mr-2"></span>
                                 基礎針法
                             </h4>
@@ -193,7 +226,7 @@ const { useState, useEffect, useRef, useMemo } = React;
                         </div>
                         
                         <div>
-                            <h4 className="font-bold text-wool-800 mb-2 flex items-center">
+                            <h4 className="font-bold text-[rgb(var(--brand-text))] mb-2 flex items-center">
                                 <span className="w-2 h-2 bg-red-400 rounded-full mr-2"></span>
                                 減針 (Decreases)
                             </h4>
@@ -204,7 +237,7 @@ const { useState, useEffect, useRef, useMemo } = React;
                         </div>
 
                         <div>
-                            <h4 className="font-bold text-wool-800 mb-2 flex items-center">
+                            <h4 className="font-bold text-[rgb(var(--brand-text))] mb-2 flex items-center">
                                 <span className="w-2 h-2 bg-green-400 rounded-full mr-2"></span>
                                 加針 (Increases)
                             </h4>
@@ -218,12 +251,12 @@ const { useState, useEffect, useRef, useMemo } = React;
                 </section>
 
                 {/* RESTORED: Reading Tips */}
-                <section className="bg-wool-100 p-6 rounded-3xl border border-wool-200">
-                    <h3 className="font-bold text-wool-800 mb-2 flex items-center">
+                <section className="bg-brand-100 p-6 rounded-3xl border border-brand-200">
+                    <h3 className="font-bold text-[rgb(var(--brand-text))] mb-2 flex items-center">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
                         新手小撇步：背面怎麼織？
                     </h3>
-                    <div className="text-sm text-wool-800 mb-2">
+                    <div className="text-sm text-[rgb(var(--brand-text))] mb-2">
                         記住口訣：「<strong>看著圖織相反</strong>」。
                     </div>
                     <ul className="list-disc list-inside text-sm text-wool-700 ml-1 space-y-1">
@@ -235,17 +268,147 @@ const { useState, useEffect, useRef, useMemo } = React;
             </div>
         );
 
-        // --- 3. 頁面元件：專案管理 (Player) ---
-        const ProjectView = ({ activeProjects, savedPatterns, onDeleteProject, onUpdateProject, onNavigateToLibrary }) => {
+        
+        // --- 2.5 頁面元件：線材庫 ---
+        const YarnLibraryView = ({ yarnLibrary, onAddYarn, onUpdateYarn, onDeleteYarn }) => {
+            const [open, setOpen] = useState(false);
+            const [editing, setEditing] = useState(null);
+
+            const empty = {
+                id: crypto.randomUUID(),
+                brand: '',
+                line: '',
+                weight: '',
+                colorName: '',
+                colorCode: '',
+                fiber: '',
+                notes: ''
+            };
+
+            const [form, setForm] = useState(empty);
+
+            const startAdd = () => {
+                setEditing(null);
+                setForm({ ...empty, id: crypto.randomUUID() });
+                setOpen(true);
+            };
+
+            const startEdit = (y) => {
+                setEditing(y);
+                setForm({ ...y });
+                setOpen(true);
+            };
+
+            const save = () => {
+                const payload = { ...form, brand: form.brand.trim(), line: form.line.trim(), weight: form.weight.trim(), colorName: form.colorName.trim(), colorCode: form.colorCode.trim(), fiber: form.fiber.trim(), notes: form.notes.trim() };
+                if (!payload.brand && !payload.line) return;
+                if (editing) onUpdateYarn(payload);
+                else onAddYarn(payload);
+                setOpen(false);
+            };
+
+            return (
+                <div className="max-w-4xl mx-auto h-full p-4 pb-24 md:pb-8 animate-fade-in">
+                    <div className="flex items-center justify-between mb-4">
+                        <div>
+                            <h2 className="text-2xl font-bold text-[rgb(var(--brand-text))]">線材庫</h2>
+                            <p className="text-gray-500 text-sm">先把常用線材建立起來，專案就能一鍵帶入。</p>
+                        </div>
+                        <button onClick={startAdd} className="px-4 py-2 rounded-xl bg-brand-800 text-white font-bold active:scale-95">＋新增</button>
+                    </div>
+
+                    {yarnLibrary.length === 0 ? (
+                        <div className="bg-white rounded-3xl p-8 border border-brand-100 text-center text-gray-500">
+                            還沒有線材紀錄～先新增一捲，讓專案不再「線」路不明。
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            {yarnLibrary.map(y => (
+                                <div key={y.id} className="bg-white rounded-3xl p-4 border border-brand-100 shadow-sm">
+                                    <div className="flex items-start justify-between gap-3">
+                                        <div className="min-w-0">
+                                            <div className="font-bold text-[rgb(var(--brand-text))] truncate">
+                                                {y.brand || '（未填品牌）'} {y.line ? `· ${y.line}` : ''}
+                                            </div>
+                                            <div className="text-sm text-gray-500 mt-1">
+                                                {y.weight ? `粗細：${y.weight}` : '粗細：—'}{y.fiber ? ` · 纖維：${y.fiber}` : ''}
+                                            </div>
+                                            <div className="text-sm text-gray-500 mt-1">
+                                                {y.colorName || y.colorCode ? `色：${y.colorName || ''}${y.colorCode ? `（${y.colorCode}）` : ''}` : '色：—'}
+                                            </div>
+                                            {y.notes ? <div className="text-xs text-gray-400 mt-2 whitespace-pre-wrap">{y.notes}</div> : null}
+                                        </div>
+                                        <div className="flex flex-col gap-2">
+                                            <button onClick={() => startEdit(y)} className="px-3 py-2 rounded-xl bg-brand-100 text-[rgb(var(--brand-text))] font-bold">編輯</button>
+                                            <button onClick={() => onDeleteYarn(y.id)} className="px-3 py-2 rounded-xl bg-gray-100 text-gray-600 font-bold">刪除</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    {open && (
+                        <div className="fixed inset-0 z-50 modal-overlay flex items-end md:items-center justify-center p-4">
+                            <div className="bg-white w-full md:max-w-xl rounded-t-3xl md:rounded-3xl shadow-xl border border-brand-100 overflow-hidden">
+                                <div className="p-4 border-b border-brand-100 flex items-center justify-between">
+                                    <h3 className="font-bold text-[rgb(var(--brand-text))]">{editing ? '編輯線材' : '新增線材'}</h3>
+                                    <button onClick={() => setOpen(false)} className="p-2 text-gray-400 hover:text-gray-600">✕</button>
+                                </div>
+
+                                <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="text-xs text-gray-500">品牌</label>
+                                        <input value={form.brand} onChange={(e) => setForm(f => ({...f, brand: e.target.value}))} className="mt-1 w-full border border-gray-200 rounded-xl p-2 text-sm" />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs text-gray-500">系列/品名</label>
+                                        <input value={form.line} onChange={(e) => setForm(f => ({...f, line: e.target.value}))} className="mt-1 w-full border border-gray-200 rounded-xl p-2 text-sm" />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs text-gray-500">粗細（如：DK / Worsted / 4 ply）</label>
+                                        <input value={form.weight} onChange={(e) => setForm(f => ({...f, weight: e.target.value}))} className="mt-1 w-full border border-gray-200 rounded-xl p-2 text-sm" />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs text-gray-500">纖維（如：羊毛/棉/混紡）</label>
+                                        <input value={form.fiber} onChange={(e) => setForm(f => ({...f, fiber: e.target.value}))} className="mt-1 w-full border border-gray-200 rounded-xl p-2 text-sm" />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs text-gray-500">色名</label>
+                                        <input value={form.colorName} onChange={(e) => setForm(f => ({...f, colorName: e.target.value}))} className="mt-1 w-full border border-gray-200 rounded-xl p-2 text-sm" />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs text-gray-500">色號</label>
+                                        <input value={form.colorCode} onChange={(e) => setForm(f => ({...f, colorCode: e.target.value}))} className="mt-1 w-full border border-gray-200 rounded-xl p-2 text-sm" />
+                                    </div>
+                                    <div className="md:col-span-2">
+                                        <label className="text-xs text-gray-500">備註</label>
+                                        <textarea value={form.notes} onChange={(e) => setForm(f => ({...f, notes: e.target.value}))} className="mt-1 w-full border border-gray-200 rounded-xl p-2 text-sm h-24" />
+                                    </div>
+                                </div>
+
+                                <div className="p-4 border-t border-brand-100 flex gap-2">
+                                    <button onClick={() => setOpen(false)} className="flex-1 py-3 rounded-xl bg-gray-100 text-gray-700 font-bold">取消</button>
+                                    <button onClick={save} className="flex-1 py-3 rounded-xl bg-brand-800 text-white font-bold">儲存</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+// --- 3. 頁面元件：專案管理 (Player) ---
+        const ProjectView = ({ activeProjects, savedPatterns, yarnLibrary, onDeleteProject, onUpdateProject, onNavigateToLibrary }) => {
             if (activeProjects.length === 0) {
                 return (
                     <div className="flex flex-col items-center justify-center h-full p-8 text-center animate-fade-in pb-20">
-                        <div className="bg-white p-8 rounded-full mb-6 shadow-sm border border-wool-100">
+                        <div className="bg-white p-8 rounded-full mb-6 shadow-sm border border-brand-100">
                             <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#d9b98a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
                         </div>
-                        <h2 className="text-2xl font-bold text-wool-800 mb-2">還沒有編織專案</h2>
+                        <h2 className="text-2xl font-bold text-[rgb(var(--brand-text))] mb-2">還沒有編織專案</h2>
                         <p className="text-gray-500 max-w-xs mb-8">挑選一份織圖，泡杯熱茶，開始您的編織時光吧！</p>
-                        <button onClick={onNavigateToLibrary} className="px-8 py-3 bg-wool-600 text-white rounded-2xl shadow-lg shadow-wool-200 hover:bg-wool-500 font-bold tracking-wide transform transition active:scale-95">
+                        <button onClick={onNavigateToLibrary} className="px-8 py-3 bg-wool-600 text-white rounded-2xl shadow-lg shadow-brand-200 hover:bg-wool-500 font-bold tracking-wide transform transition active:scale-95">
                             去挑選織圖
                         </button>
                     </div>
@@ -256,6 +419,15 @@ const { useState, useEffect, useRef, useMemo } = React;
             const currentProject = activeProjects.find(p => p.id === selectedProjectId);
             const currentPattern = currentProject ? savedPatterns.find(p => p.id === currentProject.patternId) : null;
 
+            const activeRowRules = useMemo(() => {
+                if (!currentProject || !currentPattern || currentPattern.type !== 'CHART') return [];
+                const section = (currentPattern.sections || [])[0];
+                if (!section) return [];
+                const local = ((currentProject.currentRow - 1) % (section.rows || 1)) + 1;
+                const rules = section.rowRules || [];
+                return rules.filter(r => parseRowSpec(r.rows, section.rows).includes(local));
+            }, [currentProject?.currentRow, currentPattern]);
+
             const activeAlert = useMemo(() => {
                 if (!currentProject || !currentPattern || !currentPattern.alerts) return null;
                 return currentPattern.alerts.find(a => a.row === currentProject.currentRow);
@@ -263,6 +435,8 @@ const { useState, useEffect, useRef, useMemo } = React;
 
             // 詳細播放器模式 (Player Mode)
             if (selectedProjectId && currentProject && currentPattern) {
+                const [batchN, setBatchN] = useState('');
+
                 const updateRow = (delta) => {
                     const newRow = Math.max(1, currentProject.currentRow + delta);
                     onUpdateProject({ 
@@ -281,7 +455,46 @@ const { useState, useEffect, useRef, useMemo } = React;
                     displayRowIndex = displaySection.rows - 1 - localRow;
                 }
 
-                // Text Pattern Sections
+
+                // --- Project Materials (cards) ---
+                const materials = currentProject;
+                const needles = materials.needles || [];
+                const yarnsUsed = materials.yarnsUsed || [];
+
+                const getYarnById = (id) => (yarnLibrary || []).find(y => y.id === id);
+
+                const addNeedle = () => {
+                    const size = prompt('針號/尺寸（例如 4.0mm / US6）');
+                    if (!size) return;
+                    const type = prompt('類型（直針/輪針/鉤針…可留空）') || '';
+                    onUpdateProject({ ...currentProject, needles: [...needles, { id: crypto.randomUUID(), size, type }], lastActive: new Date().toISOString() });
+                };
+
+                const addYarnFromLibrary = () => {
+                    if (!yarnLibrary || yarnLibrary.length === 0) {
+                        alert('線材庫還沒有資料～先到「線材」頁新增一捲吧！');
+                        return;
+                    }
+                    const options = yarnLibrary.map((y, idx) => `${idx+1}. ${y.brand || ''} ${y.line || ''} ${y.colorName || ''}${y.colorCode ? `(${y.colorCode})` : ''}`).join('\\n');
+                    const pick = prompt('輸入要加入的線材編號：\\n' + options);
+                    const n = Number(pick);
+                    if (!n || n < 1 || n > yarnLibrary.length) return;
+                    const y = yarnLibrary[n-1];
+                    const batchNote = prompt('這次專案的備註（例如：2顆、改染…可留空）') || '';
+                    onUpdateProject({ ...currentProject, yarnsUsed: [...yarnsUsed, { id: crypto.randomUUID(), yarnId: y.id, note: batchNote }], lastActive: new Date().toISOString() });
+                };
+
+                const addCustomYarn = () => {
+                    const brand = prompt('品牌（可留空）') || '';
+                    const weight = prompt('粗細（如 DK / 4ply）') || '';
+                    const colorCode = prompt('色號（可留空）') || '';
+                    onUpdateProject({ ...currentProject, yarnsUsed: [...yarnsUsed, { id: crypto.randomUUID(), brand, weight, colorCode }], lastActive: new Date().toISOString() });
+                };
+
+                const removeNeedle = (id) => onUpdateProject({ ...currentProject, needles: needles.filter(n => n.id !== id), lastActive: new Date().toISOString() });
+                const removeYarn = (id) => onUpdateProject({ ...currentProject, yarnsUsed: yarnsUsed.filter(y => y.id !== id), lastActive: new Date().toISOString() });
+
+                                // Text Pattern Sections
                 const textSections = currentPattern.textSections || [];
 
                 return (
@@ -292,30 +505,30 @@ const { useState, useEffect, useRef, useMemo } = React;
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
                             </button>
                             <div className="text-center">
-                                <h2 className="font-bold text-wool-800 text-lg">{currentProject.patternName}</h2>
+                                <h2 className="font-bold text-[rgb(var(--brand-text))] text-lg">{currentProject.patternName}</h2>
                             </div>
                             <div className="w-8"></div>
                         </div>
 
                         {/* Info Bar for Text Pattern (Fixed Info) */}
                         {currentPattern.type === 'TEXT' && currentPattern.meta && (
-                            <div className="bg-wool-50 px-6 py-3 border-b border-wool-100 flex gap-6 text-sm overflow-x-auto">
+                            <div className="bg-wool-50 px-6 py-3 border-b border-brand-100 flex gap-6 text-sm overflow-x-auto">
                                 {currentPattern.meta.castOn && (
                                     <div className="flex flex-col flex-shrink-0">
                                         <span className="text-[10px] text-gray-400 font-bold uppercase">起針 Cast On</span>
-                                        <span className="font-bold text-wool-800">{currentPattern.meta.castOn} 針</span>
+                                        <span className="font-bold text-[rgb(var(--brand-text))]">{currentPattern.meta.castOn} 針</span>
                                     </div>
                                 )}
                                 {currentPattern.meta.needle && (
                                     <div className="flex flex-col flex-shrink-0">
                                         <span className="text-[10px] text-gray-400 font-bold uppercase">針號 Needle</span>
-                                        <span className="font-bold text-wool-800">{currentPattern.meta.needle}</span>
+                                        <span className="font-bold text-[rgb(var(--brand-text))]">{currentPattern.meta.needle}</span>
                                     </div>
                                 )}
                                 {currentPattern.meta.yarn && (
                                     <div className="flex flex-col flex-shrink-0">
                                         <span className="text-[10px] text-gray-400 font-bold uppercase">線材 Yarn</span>
-                                        <span className="font-bold text-wool-800">{currentPattern.meta.yarn}</span>
+                                        <span className="font-bold text-[rgb(var(--brand-text))]">{currentPattern.meta.yarn}</span>
                                     </div>
                                 )}
                             </div>
@@ -326,15 +539,28 @@ const { useState, useEffect, useRef, useMemo } = React;
                             
                             {/* Counter Section */}
                             <div className="w-full md:w-1/3 flex flex-col gap-4 order-1 md:order-1">
-                                <div className="bg-wool-50 rounded-3xl shadow-inner p-6 flex flex-col items-center justify-center border border-wool-100 relative">
+                                <div className="bg-wool-50 rounded-3xl shadow-inner p-6 flex flex-col items-center justify-center border border-brand-100 relative">
                                     {activeAlert && (
                                         <div className="absolute top-4 left-4 right-4 bg-yellow-100 text-yellow-800 text-center py-2 rounded-xl font-bold animate-pulse text-sm shadow-sm border border-yellow-200">
                                             🔔 {activeAlert.message}
                                         </div>
                                     )}
 
+                                    {activeRowRules && activeRowRules.length > 0 && (
+                                        <div className="absolute bottom-3 left-3 right-3 bg-white/90 backdrop-blur rounded-2xl p-3 border border-brand-100 shadow-sm">
+                                            <div className="text-xs font-bold text-[rgb(var(--brand-text))] mb-1">本排規則</div>
+                                            <div className="flex flex-wrap gap-2">
+                                                {activeRowRules.map(r => (
+                                                    <span key={r.id} className="px-3 py-1 rounded-full bg-brand-100 text-[rgb(var(--brand-text))] text-xs font-bold">
+                                                        {r.action}{r.note ? `：${r.note}` : ''}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
                                     <h3 className="text-wool-400 font-bold uppercase tracking-widest text-xs mb-2 mt-8">目前段數 ROW</h3>
-                                    <div className="text-[6rem] md:text-8xl font-black text-wool-800 tabular-nums leading-none mb-8 drop-shadow-sm">
+                                    <div className="text-[6rem] md:text-8xl font-black text-[rgb(var(--brand-text))] tabular-nums leading-none mb-8 drop-shadow-sm">
                                         {currentProject.currentRow}
                                     </div>
                                     
@@ -343,20 +569,41 @@ const { useState, useEffect, useRef, useMemo } = React;
                                         <button onClick={() => updateRow(-1)} className="py-6 bg-white rounded-2xl text-gray-400 shadow-sm border border-gray-100 active:bg-gray-50 active:scale-95 transition-all text-xl font-bold">
                                             -1
                                         </button>
-                                        <button onClick={() => updateRow(1)} className="py-6 bg-wool-600 text-white rounded-2xl shadow-lg shadow-wool-200 active:bg-wool-700 active:scale-95 transition-all text-3xl font-bold">
+                                        <button onClick={() => updateRow(1)} className="py-6 bg-wool-600 text-white rounded-2xl shadow-lg shadow-brand-200 active:bg-brand-700 active:scale-95 transition-all text-3xl font-bold">
                                             +1
                                         </button>
                                     </div>
+
+                                    {/* Batch update */}
+                                    <div className="mt-4 w-full bg-brand-50 border border-brand-100 rounded-2xl p-4">
+                                        <div className="flex items-center justify-between">
+                                            <div className="text-sm font-bold text-[rgb(var(--brand-text))]">快速加排</div>
+                                            {(() => {
+                                                if (!displaySection) return <div className="text-xs text-gray-500">（文字專案無段排資訊）</div>;
+                                                const total = (displaySection.rows || 0) * (displaySection.repeats || 1);
+                                                const local = ((currentProject.currentRow - 1) % (displaySection.rows || 1)) + 1;
+                                                const rep = Math.floor((currentProject.currentRow - 1) / (displaySection.rows || 1)) + 1;
+                                                return <div className="text-xs text-gray-500">總排數 {total} · 目前段排 {local}（第 {rep} 輪）</div>;
+                                            })()}
+                                        </div>
+                                        <div className="mt-3 flex items-center gap-2">
+                                            <input type="number" min="1" placeholder="+n" value={batchN} onChange={(e) => setBatchN(e.target.value)}
+                                                className="w-24 border border-gray-200 rounded-xl p-2 text-sm text-center" />
+                                            <button onClick={() => { const n = Number(batchN); if (!n) return; updateRow(n); setBatchN(''); }}
+                                                className="flex-1 py-2 rounded-xl bg-brand-800 text-white font-bold active:scale-95">套用</button>
+                                        </div>
+                                    </div>
+
                                     <div className="flex justify-center gap-4 mt-4 w-full">
                                         <button onClick={() => updateRow(-5)} className="px-4 py-2 text-xs text-gray-400 bg-white rounded-lg border border-gray-100">-5</button>
-                                        <button onClick={() => updateRow(5)} className="px-4 py-2 text-xs text-wool-600 bg-white rounded-lg border border-wool-100">+5</button>
+                                        <button onClick={() => updateRow(5)} className="px-4 py-2 text-xs text-wool-600 bg-white rounded-lg border border-brand-100">+5</button>
                                     </div>
                                 </div>
                             </div>
 
                             {/* Pattern Display Section */}
-                            <div className="flex-1 bg-white rounded-3xl shadow-sm border border-wool-100 p-6 overflow-hidden flex flex-col order-2 md:order-2 min-h-[300px]">
-                                <h4 className="font-bold text-wool-800 mb-4 flex items-center">
+                            <div className="flex-1 bg-white rounded-3xl shadow-sm border border-brand-100 p-6 overflow-hidden flex flex-col order-2 md:order-2 min-h-[300px]">
+                                <h4 className="font-bold text-[rgb(var(--brand-text))] mb-4 flex items-center">
                                     <span className="w-2 h-6 bg-wool-400 rounded-full mr-2"></span>
                                     織圖內容
                                 </h4>
@@ -369,6 +616,19 @@ const { useState, useEffect, useRef, useMemo } = React;
                                                     {currentPattern.textContent}
                                                 </div>
                                             )}
+
+                                    {activeRowRules && activeRowRules.length > 0 && (
+                                        <div className="absolute bottom-3 left-3 right-3 bg-white/90 backdrop-blur rounded-2xl p-3 border border-brand-100 shadow-sm">
+                                            <div className="text-xs font-bold text-[rgb(var(--brand-text))] mb-1">本排規則</div>
+                                            <div className="flex flex-wrap gap-2">
+                                                {activeRowRules.map(r => (
+                                                    <span key={r.id} className="px-3 py-1 rounded-full bg-brand-100 text-[rgb(var(--brand-text))] text-xs font-bold">
+                                                        {r.action}{r.note ? `：${r.note}` : ''}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
 
                                             {/* Sections Display */}
                                             {textSections.map((section, idx) => (
@@ -383,9 +643,9 @@ const { useState, useEffect, useRef, useMemo } = React;
                                     ) : (
                                         displaySection && (
                                             <div className="flex flex-col items-center min-w-max">
-                                                <div className="inline-block relative bg-white border-2 border-wool-200 rounded p-1 shadow-sm">
+                                                <div className="inline-block relative bg-white border-2 border-brand-200 rounded p-1 shadow-sm">
                                                     <div 
-                                                        className="grid gap-[1px] bg-wool-200 border border-wool-200"
+                                                        className="grid gap-[1px] bg-wool-200 border border-brand-200"
                                                         style={{
                                                             gridTemplateColumns: `repeat(${displaySection.cols}, 28px)`,
                                                             gridTemplateRows: `repeat(${displaySection.rows}, 28px)`
@@ -429,7 +689,7 @@ const { useState, useEffect, useRef, useMemo } = React;
             // --- 列表模式 (List View) ---
             return (
                 <div className="max-w-5xl mx-auto p-4 animate-fade-in pb-24 md:pb-8">
-                    <h2 className="text-2xl font-bold text-wool-800 mb-6 pl-2">進行中的專案</h2>
+                    <h2 className="text-2xl font-bold text-[rgb(var(--brand-text))] mb-6 pl-2">進行中的專案</h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {activeProjects.map(proj => {
                             const ptn = savedPatterns.find(p => p.id === proj.patternId);
@@ -485,12 +745,12 @@ const { useState, useEffect, useRef, useMemo } = React;
                 <div className="max-w-6xl mx-auto p-4 animate-fade-in pb-24 md:pb-8">
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
                         <div className="pl-2">
-                            <h2 className="text-2xl font-bold text-wool-800">織圖資料庫</h2>
+                            <h2 className="text-2xl font-bold text-[rgb(var(--brand-text))]">織圖資料庫</h2>
                             <p className="text-sm text-gray-500">所有的織圖與文字說明</p>
                         </div>
                         <div className="flex gap-2 w-full md:w-auto overflow-x-auto pb-1">
                             <input type="file" accept=".json" className="hidden" ref={fileInputRef} onChange={handleFileChange} />
-                            <button onClick={() => fileInputRef.current.click()} className="flex-shrink-0 flex items-center px-4 py-2 bg-white border border-wool-200 rounded-xl text-wool-700 hover:bg-wool-50 text-sm font-bold shadow-sm">
+                            <button onClick={() => fileInputRef.current.click()} className="flex-shrink-0 flex items-center px-4 py-2 bg-white border border-brand-200 rounded-xl text-wool-700 hover:bg-wool-50 text-sm font-bold shadow-sm">
                                 匯入
                             </button>
                             
@@ -506,9 +766,9 @@ const { useState, useEffect, useRef, useMemo } = React;
                     </div>
 
                     <div className="flex gap-2 overflow-x-auto pb-4 mb-2 scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
-                        <button onClick={() => setFilter('ALL')} className={`flex-shrink-0 px-5 py-2 rounded-full text-sm font-bold transition-all ${filter === 'ALL' ? 'bg-wool-800 text-white shadow-md' : 'bg-white text-gray-500 border border-gray-100'}`}>全部</button>
+                        <button onClick={() => setFilter('ALL')} className={`flex-shrink-0 px-5 py-2 rounded-full text-sm font-bold transition-all ${filter === 'ALL' ? 'bg-brand-800 text-white shadow-md' : 'bg-white text-gray-500 border border-gray-100'}`}>全部</button>
                         {CATEGORIES.map(cat => (
-                            <button key={cat} onClick={() => setFilter(cat)} className={`flex-shrink-0 px-5 py-2 rounded-full text-sm font-bold transition-all ${filter === cat ? 'bg-wool-800 text-white shadow-md' : 'bg-white text-gray-500 border border-gray-100'}`}>{cat}</button>
+                            <button key={cat} onClick={() => setFilter(cat)} className={`flex-shrink-0 px-5 py-2 rounded-full text-sm font-bold transition-all ${filter === cat ? 'bg-brand-800 text-white shadow-md' : 'bg-white text-gray-500 border border-gray-100'}`}>{cat}</button>
                         ))}
                     </div>
 
@@ -531,7 +791,7 @@ const { useState, useEffect, useRef, useMemo } = React;
                                     <span className="text-xs px-2 py-1 bg-gray-50 text-gray-500 rounded-lg">{pattern.category}</span>
                                 </div>
                                 <div className="mt-4 pt-4 border-t border-gray-50 relative z-10">
-                                    <button onClick={() => onCreateProject(pattern)} className="w-full py-3 bg-wool-100 text-wool-800 rounded-xl hover:bg-wool-200 text-sm font-bold flex items-center justify-center transition-colors">
+                                    <button onClick={() => onCreateProject(pattern)} className="w-full py-3 bg-brand-100 text-[rgb(var(--brand-text))] rounded-xl hover:bg-wool-200 text-sm font-bold flex items-center justify-center transition-colors">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
                                         開始編織
                                     </button>
@@ -622,14 +882,14 @@ const { useState, useEffect, useRef, useMemo } = React;
                     <div className="bg-white border-b border-gray-100 px-4 py-3 shadow-sm flex items-center justify-between sticky top-0 z-30">
                         <button onClick={onBack} className="p-2 -ml-2 text-gray-500">← 返回</button>
                         <div className="flex bg-gray-100 p-1 rounded-lg">
-                            <button onClick={() => setActiveTab('CONTENT')} className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${activeTab === 'CONTENT' ? 'bg-white shadow text-wool-800' : 'text-gray-400'}`}>內容</button>
+                            <button onClick={() => setActiveTab('CONTENT')} className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${activeTab === 'CONTENT' ? 'bg-white shadow text-[rgb(var(--brand-text))]' : 'text-gray-400'}`}>內容</button>
                             <button onClick={() => setActiveTab('ALERTS')} className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${activeTab === 'ALERTS' ? 'bg-white shadow text-yellow-600' : 'text-gray-400'}`}>提醒</button>
                         </div>
                         <div className="w-8"></div>
                     </div>
 
                     <div className="p-4 border-b border-gray-50 bg-gray-50/50">
-                        <input type="text" value={data.name} onChange={(e) => updateMeta('name', e.target.value)} className="w-full font-bold text-lg text-wool-800 bg-transparent border-none p-0 focus:ring-0 mb-2" placeholder="專案名稱" />
+                        <input type="text" value={data.name} onChange={(e) => updateMeta('name', e.target.value)} className="w-full font-bold text-lg text-[rgb(var(--brand-text))] bg-transparent border-none p-0 focus:ring-0 mb-2" placeholder="專案名稱" />
                         <select value={data.category} onChange={(e) => updateMeta('category', e.target.value)} className="text-sm border-gray-200 rounded-lg py-1 px-2 bg-white text-gray-600">
                             {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
                         </select>
@@ -658,7 +918,7 @@ const { useState, useEffect, useRef, useMemo } = React;
                         ) : data.type === 'TEXT' ? (
                             <div className="space-y-6">
                                 {/* Fixed Info Fields */}
-                                <div className="bg-wool-50 p-4 rounded-xl border border-wool-100">
+                                <div className="bg-wool-50 p-4 rounded-xl border border-brand-100">
                                     <h3 className="text-xs font-bold text-wool-400 uppercase mb-3">基本資訊</h3>
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
@@ -721,7 +981,7 @@ const { useState, useEffect, useRef, useMemo } = React;
                                 {/* Tool Palette - Horizontal Scroll */}
                                 <div className="bg-white border-b border-gray-100 py-2 flex overflow-x-auto gap-2 items-center sticky top-0 z-10 -mx-4 px-4 shadow-sm">
                                     {Object.values(SYMBOLS).map((tool) => (
-                                        <button key={tool.id} onClick={() => setSelectedTool(tool.id)} className={`flex-shrink-0 flex flex-col items-center justify-center w-10 h-10 rounded-lg border transition-all ${selectedTool === tool.id ? 'bg-wool-800 text-white shadow-md scale-105' : 'bg-white text-gray-400 border-gray-100'}`}>
+                                        <button key={tool.id} onClick={() => setSelectedTool(tool.id)} className={`flex-shrink-0 flex flex-col items-center justify-center w-10 h-10 rounded-lg border transition-all ${selectedTool === tool.id ? 'bg-brand-800 text-white shadow-md scale-105' : 'bg-white text-gray-400 border-gray-100'}`}>
                                             <span className="text-sm font-mono">{tool.symbol}</span>
                                         </button>
                                     ))}
@@ -737,6 +997,101 @@ const { useState, useEffect, useRef, useMemo } = React;
                                             </div>
                                         </div>
                                     </div>
+
+                                        <div className="mt-3 bg-white rounded-2xl border border-brand-100 p-3">
+                                            <div className="flex items-center justify-between">
+                                                <div className="text-xs font-bold text-gray-600">段內規則（這段哪些排要做什麼）</div>
+                                                <button
+                                                    onClick={() => {
+                                                        const newRule = { id: crypto.randomUUID(), rows: 'every 4', action: '加針', note: '' };
+                                                        const newSections = data.sections.map(s => s.id === section.id ? ({ ...s, rowRules: [...(s.rowRules || []), newRule] }) : s);
+                                                        setData(p => ({ ...p, sections: newSections }));
+                                                    }}
+                                                    className="px-3 py-2 rounded-xl bg-brand-100 text-[rgb(var(--brand-text))] font-bold text-xs"
+                                                >
+                                                    ＋新增規則
+                                                </button>
+                                            </div>
+
+                                            {(section.rowRules || []).length === 0 ? (
+                                                <div className="text-xs text-gray-400 mt-2">尚未設定。例：every 4、1,3,5、5-12</div>
+                                            ) : (
+                                                <div className="mt-2 space-y-2">
+                                                    {(section.rowRules || []).map((rule) => (
+                                                        <div key={rule.id} className="grid grid-cols-1 md:grid-cols-7 gap-2 items-center bg-brand-50 border border-brand-100 rounded-2xl p-2">
+                                                            <div className="md:col-span-2">
+                                                                <div className="text-[10px] text-gray-500">排數</div>
+                                                                <input
+                                                                    value={rule.rows || ''}
+                                                                    onChange={(e) => {
+                                                                        const newSections = data.sections.map(s => s.id === section.id
+                                                                            ? ({ ...s, rowRules: (s.rowRules || []).map(r => r.id === rule.id ? ({ ...r, rows: e.target.value }) : r) })
+                                                                            : s
+                                                                        );
+                                                                        setData(p => ({ ...p, sections: newSections }));
+                                                                    }}
+                                                                    className="mt-1 w-full border border-gray-200 rounded-xl p-2 text-sm"
+                                                                    placeholder="例如：every 4 / 1,3,5 / 5-12"
+                                                                />
+                                                            </div>
+
+                                                            <div className="md:col-span-2">
+                                                                <div className="text-[10px] text-gray-500">動作</div>
+                                                                <select
+                                                                    value={rule.action || '加針'}
+                                                                    onChange={(e) => {
+                                                                        const newSections = data.sections.map(s => s.id === section.id
+                                                                            ? ({ ...s, rowRules: (s.rowRules || []).map(r => r.id === rule.id ? ({ ...r, action: e.target.value }) : r) })
+                                                                            : s
+                                                                        );
+                                                                        setData(p => ({ ...p, sections: newSections }));
+                                                                    }}
+                                                                    className="mt-1 w-full border border-gray-200 rounded-xl p-2 text-sm bg-white"
+                                                                >
+                                                                    <option value="加針">加針</option>
+                                                                    <option value="減針">減針</option>
+                                                                    <option value="扭麻花">扭麻花</option>
+                                                                    <option value="換色">換色</option>
+                                                                    <option value="其他">其他</option>
+                                                                </select>
+                                                            </div>
+
+                                                            <div className="md:col-span-2">
+                                                                <div className="text-[10px] text-gray-500">備註</div>
+                                                                <input
+                                                                    value={rule.note || ''}
+                                                                    onChange={(e) => {
+                                                                        const newSections = data.sections.map(s => s.id === section.id
+                                                                            ? ({ ...s, rowRules: (s.rowRules || []).map(r => r.id === rule.id ? ({ ...r, note: e.target.value }) : r) })
+                                                                            : s
+                                                                        );
+                                                                        setData(p => ({ ...p, sections: newSections }));
+                                                                    }}
+                                                                    className="mt-1 w-full border border-gray-200 rounded-xl p-2 text-sm"
+                                                                    placeholder="例如：左右各+1 / C4B"
+                                                                />
+                                                            </div>
+
+                                                            <div className="md:col-span-1 flex justify-end">
+                                                                <button
+                                                                    onClick={() => {
+                                                                        const newSections = data.sections.map(s => s.id === section.id
+                                                                            ? ({ ...s, rowRules: (s.rowRules || []).filter(r => r.id !== rule.id) })
+                                                                            : s
+                                                                        );
+                                                                        setData(p => ({ ...p, sections: newSections }));
+                                                                    }}
+                                                                    className="px-3 py-2 rounded-xl bg-white border border-brand-100 text-gray-500 font-bold text-xs hover:bg-gray-50"
+                                                                >
+                                                                    刪除
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+
                                 ))}
                             </div>
                         )}
@@ -750,6 +1105,25 @@ const { useState, useEffect, useRef, useMemo } = React;
 
             const [cloudOpen, setCloudOpen] = useState(false);
             const [cloudStatus, setCloudStatus] = useState('');
+
+            const THEME_KEY = 'cozy_knit_theme_v1';
+            const THEMES = [
+                { id: 'blue', name: '莫蘭迪藍', cls: 'theme-blue' },
+                { id: 'purple', name: '莫蘭迪紫', cls: 'theme-purple' },
+                { id: 'green', name: '墨綠', cls: 'theme-green' },
+                { id: 'mono', name: '黑白灰', cls: 'theme-mono' },
+            ];
+            const [themeId, setThemeId] = useState(() => localStorage.getItem(THEME_KEY) || 'blue');
+
+            useEffect(() => {
+                const theme = THEMES.find(t => t.id === themeId) || THEMES[0];
+                const root = document.documentElement;
+                // remove previous theme classes
+                root.classList.remove('theme-blue','theme-purple','theme-green','theme-mono');
+                root.classList.add(theme.cls);
+                localStorage.setItem(THEME_KEY, themeId);
+            }, [themeId]);
+
             const [cloudCfg, setCloudCfg] = useState(() => {
                 const c = readCloudCfg();
                 return {
@@ -782,6 +1156,7 @@ const { useState, useEffect, useRef, useMemo } = React;
                     cloudShaRef.current = sha;
                     setSavedPatterns(data.savedPatterns || []);
                     setActiveProjects(data.activeProjects || []);
+                    setYarnLibrary(data.yarnLibrary || []);
                     localStorage.setItem(CLOUD_CACHE_KEY, JSON.stringify(data));
                     setCloudStatus(`載入成功 ✅（sha: ${String(sha).slice(0,7)}…）`);
                 } catch (e) {
@@ -810,7 +1185,8 @@ const { useState, useEffect, useRef, useMemo } = React;
                         version: 1,
                         updatedAt: new Date().toISOString(),
                         savedPatterns,
-                        activeProjects
+                        activeProjects,
+                        yarnLibrary
                     };
                     await window.CozyKnitStorage.saveData(cfg, payload, cloudShaRef.current);
                     // refresh sha after save
@@ -824,6 +1200,7 @@ const { useState, useEffect, useRef, useMemo } = React;
             const [view, setView] = useState('PROJECTS');
             const [savedPatterns, setSavedPatterns] = useState([]);
             const [activeProjects, setActiveProjects] = useState([]);
+            const [yarnLibrary, setYarnLibrary] = useState([]);
             const [currentPattern, setCurrentPattern] = useState(null);
 
             useEffect(() => {
@@ -834,12 +1211,15 @@ const { useState, useEffect, useRef, useMemo } = React;
                         const d = JSON.parse(cache);
                         if (Array.isArray(d.savedPatterns)) setSavedPatterns(d.savedPatterns);
                         if (Array.isArray(d.activeProjects)) setActiveProjects(d.activeProjects);
+                        if (Array.isArray(d.yarnLibrary)) setYarnLibrary(d.yarnLibrary);
                     } catch(e) {}
                 } else {
                     const savedP = localStorage.getItem('cozy_knit_patterns_v6');
                     const savedProj = localStorage.getItem('cozy_knit_projects_v6');
                     if (savedP) try { setSavedPatterns(JSON.parse(savedP)); } catch(e) {}
                     if (savedProj) try { setActiveProjects(JSON.parse(savedProj)); } catch(e) {}
+                    const savedY = localStorage.getItem('cozy_knit_yarns_v1');
+                    if (savedY) try { setYarnLibrary(JSON.parse(savedY)); } catch(e) {}
                 }
 
                 // 2) Cloud auto-load if config exists
@@ -871,6 +1251,14 @@ const { useState, useEffect, useRef, useMemo } = React;
                 } catch(e) {}
             }, [activeProjects]);
 
+            useEffect(() => {
+                localStorage.setItem('cozy_knit_yarns_v1', JSON.stringify(yarnLibrary));
+                try {
+                    const cur = JSON.parse(localStorage.getItem(CLOUD_CACHE_KEY) || '{}');
+                    localStorage.setItem(CLOUD_CACHE_KEY, JSON.stringify({ ...cur, version: 1, updatedAt: new Date().toISOString(), yarnLibrary }));
+                } catch(e) {}
+            }, [yarnLibrary]);
+
             const handleNewPattern = (type) => { setCurrentPattern(createNewPattern(type)); setView('EDITOR'); };
             const handleSelectPattern = (p) => { setCurrentPattern({...p}); setView('EDITOR'); };
             const handleDeletePattern = (id) => { if(confirm('刪除織圖？')) setSavedPatterns(p => p.filter(x => x.id !== id)); };
@@ -892,7 +1280,7 @@ const { useState, useEffect, useRef, useMemo } = React;
 
             // Navigation Components
             const NavIcon = ({ icon, label, active, onClick }) => (
-                <button onClick={onClick} className={`flex flex-col items-center justify-center p-2 transition-all duration-300 ${active ? 'text-wool-800 scale-105' : 'text-gray-400 hover:text-gray-500'}`}>
+                <button onClick={onClick} className={`flex flex-col items-center justify-center p-2 transition-all duration-300 ${active ? 'text-[rgb(var(--brand-text))] scale-105' : 'text-gray-400 hover:text-gray-500'}`}>
                     {icon}
                     <span className={`text-[10px] mt-1 font-bold ${active ? 'opacity-100' : 'opacity-0 md:opacity-100'}`}>{label}</span>
                 </button>
@@ -901,16 +1289,22 @@ const { useState, useEffect, useRef, useMemo } = React;
             return (
                 <div className="flex h-screen overflow-hidden">
                     {/* Desktop Sidebar */}
-                    <div className="hidden md:flex w-24 bg-white border-r border-wool-100 flex-col items-center py-8 space-y-8 z-30 shadow-sm relative">
-                        <div className="w-12 h-12 bg-wool-800 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-wool-200">
+                    <div className="hidden md:flex w-24 bg-white border-r border-brand-100 flex-col items-center py-8 space-y-8 z-30 shadow-sm relative">
+                        <div className="w-12 h-12 bg-brand-800 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-brand-200">
                              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.2 16.6l-5.6-3.2 5.6-3.2c.8-.5.8-1.9-.3-2.3L15.3 5.4c-.9-.4-2-.2-2.5.5L7.9 14.5c-.5.8-1.7.8-2.2-.1L3.3 12c-.5-.9.1-1.9 1.1-1.9H12"/><path d="M12 22V12"/></svg>
                         </div>
                         <nav className="flex flex-col space-y-6 w-full items-center">
                             <NavIcon active={view === 'PROJECTS'} onClick={() => setView('PROJECTS')} icon={<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>} label="專案" />
+                            <NavIcon active={view === 'YARNS'} onClick={() => setView('YARNS')} icon={<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3a7 7 0 0 0-7 7c0 2.2 1 4.1 2.6 5.4"/><path d="M12 3a7 7 0 0 1 7 7c0 2.2-1 4.1-2.6 5.4"/><path d="M8 14c1.2 1 2.6 1.6 4 1.6s2.8-.6 4-1.6"/><path d="M7 17h10"/><path d="M9 21h6"/></svg>} label="線材" />
                             <NavIcon active={view === 'LIBRARY' || view === 'EDITOR'} onClick={() => setView('LIBRARY')} icon={<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>} label="圖庫" />
                             <NavIcon active={view === 'TUTORIAL'} onClick={() => setView('TUTORIAL')} icon={<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>} label="教學" />
                         </nav>
-                        <button onClick={() => setCloudOpen(true)} className="mt-auto mb-2 text-xs font-bold text-gray-400 hover:text-wool-700">⚙︎ 雲端同步</button>
+                        <button onClick={() => setCloudOpen(true)} className="mt-auto mb-2 text-xs font-bold text-gray-400 hover:text-wool-700">🎨 換主題</button>
+                        <button onClick={() => setThemeId(prev => {
+                            const i = THEMES.findIndex(t => t.id === prev);
+                            return THEMES[(i+1)%THEMES.length].id;
+                        })} className="mt-auto -mb-1 text-xs font-bold text-gray-400 hover:text-[rgb(var(--brand-text))]">🎨 換主題</button>
+                        <button onClick={() => setCloudOpen(true)} className="mb-2 text-xs font-bold text-gray-400 hover:text-[rgb(var(--brand-text))]">⚙︎ 雲端同步</button>
                     </div>
 
                     {/* Main Area */}
@@ -918,17 +1312,18 @@ const { useState, useEffect, useRef, useMemo } = React;
                          {/* Mobile Top Bar (Only visible on main views) */}
                          <div className="md:hidden p-4 flex items-center justify-between bg-white/50 backdrop-blur sticky top-0 z-20">
                              <div className="flex items-center gap-2">
-                                <div className="w-8 h-8 bg-wool-800 text-white rounded-lg flex items-center justify-center">
+                                <div className="w-8 h-8 bg-brand-800 text-white rounded-lg flex items-center justify-center">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.2 16.6l-5.6-3.2 5.6-3.2c.8-.5.8-1.9-.3-2.3L15.3 5.4c-.9-.4-2-.2-2.5.5L7.9 14.5c-.5.8-1.7.8-2.2-.1L3.3 12c-.5-.9.1-1.9 1.1-1.9H12"/><path d="M12 22V12"/></svg>
                                 </div>
-                                <span className="font-bold text-wool-800 text-lg">Cozy Knit</span>
+                                <span className="font-bold text-[rgb(var(--brand-text))] text-lg">Cozy Knit</span>
                              </div>
-                             <button onClick={() => setCloudOpen(true)} className="px-3 py-2 bg-white border border-wool-100 rounded-xl text-xs font-bold text-wool-700 shadow-sm">同步</button>
+                             <button onClick={() => setCloudOpen(true)} className="px-3 py-2 bg-white border border-brand-100 rounded-xl text-xs font-bold text-wool-700 shadow-sm">同步</button>
                          </div>
 
                         <div className="flex-1 overflow-y-auto">
                             {view === 'TUTORIAL' && <TutorialView />}
-                            {view === 'PROJECTS' && <ProjectView activeProjects={activeProjects} savedPatterns={savedPatterns} onDeleteProject={handleDeleteProject} onUpdateProject={handleUpdateProject} onNavigateToLibrary={() => setView('LIBRARY')} />}
+                            {view === 'PROJECTS' && <ProjectView activeProjects={activeProjects} savedPatterns={savedPatterns} onDeleteProject={handleDeleteProject} onUpdateProject={handleUpdateProject} onNavigateToLibrary={() => setView('LIBRARY')} yarnLibrary={yarnLibrary} onUpdateYarnLibrary={setYarnLibrary} />}
+{view === 'YARNS' && <YarnLibraryView yarnLibrary={yarnLibrary} onAddYarn={(y) => setYarnLibrary(prev => [y, ...(prev || [])])} onUpdateYarn={(y) => setYarnLibrary(prev => (prev || []).map(i => i.id === y.id ? y : i))} onDeleteYarn={(id) => setYarnLibrary(prev => (prev || []).filter(i => i.id !== id))} />}
                             {view === 'LIBRARY' && <LibraryView savedPatterns={savedPatterns} onSelectPattern={handleSelectPattern} onDeletePattern={handleDeletePattern} onImport={handleImport} onNewPattern={handleNewPattern} onCreateProject={handleCreateProject} />}
                             {view === 'EDITOR' && currentPattern && <EditorView pattern={currentPattern} onUpdate={handleSavePattern} onBack={() => setView('LIBRARY')} />}
                         </div>
@@ -947,8 +1342,10 @@ const { useState, useEffect, useRef, useMemo } = React;
 
 {/* Mobile Bottom Navigation (Hidden on Desktop) */}
                     {view !== 'EDITOR' && (
-                        <div className="md:hidden fixed bottom-0 w-full bg-white border-t border-wool-100 flex justify-around py-3 pb-safe z-40 shadow-[0_-5px_15px_rgba(0,0,0,0.02)]">
+                        <div className="md:hidden fixed bottom-0 w-full bg-white border-t border-brand-100 flex justify-around py-3 pb-safe z-40 shadow-[0_-5px_15px_rgba(0,0,0,0.02)]">
                             <NavIcon active={view === 'PROJECTS'} onClick={() => setView('PROJECTS')} icon={<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>} label="專案" />
+                            <NavIcon active={view === 'YARNS'} onClick={() => setView('YARNS')} icon={<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3a7 7 0 0 0-7 7c0 2.2 1 4.1 2.6 5.4"/><path d="M12 3a7 7 0 0 1 7 7c0 2.2-1 4.1-2.6 5.4"/><path d="M8 14c1.2 1 2.6 1.6 4 1.6s2.8-.6 4-1.6"/><path d="M7 17h10"/><path d="M9 21h6"/></svg>} label="線材" />
+                            <NavIcon active={view === 'YARNS'} onClick={() => setView('YARNS')} icon={<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3a7 7 0 0 0-7 7c0 2.2 1 4.1 2.6 5.4"/><path d="M12 3a7 7 0 0 1 7 7c0 2.2-1 4.1-2.6 5.4"/><path d="M8 14c1.2 1 2.6 1.6 4 1.6s2.8-.6 4-1.6"/><path d="M7 17h10"/><path d="M9 21h6"/></svg>} label="線材" />
                             <NavIcon active={view === 'LIBRARY'} onClick={() => setView('LIBRARY')} icon={<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>} label="圖庫" />
                             <NavIcon active={view === 'TUTORIAL'} onClick={() => setView('TUTORIAL')} icon={<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>} label="教學" />
                         </div>

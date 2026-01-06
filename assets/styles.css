@@ -1,60 +1,111 @@
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Nunito:wght@600;800&display=swap');
+        
+        body {
+            font-family: 'Nunito', 'Noto Sans TC', sans-serif;
+            background-color: #fdfbf7; /* wool-50 */
+            color: #4b5563;
+            -webkit-tap-highlight-color: transparent;
+        }
 
-body {
-    font-family: 'Nunito', 'Noto Sans TC', sans-serif;
-    /* 莫蘭迪淡粉紫背景 */
-    background-color: #f4f2f7; 
-    /* 深灰紫文字，比純黑更柔和 */
-    color: #5d5666; 
-    -webkit-tap-highlight-color: transparent;
+        /* 隱藏捲軸但保留功能 */
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* 針織背景紋理 (CSS Pattern) */
+        .bg-knit-pattern {
+            background-color: #fdfbf7;
+            background-image: url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1h2v2H1V1zm4 0h2v2H5V1zm4 0h2v2H9V1zm4 0h2v2h-2V1zm4 0h2v2h-2V1zM1 5h2v2H1V5zm4 0h2v2H5V5zm4 0h2v2H9V5zm4 0h2v2h-2V5zm4 0h2v2h-2V5zM1 9h2v2H1V9zm4 0h2v2H5V9zm4 0h2v2H9V9zm4 0h2v2h-2V9zm4 0h2v2h-2V9zM1 13h2v2H1v-2zm4 0h2v2H5v-2zm4 0h2v2H9v-2zm4 0h2v2h-2v-2zm4 0h2v2h-2v-2z' fill='%23e5d3b0' fill-opacity='0.15' fill-rule='evenodd'/%3E%3C/svg%3E");
+        }
+
+        .grid-cell {
+            transition: all 0.1s ease;
+        }
+        .grid-cell:active {
+            transform: scale(0.9);
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+
+        @keyframes bounce-gentle {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+        .alert-active {
+            animation: bounce-gentle 1s infinite;
+        }
+        
+        /* Modal Overlay */
+        .modal-overlay {
+            background-color: rgba(122, 82, 48, 0.2); /* wool-800 with opacity */
+            backdrop-filter: blur(4px);
+        }
+
+        /* Mobile Bottom Nav Fix */
+        .pb-safe {
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+
+
+/* ===== Theme system (Morandi) =====
+   We set CSS variables and map Tailwind "brand" colors to them via tailwind.config in index.html.
+*/
+:root{
+  --brand-50: 243 246 250;
+  --brand-100: 229 237 246;
+  --brand-200: 205 221 238;
+  --brand-700: 62 92 122;
+  --brand-800: 43 68 95;
+  --brand-text: 43 68 95;
 }
 
-/* 隱藏捲軸但保留功能 */
-.scrollbar-hide::-webkit-scrollbar {
-    display: none;
-}
-.scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-}
-
-/* 針織背景紋理 (CSS Pattern) - 莫蘭迪版 */
-.bg-knit-pattern {
-    background-color: #f4f2f7;
-    /* 這裡的 fill='%23dcd3e3' 是莫蘭迪紫的紋理色 */
-    background-image: url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1h2v2H1V1zm4 0h2v2H5V1zm4 0h2v2H9V1zm4 0h2v2h-2V1zm4 0h2v2h-2V1zM1 5h2v2H1V5zm4 0h2v2H5V5zm4 0h2v2H9V5zm4 0h2v2h-2V5zm4 0h2v2h-2V5zM1 9h2v2H1V9zm4 0h2v2H5V9zm4 0h2v2H9V9zm4 0h2v2h-2V9zm4 0h2v2h-2V9zM1 13h2v2H1v-2zm4 0h2v2H5v-2zm4 0h2v2H9v-2zm4 0h2v2h-2v-2zm4 0h2v2h-2v-2z' fill='%23dcd3e3' fill-opacity='0.4' fill-rule='evenodd'/%3E%3C/svg%3E");
+/* Morandi Blue */
+.theme-blue{
+  --brand-50: 242 245 248;
+  --brand-100: 226 234 242;
+  --brand-200: 201 216 232;
+  --brand-700: 74 104 132;
+  --brand-800: 52 79 105;
+  --brand-text: 52 79 105;
 }
 
-.grid-cell {
-    transition: all 0.1s ease;
-}
-.grid-cell:active {
-    transform: scale(0.9);
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(5px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-.animate-fade-in {
-    animation: fadeIn 0.3s ease-out forwards;
+/* Morandi Purple */
+.theme-purple{
+  --brand-50: 246 243 248;
+  --brand-100: 235 226 242;
+  --brand-200: 217 203 232;
+  --brand-700: 110 86 132;
+  --brand-800: 86 63 104;
+  --brand-text: 86 63 104;
 }
 
-@keyframes bounce-gentle {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-5px); }
-}
-.alert-active {
-    animation: bounce-gentle 1s infinite;
-}
-
-/* Modal Overlay - 帶有紫色調的半透明遮罩 */
-.modal-overlay {
-    background-color: rgba(90, 80, 100, 0.25);
-    backdrop-filter: blur(4px);
+/* Ink Green */
+.theme-green{
+  --brand-50: 242 246 244;
+  --brand-100: 224 236 231;
+  --brand-200: 200 220 211;
+  --brand-700: 56 92 80;
+  --brand-800: 38 70 60;
+  --brand-text: 38 70 60;
 }
 
-/* Mobile Bottom Nav Fix */
-.pb-safe {
-    padding-bottom: env(safe-area-inset-bottom);
+/* Black/White/Gray */
+.theme-mono{
+  --brand-50: 246 246 246;
+  --brand-100: 234 234 234;
+  --brand-200: 214 214 214;
+  --brand-700: 64 64 64;
+  --brand-800: 20 20 20;
+  --brand-text: 20 20 20;
 }
+

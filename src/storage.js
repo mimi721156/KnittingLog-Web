@@ -7,6 +7,7 @@
       updatedAt: new Date().toISOString(),
       savedPatterns: [],
       activeProjects: [],
+      yarnLibrary: [],
     };
   }
 
@@ -17,6 +18,7 @@
       ...json,
       savedPatterns: Array.isArray(json?.savedPatterns) ? json.savedPatterns : [],
       activeProjects: Array.isArray(json?.activeProjects) ? json.activeProjects : [],
+      yarnLibrary: Array.isArray(json?.yarnLibrary) ? json.yarnLibrary : [],
     };
     return { data, sha };
   }
