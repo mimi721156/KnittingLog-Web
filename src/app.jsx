@@ -987,7 +987,7 @@ const { useState, useEffect, useRef, useMemo } = React;
                                     ))}
                                 </div>
                                 {data.sections.map(section => (
-                                    <>
+                                    <React.Fragment key={section.id}>
                                     <div key={section.id} className="bg-gray-50 p-4 rounded-2xl border border-gray-100 overflow-hidden">
                                         <h4 className="font-bold mb-2 text-wool-700">{section.name}</h4>
                                         <div className="overflow-x-auto pb-2">
@@ -1094,7 +1094,7 @@ const { useState, useEffect, useRef, useMemo } = React;
                                         </div>
 
                                 
-                                    </>
+                                    </React.Fragment>
 ))}
                             </div>
                         )}
