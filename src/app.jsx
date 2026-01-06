@@ -747,6 +747,9 @@ const { useState, useEffect, useRef, useMemo } = React;
 
         // --- 5. 主程式 ---
         const App = () => {
+            const [theme, setTheme] = useState(() => localStorage.getItem('cozy_theme') || 'theme-purple');
+            useEffect(() => { localStorage.setItem('cozy_theme', theme); }, [theme]);
+
 
             const [cloudOpen, setCloudOpen] = useState(false);
             const [cloudStatus, setCloudStatus] = useState('');
@@ -899,7 +902,7 @@ const { useState, useEffect, useRef, useMemo } = React;
             );
 
             return (
-                <div className="flex h-screen overflow-hidden">
+                <div className={`flex h-screen overflow-hidden ${theme}`}>
                     {/* Desktop Sidebar */}
                     <div className="hidden md:flex w-24 bg-white border-r border-wool-100 flex-col items-center py-8 space-y-8 z-30 shadow-sm relative">
                         <div className="w-12 h-12 bg-wool-800 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-wool-200">
