@@ -987,6 +987,7 @@ const { useState, useEffect, useRef, useMemo } = React;
                                     ))}
                                 </div>
                                 {data.sections.map(section => (
+                                    <>
                                     <div key={section.id} className="bg-gray-50 p-4 rounded-2xl border border-gray-100 overflow-hidden">
                                         <h4 className="font-bold mb-2 text-wool-700">{section.name}</h4>
                                         <div className="overflow-x-auto pb-2">
@@ -996,7 +997,7 @@ const { useState, useEffect, useRef, useMemo } = React;
                                                 )))}
                                             </div>
                                         </div>
-                                    </div>
+                                    
 
                                         <div className="mt-3 bg-white rounded-2xl border border-brand-100 p-3">
                                             <div className="flex items-center justify-between">
@@ -1092,7 +1093,9 @@ const { useState, useEffect, useRef, useMemo } = React;
                                             )}
                                         </div>
 
-                                ))}
+                                
+                                    </>
+))}
                             </div>
                         )}
                     </div>
