@@ -1,59 +1,12 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Cozy Knit - 編織小幫手</title>
-
-  <!-- React and ReactDOM -->
-  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
-
-  <!-- Babel for JSX (kept to avoid build step) -->
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-
-  <!-- Lucide Icons -->
-  <script src="https://unpkg.com/lucide@latest"></script>
-
-  <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        wool: {
-                            50: '#fdfbf7',  // 羊毛白
-                            100: '#f7f3e8', // 奶油色
-                            200: '#efe6d0',
-                            300: '#e5d3b0',
-                            400: '#d9b98a', // 溫暖駝色
-                            500: '#cc9f6a',
-                            600: '#bf8652',
-                            800: '#7a5230',
-                        },
-                        cozy: {
-                            pink: '#eecaca',
-                            blue: '#b8c6db',
-                            green: '#d4e4bc'
-                        }
-                    }
-                }
-            }
-        }
-    </script>
-
-  <link rel="stylesheet" href="./assets/styles.css" />
+  <meta charset="UTF-8" />
+  <title>KnittingLog</title>
+  <link rel="stylesheet" href="./assets/style.css" />
 </head>
-<body class="h-screen overflow-hidden flex flex-col bg-knit-pattern">
-  <div id="root" class="h-full flex flex-col"></div>
-
-  <!-- Cloud sync helpers -->
-  <script src="./src/githubContentsApi.js"></script>
-  <script src="./src/storage.js"></script>
-
-  <!-- App -->
-  <script type="text/babel" src="./src/app.jsx"></script>
+<body>
+  <div id="root"></div>
+  <script type="module" src="./src/app.jsx"></script>
 </body>
 </html>
