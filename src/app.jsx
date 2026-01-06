@@ -272,12 +272,51 @@ const { useState, useEffect, useRef, useMemo } = React;
                     });
                 };
 
-                // Chart Logic
+                // Chart Logic (with section progress + total rows)
                 let displaySection = null;
                 let displayRowIndex = -1;
-                if (currentPattern.type === 'CHART' && currentPattern.sections.length > 0) {
-                    displaySection = currentPattern.sections[0];
-                    const localRow = (currentProject.currentRow - 1) % displaySection.rows; 
+
+                // progress meta
+                let totalRows = null;                 // 總排數（跨段、含 repeats）
+                let sectionInfo = null;               // { section, sectionRow, sectionTotalRows, repeatIndex, repeats }
+
+                if (currentPattern.type === 'CHART' && (currentPattern.sections || []).length > 0) {
+                    const sections = currentPattern.sections || [];
+
+                    totalRows = sections.reduce((sum, s) => {
+                        const rows = Number(s.rows || 0);
+                        const reps = Number(s.repeats || 1);
+                        return sum + (rows * reps);
+                    }, 0);
+
+                    // 找到 currentRow 落在哪一段、哪一排
+                    let remaining = Number(currentProject.currentRow || 1);
+                    for (const s of sections) {
+                        const rows = Number(s.rows || 0);
+                        const reps = Number(s.repeats || 1);
+                        const span = rows * reps;
+
+                        if (rows > 0 && remaining <= span) {
+                            const sectionRow = ((remaining - 1) % rows) + 1;       // 1..rows
+                            const repeatIndex = Math.floor((remaining - 1) / rows) + 1; // 1..reps
+                            sectionInfo = { section: s, sectionRow, sectionTotalRows: rows, repeatIndex, repeats: reps };
+                            break;
+                        }
+                        remaining -= span;
+                    }
+
+                    // fallback（理論上不會進來）
+                    if (!sectionInfo) {
+                        const last = sections[sections.length - 1];
+                        const rows = Number(last.rows || 0) || 1;
+                        const reps = Number(last.repeats || 1);
+                        sectionInfo = { section: last, sectionRow: ((rows - 1) % rows) + 1, sectionTotalRows: rows, repeatIndex: reps, repeats: reps };
+                    }
+
+                    displaySection = sectionInfo.section;
+
+                    // 顯示該段的「目前排」高亮（grid 從上到下顛倒顯示，所以要反轉 index）
+                    const localRow = (sectionInfo.sectionRow - 1) % displaySection.rows;
                     displayRowIndex = displaySection.rows - 1 - localRow;
                 }
 
@@ -338,23 +377,59 @@ const { useState, useEffect, useRef, useMemo } = React;
                                         {currentProject.currentRow}
                                     </div>
                                     
+                                    {{/* 進度資訊：總排數／目前段排數 */}
+                                    {totalRows ? (
+                                        <div className="text-xs text-gray-500 -mt-6 mb-6 text-center">
+                                            總排數 <span className="font-extrabold text-wool-800">{totalRows}</span>
+                                            <span className="mx-2">·</span>
+                                            目前段排數 <span className="font-extrabold text-wool-800">{sectionInfo?.sectionRow ?? '-'}</span>
+                                            /
+                                            <span className="font-extrabold text-wool-800">{sectionInfo?.sectionTotalRows ?? '-'}</span>
+                                            {(sectionInfo?.repeats ?? 1) > 1 && (
+                                                <span className="ml-2 text-gray-400">（第 {sectionInfo.repeatIndex}/{sectionInfo.repeats} 次）</span>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <div className="text-xs text-gray-400 -mt-6 mb-6 text-center">
+                                            （此模式未計算總排數）
+                                        </div>
+                                    )}
+
                                     {/* Big Control Buttons for Touch */}
                                     <div className="grid grid-cols-2 gap-4 w-full">
-                                        <button onClick={() => updateRow(-1)} className="py-6 bg-white rounded-2xl text-gray-400 shadow-sm border border-gray-100 active:bg-gray-50 active:scale-95 transition-all text-xl font-bold">
+                                        <button onClick={() => updateRow(-1)} className="h-24 rounded-2xl bg-white border border-gray-100 text-gray-500 hover:bg-gray-50 active:scale-95 transition-all text-xl font-bold">
                                             -1
                                         </button>
-                                        <button onClick={() => updateRow(1)} className="py-6 bg-wool-600 text-white rounded-2xl shadow-lg shadow-wool-200 active:bg-wool-700 active:scale-95 transition-all text-3xl font-bold">
+                                        <button onClick={() => updateRow(+1)} className="h-24 rounded-2xl bg-wool-700 text-white shadow-lg shadow-wool-200 hover:bg-wool-800 active:scale-95 transition-all text-3xl font-bold">
                                             +1
                                         </button>
                                     </div>
-                                    <div className="flex justify-center gap-4 mt-4 w-full">
-                                        <button onClick={() => updateRow(-5)} className="px-4 py-2 text-xs text-gray-400 bg-white rounded-lg border border-gray-100">-5</button>
-                                        <button onClick={() => updateRow(5)} className="px-4 py-2 text-xs text-wool-600 bg-white rounded-lg border border-wool-100">+5</button>
-                                    </div>
-                                </div>
-                            </div>
 
-                            {/* Pattern Display Section */}
+                                    <div className="flex justify-center gap-4 mt-4 w-full">
+                                        <button onClick={() => updateRow(-5)} className="flex-1 py-2 text-xs font-bold text-gray-400 bg-white rounded-lg border border-gray-100">-5</button>
+                                        <button onClick={() => updateRow(+5)} className="flex-1 py-2 text-xs font-bold text-wool-600 bg-white rounded-lg border border-wool-100">+5</button>
+                                    </div>
+
+                                    {/* +n 批次（自訂） */}
+                                    <div className="mt-4 w-full">
+                                        <div className="text-[11px] font-bold text-gray-400 mb-2 text-center">批次</div>
+                                        <div className="flex items-center justify-center gap-2">
+                                            <input
+                                                type="number"
+                                                min="1"
+                                                value={batchDelta}
+                                                onChange={(e) => setBatchDelta(Math.max(1, parseInt(e.target.value || '1', 10)))}
+                                                className="w-20 text-center border border-gray-200 rounded-xl py-2 text-sm font-bold text-wool-800"
+                                            />
+                                            <button onClick={() => updateRow(+batchDelta)} className="px-4 py-2 rounded-xl bg-wool-800 text-white text-sm font-bold shadow active:scale-95">
+                                                +n
+                                            </button>
+                                            <button onClick={() => updateRow(-batchDelta)} className="px-3 py-2 rounded-xl bg-white border border-gray-200 text-gray-500 text-sm font-bold active:scale-95">
+                                                -n
+                                            </button>
+                                        </div>
+                                    </div>
+{/* Pattern Display Section */}
                             <div className="flex-1 bg-white rounded-3xl shadow-sm border border-wool-100 p-6 overflow-hidden flex flex-col order-2 md:order-2 min-h-[300px]">
                                 <h4 className="font-bold text-wool-800 mb-4 flex items-center">
                                     <span className="w-2 h-6 bg-wool-400 rounded-full mr-2"></span>
@@ -747,6 +822,30 @@ const { useState, useEffect, useRef, useMemo } = React;
 
         // --- 5. 主程式 ---
         const App = () => {
+            const THEME_KEY = 'cozy_knit_theme_v1';
+
+            const THEMES = {
+              PURPLE: { name: '莫蘭迪紫', className: '' },
+              BLUE:   { name: '莫蘭迪藍', className: 'theme-blue' },
+              GREEN:  { name: '墨綠',     className: 'theme-green' },
+              MONO:   { name: '黑灰白',   className: 'theme-mono' }
+            };
+        
+            const [theme, setTheme] = React.useState(
+              () => localStorage.getItem(THEME_KEY) || 'PURPLE'
+            );
+        
+            React.useEffect(() => {
+              localStorage.setItem(THEME_KEY, theme);
+            }, [theme]);
+            const cycleTheme = () => {
+                const i = THEMES.findIndex(t => t.id === theme);
+                const next = THEMES[(i + 1) % THEMES.length].id;
+                setTheme(next);
+            };
+
+            useEffect(() => { localStorage.setItem('cozy_theme', theme); }, [theme]);
+
 
             const [cloudOpen, setCloudOpen] = useState(false);
             const [cloudStatus, setCloudStatus] = useState('');
@@ -822,6 +921,7 @@ const { useState, useEffect, useRef, useMemo } = React;
                 }
             };
             const [view, setView] = useState('PROJECTS');
+            const [batchDelta, setBatchDelta] = useState(10);
             const [savedPatterns, setSavedPatterns] = useState([]);
             const [activeProjects, setActiveProjects] = useState([]);
             const [currentPattern, setCurrentPattern] = useState(null);
@@ -899,7 +999,7 @@ const { useState, useEffect, useRef, useMemo } = React;
             );
 
             return (
-                <div className="flex h-screen overflow-hidden">
+                <div className={`flex h-screen overflow-hidden ${THEMES[theme].className}`}>
                     {/* Desktop Sidebar */}
                     <div className="hidden md:flex w-24 bg-white border-r border-wool-100 flex-col items-center py-8 space-y-8 z-30 shadow-sm relative">
                         <div className="w-12 h-12 bg-wool-800 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-wool-200">
@@ -911,7 +1011,40 @@ const { useState, useEffect, useRef, useMemo } = React;
                             <NavIcon active={view === 'TUTORIAL'} onClick={() => setView('TUTORIAL')} icon={<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>} label="教學" />
                         </nav>
                         <button onClick={() => setCloudOpen(true)} className="mt-auto mb-2 text-xs font-bold text-gray-400 hover:text-wool-700">⚙︎ 雲端同步</button>
+                        <div className="mt-3 flex flex-col gap-2">
+                            <button onClick={cycleTheme} className="text-xs font-bold text-gray-400 hover:text-wool-700">🎨 切換主題</button>
+                            <div className="grid grid-cols-2 gap-2">
+                                {THEMES.map(t => (
+                                    <button key={t.id} onClick={() => setTheme(t.id)} className={`px-2 py-2 rounded-xl border text-xs font-bold ${theme === t.id ? 'bg-white border-wool-200 text-wool-800' : 'bg-wool-50 border-wool-100 text-gray-500 hover:bg-white'}`}>
+                                        {t.name}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
                     </div>
+                        {/* Theme Switcher */}
+                        <div className="mt-4 flex flex-col items-center gap-3">
+                          <div className="flex gap-3">
+                            {Object.entries(THEMES).map(([key, t]) => (
+                              <div
+                                key={key}
+                                className="theme-dot"
+                                title={t.name}
+                                style={{
+                                  backgroundColor:
+                                    key === 'PURPLE' ? '#8e8499' :
+                                    key === 'BLUE'   ? '#7da1c4' :
+                                    key === 'GREEN'  ? '#5f7f78' :
+                                                       '#444444',
+                                  opacity: theme === key ? 1 : 0.35
+                                }}
+                                onClick={() => setTheme(key)}
+                              />
+                            ))}
+                          </div>
+                          <div className="text-[11px] text-gray-400">主題</div>
+                        </div>
 
                     {/* Main Area */}
                     <div className="flex-1 flex flex-col h-full overflow-hidden relative pb-safe">
@@ -923,7 +1056,8 @@ const { useState, useEffect, useRef, useMemo } = React;
                                 </div>
                                 <span className="font-bold text-wool-800 text-lg">Cozy Knit</span>
                              </div>
-                             <button onClick={() => setCloudOpen(true)} className="px-3 py-2 bg-white border border-wool-100 rounded-xl text-xs font-bold text-wool-700 shadow-sm">同步</button>
+                              <button onClick={() => setCloudOpen(true)} className="px-3 py-2 bg-white border border-wool-100 rounded-xl text-xs font-bold text-wool-700 shadow-sm">同步</button>
+                             <button onClick={cycleTheme} className="px-3 py-2 bg-white border border-wool-100 rounded-xl text-xs font-bold text-wool-700 shadow-sm">主題</button>
                          </div>
 
                         <div className="flex-1 overflow-y-auto">
