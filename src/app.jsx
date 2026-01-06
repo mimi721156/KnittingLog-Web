@@ -986,21 +986,22 @@ const { useState, useEffect, useRef, useMemo } = React;
                                         </button>
                                     ))}
                                 </div>
-                                {data.sections.map(section => (
+                                                                {data.sections.map(section => (
                                   <div
                                     key={section.id}
                                     className="bg-gray-50 p-4 rounded-2xl border border-gray-100 overflow-hidden"
                                   >
-                                    {/* 原本的圖解 grid */}
+                                    <h4 className="font-bold mb-2 text-wool-700">{section.name}</h4>
                                     <div className="overflow-x-auto pb-2">
-                                      <div className="inline-grid gap-1"
-                                        style={{ gridTemplateColumns: `repeat(${section.grid[0]?.length || 1}, 26px)` }}
+                                      <div
+                                        className="grid gap-[1px] bg-gray-300 border border-gray-300 inline-block rounded overflow-hidden"
+                                        style={{ gridTemplateColumns: `repeat(${section.cols}, 26px)` }}
                                       >
                                         {section.grid.map((row, r) =>
                                           row.map((cell, c) => (
                                             <div
                                               key={`${section.id}-${r}-${c}`}
-                                              onClick={() => toggleCell(section.id, r, c)}
+                                              onClick={() => handleCellClick(section.id, r, c)}
                                               className="h-[26px] w-[26px] bg-white flex items-center justify-center text-xs cursor-pointer hover:bg-blue-50"
                                             >
                                               {SYMBOLS[cell]?.symbol}
@@ -1009,29 +1010,16 @@ const { useState, useEffect, useRef, useMemo } = React;
                                         )}
                                       </div>
                                     </div>
-                                
-                                    {/* ===== 段內規則（現在是「同一個 root div 裡的子區塊」） ===== */}
+
                                     <div className="mt-3 bg-white rounded-2xl border border-brand-100 p-3">
                                       <div className="flex items-center justify-between">
-                                        <div className="text-xs font-bold text-gray-600">
-                                          段內規則（這段哪些排要做什麼）
-                                        </div>
-                                
+                                        <div className="text-xs font-bold text-gray-600">段內規則（這段哪些排要做什麼）</div>
                                         <button
                                           onClick={() => {
-                                            const newRule = {
-                                              id: crypto.randomUUID(),
-                                              rows: "every 4",
-                                              action: "加針",
-                                              note: ""
-                                            };
+                                            const newRule = { id: crypto.randomUUID(), rows: 'every 4', action: '加針', note: '' };
                                             setData(p => ({
                                               ...p,
-                                              sections: p.sections.map(s =>
-                                                s.id === section.id
-                                                  ? { ...s, rowRules: [...(s.rowRules || []), newRule] }
-                                                  : s
-                                              )
+                                              sections: p.sections.map(s => s.id === section.id ? ({ ...s, rowRules: [...(s.rowRules || []), newRule] }) : s)
                                             }));
                                           }}
                                           className="px-3 py-2 rounded-xl bg-brand-100 text-[rgb(var(--brand-text))] font-bold text-xs"
@@ -1039,45 +1027,73 @@ const { useState, useEffect, useRef, useMemo } = React;
                                           ＋新增規則
                                         </button>
                                       </div>
-                                
+
                                       {(section.rowRules || []).length === 0 ? (
-                                        <div className="text-xs text-gray-400 mt-2">
-                                          尚未設定。例：every 4、1,3,5、5-12
-                                        </div>
+                                        <div className="text-xs text-gray-400 mt-2">尚未設定。例：every 4、1,3,5、5-12</div>
                                       ) : (
                                         <div className="mt-2 space-y-2">
-                                          {section.rowRules.map(rule => (
-                                            <div
-                                              key={rule.id}
-                                              className="grid grid-cols-1 md:grid-cols-7 gap-2 items-center bg-brand-50 border border-brand-100 rounded-2xl p-2"
-                                            >
+                                          {(section.rowRules || []).map(rule => (
+                                            <div key={rule.id} className="grid grid-cols-1 md:grid-cols-7 gap-2 items-center bg-brand-50 border border-brand-100 rounded-2xl p-2">
                                               <input
-                                                value={rule.rows}
-                                                onChange={e => updateRule(section.id, rule.id, { rows: e.target.value })}
+                                                value={rule.rows || ''}
+                                                onChange={(e) => {
+                                                  setData(p => ({
+                                                    ...p,
+                                                    sections: p.sections.map(s => s.id === section.id ? ({
+                                                      ...s,
+                                                      rowRules: (s.rowRules || []).map(r => r.id === rule.id ? ({ ...r, rows: e.target.value }) : r)
+                                                    }) : s)
+                                                  }));
+                                                }}
                                                 className="md:col-span-2 border rounded-xl p-2 text-sm"
+                                                placeholder="例如：every 4 / 1,3,5 / 5-12"
                                               />
-                                
+
                                               <select
-                                                value={rule.action}
-                                                onChange={e => updateRule(section.id, rule.id, { action: e.target.value })}
+                                                value={rule.action || '加針'}
+                                                onChange={(e) => {
+                                                  setData(p => ({
+                                                    ...p,
+                                                    sections: p.sections.map(s => s.id === section.id ? ({
+                                                      ...s,
+                                                      rowRules: (s.rowRules || []).map(r => r.id === rule.id ? ({ ...r, action: e.target.value }) : r)
+                                                    }) : s)
+                                                  }));
+                                                }}
                                                 className="md:col-span-2 border rounded-xl p-2 text-sm"
                                               >
-                                                <option>加針</option>
-                                                <option>減針</option>
-                                                <option>扭麻花</option>
-                                                <option>換色</option>
-                                                <option>其他</option>
+                                                <option value="加針">加針</option>
+                                                <option value="減針">減針</option>
+                                                <option value="扭麻花">扭麻花</option>
+                                                <option value="換色">換色</option>
+                                                <option value="其他">其他</option>
                                               </select>
-                                
+
                                               <input
-                                                value={rule.note}
-                                                onChange={e => updateRule(section.id, rule.id, { note: e.target.value })}
+                                                value={rule.note || ''}
+                                                onChange={(e) => {
+                                                  setData(p => ({
+                                                    ...p,
+                                                    sections: p.sections.map(s => s.id === section.id ? ({
+                                                      ...s,
+                                                      rowRules: (s.rowRules || []).map(r => r.id === rule.id ? ({ ...r, note: e.target.value }) : r)
+                                                    }) : s)
+                                                  }));
+                                                }}
                                                 className="md:col-span-2 border rounded-xl p-2 text-sm"
                                                 placeholder="備註"
                                               />
-                                
+
                                               <button
-                                                onClick={() => deleteRule(section.id, rule.id)}
+                                                onClick={() => {
+                                                  setData(p => ({
+                                                    ...p,
+                                                    sections: p.sections.map(s => s.id === section.id ? ({
+                                                      ...s,
+                                                      rowRules: (s.rowRules || []).filter(r => r.id !== rule.id)
+                                                    }) : s)
+                                                  }));
+                                                }}
                                                 className="md:col-span-1 text-xs font-bold text-gray-500"
                                               >
                                                 刪除
@@ -1089,7 +1105,8 @@ const { useState, useEffect, useRef, useMemo } = React;
                                     </div>
                                   </div>
                                 ))}
-
+                            </div>
+                        )}
                     </div>
                 </div>
             );
