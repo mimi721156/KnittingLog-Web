@@ -748,6 +748,18 @@ const { useState, useEffect, useRef, useMemo } = React;
         // --- 5. 主程式 ---
         const App = () => {
             const [theme, setTheme] = useState(() => localStorage.getItem('cozy_theme') || 'theme-purple');
+            const THEMES = [
+                { id: 'theme-purple', name: '莫蘭迪紫' },
+                { id: 'theme-blue', name: '莫蘭迪藍' },
+                { id: 'theme-green', name: '墨綠' },
+                { id: 'theme-mono', name: '黑灰白' },
+            ];
+            const cycleTheme = () => {
+                const i = THEMES.findIndex(t => t.id === theme);
+                const next = THEMES[(i + 1) % THEMES.length].id;
+                setTheme(next);
+            };
+
             useEffect(() => { localStorage.setItem('cozy_theme', theme); }, [theme]);
 
 
@@ -914,6 +926,17 @@ const { useState, useEffect, useRef, useMemo } = React;
                             <NavIcon active={view === 'TUTORIAL'} onClick={() => setView('TUTORIAL')} icon={<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>} label="教學" />
                         </nav>
                         <button onClick={() => setCloudOpen(true)} className="mt-auto mb-2 text-xs font-bold text-gray-400 hover:text-wool-700">⚙︎ 雲端同步</button>
+                        <div className="mt-3 flex flex-col gap-2">
+                            <button onClick={cycleTheme} className="text-xs font-bold text-gray-400 hover:text-wool-700">🎨 切換主題</button>
+                            <div className="grid grid-cols-2 gap-2">
+                                {THEMES.map(t => (
+                                    <button key={t.id} onClick={() => setTheme(t.id)} className={`px-2 py-2 rounded-xl border text-xs font-bold ${theme === t.id ? 'bg-white border-wool-200 text-wool-800' : 'bg-wool-50 border-wool-100 text-gray-500 hover:bg-white'}`}>
+                                        {t.name}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
                     </div>
 
                     {/* Main Area */}
@@ -926,7 +949,8 @@ const { useState, useEffect, useRef, useMemo } = React;
                                 </div>
                                 <span className="font-bold text-wool-800 text-lg">Cozy Knit</span>
                              </div>
-                             <button onClick={() => setCloudOpen(true)} className="px-3 py-2 bg-white border border-wool-100 rounded-xl text-xs font-bold text-wool-700 shadow-sm">同步</button>
+                              <button onClick={() => setCloudOpen(true)} className="px-3 py-2 bg-white border border-wool-100 rounded-xl text-xs font-bold text-wool-700 shadow-sm">同步</button>
+                             <button onClick={cycleTheme} className="px-3 py-2 bg-white border border-wool-100 rounded-xl text-xs font-bold text-wool-700 shadow-sm">主題</button>
                          </div>
 
                         <div className="flex-1 overflow-y-auto">
