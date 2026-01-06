@@ -747,13 +747,22 @@ const { useState, useEffect, useRef, useMemo } = React;
 
         // --- 5. 主程式 ---
         const App = () => {
-            const [theme, setTheme] = useState(() => localStorage.getItem('cozy_theme') || 'theme-purple');
-            const THEMES = [
-                { id: 'theme-purple', name: '莫蘭迪紫' },
-                { id: 'theme-blue', name: '莫蘭迪藍' },
-                { id: 'theme-green', name: '墨綠' },
-                { id: 'theme-mono', name: '黑灰白' },
-            ];
+            const THEME_KEY = 'cozy_knit_theme_v1';
+
+            const THEMES = {
+              PURPLE: { name: '莫蘭迪紫', className: '' },
+              BLUE:   { name: '莫蘭迪藍', className: 'theme-blue' },
+              GREEN:  { name: '墨綠',     className: 'theme-green' },
+              MONO:   { name: '黑灰白',   className: 'theme-mono' }
+            };
+        
+            const [theme, setTheme] = React.useState(
+              () => localStorage.getItem(THEME_KEY) || 'PURPLE'
+            );
+        
+            React.useEffect(() => {
+              localStorage.setItem(THEME_KEY, theme);
+            }, [theme]);
             const cycleTheme = () => {
                 const i = THEMES.findIndex(t => t.id === theme);
                 const next = THEMES[(i + 1) % THEMES.length].id;
@@ -914,7 +923,7 @@ const { useState, useEffect, useRef, useMemo } = React;
             );
 
             return (
-                <div className={`flex h-screen overflow-hidden ${theme}`}>
+                <div className={`flex h-screen overflow-hidden ${THEMES[theme].className}`}>
                     {/* Desktop Sidebar */}
                     <div className="hidden md:flex w-24 bg-white border-r border-wool-100 flex-col items-center py-8 space-y-8 z-30 shadow-sm relative">
                         <div className="w-12 h-12 bg-wool-800 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-wool-200">
@@ -938,6 +947,28 @@ const { useState, useEffect, useRef, useMemo } = React;
                         </div>
 
                     </div>
+                        {/* Theme Switcher */}
+                        <div className="mt-4 flex flex-col items-center gap-3">
+                          <div className="flex gap-3">
+                            {Object.entries(THEMES).map(([key, t]) => (
+                              <div
+                                key={key}
+                                className="theme-dot"
+                                title={t.name}
+                                style={{
+                                  backgroundColor:
+                                    key === 'PURPLE' ? '#8e8499' :
+                                    key === 'BLUE'   ? '#7da1c4' :
+                                    key === 'GREEN'  ? '#5f7f78' :
+                                                       '#444444',
+                                  opacity: theme === key ? 1 : 0.35
+                                }}
+                                onClick={() => setTheme(key)}
+                              />
+                            ))}
+                          </div>
+                          <div className="text-[11px] text-gray-400">主題</div>
+                        </div>
 
                     {/* Main Area */}
                     <div className="flex-1 flex flex-col h-full overflow-hidden relative pb-safe">
