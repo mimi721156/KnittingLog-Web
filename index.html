@@ -1,85 +1,59 @@
-<!doctype html>
-<html lang="zh-Hant">
+<!DOCTYPE html>
+<html lang="zh-TW">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>編織日記</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Cozy Knit - 編織小幫手</title>
+
+  <!-- React and ReactDOM -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+
+  <!-- Babel for JSX (kept to avoid build step) -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        wool: {
+                            50: '#fdfbf7',  // 羊毛白
+                            100: '#f7f3e8', // 奶油色
+                            200: '#efe6d0',
+                            300: '#e5d3b0',
+                            400: '#d9b98a', // 溫暖駝色
+                            500: '#cc9f6a',
+                            600: '#bf8652',
+                            800: '#7a5230',
+                        },
+                        cozy: {
+                            pink: '#eecaca',
+                            blue: '#b8c6db',
+                            green: '#d4e4bc'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
   <link rel="stylesheet" href="./assets/styles.css" />
 </head>
-<body>
-  <header class="header">
-    <h1>編織日記</h1>
-    <p class="sub">介面公開、資料私有。你的日記不會曝光。</p>
-  </header>
+<body class="h-screen overflow-hidden flex flex-col bg-knit-pattern">
+  <div id="root" class="h-full flex flex-col"></div>
 
-  <section class="card">
-    <h2>設定（只存在這台手機/瀏覽器）</h2>
+  <!-- Cloud sync helpers -->
+  <script src="./src/githubContentsApi.js"></script>
+  <script src="./src/storage.js"></script>
 
-    <div class="grid">
-      <label>GitHub Owner
-        <input id="owner" placeholder="你的帳號，例如: myname" autocomplete="off">
-      </label>
-
-      <label>資料 Repo（Private）
-        <input id="dataRepo" value="KnittingLog-Data" autocomplete="off">
-      </label>
-
-      <label>Branch
-        <input id="branch" value="main" autocomplete="off">
-      </label>
-
-      <label>JSON 路徑
-        <input id="path" value="data/knitting.json" autocomplete="off">
-      </label>
-
-      <label>Fine-grained Token
-        <input id="token" type="password" placeholder="貼上 PAT（只給資料 repo 權限）" autocomplete="off">
-      </label>
-    </div>
-
-    <div class="row">
-      <button id="saveSettings">儲存設定</button>
-      <button id="loadBtn" class="secondary">重新載入資料</button>
-    </div>
-
-    <p class="hint" id="status"></p>
-  </section>
-
-  <section class="card">
-    <h2>新增紀錄</h2>
-
-    <div class="grid">
-      <label>日期
-        <input id="date" type="date">
-      </label>
-
-      <label>作品
-        <input id="project" placeholder="例如：圍巾A">
-      </label>
-
-      <label>備註
-        <input id="notes" placeholder="例如：起針 120 目">
-      </label>
-
-      <label>標籤（逗號分隔）
-        <input id="tags" placeholder="起針, 4mm, 圍巾">
-      </label>
-    </div>
-
-    <div class="row">
-      <button id="addEntry">加入清單</button>
-      <button id="saveBtn" class="primary">存檔到 GitHub</button>
-    </div>
-  </section>
-
-  <section class="card">
-    <div class="row space">
-      <h2>紀錄列表</h2>
-      <button id="exportBtn" class="secondary">備份下載 JSON</button>
-    </div>
-    <div id="list" class="list"></div>
-  </section>
-
-  <script type="module" src="./src/app.js"></script>
+  <!-- App -->
+  <script type="text/babel" src="./src/app.jsx"></script>
 </body>
 </html>
