@@ -6,8 +6,8 @@ import {
   saveSyncSettings,
   loadToken,
   saveToken,
-} from './storage.js';
-import { loadFromGitHub, saveToGitHub } from './githubContentsApi.js';
+} from './src/storage.js';
+import { loadFromGitHub, saveToGitHub } from './src/githubContentsApi.js';
 
 const { useState, useEffect, useMemo, useRef } = React;
 
