@@ -640,6 +640,7 @@ function ProjectView({
   onUpdateProject,
   onDeleteProject,
   categoryFilter,
+  categories,   // ⬅ 新增這個
 }) {
   const [selectedId, setSelectedId] = useState(null);
   const [plusN, setPlusN] = useState('');
@@ -1008,6 +1009,27 @@ function ProjectView({
                 </span>
               </div>
             )}
+          </div>
+           <div className="mt-3 flex flex-wrap items-center gap-2">
+            <span className="text-[9px] font-black uppercase tracking-[0.18em] text-theme-text/50">
+              Category
+            </span>
+            <select
+              className="bg-theme-bg/70 rounded-full px-3 py-1.5 border-none text-[10px]"
+              value={currentProject.category || '未分類'}
+              onChange={(e) =>
+                onUpdateProject({
+                  ...currentProject,
+                  category: e.target.value,
+                })
+              }
+            >
+              {(categories || ['未分類']).map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
           </div>
           {/* 新增：線材 + 針號 + 起針數 編輯列 */}
           <div className="flex flex-wrap items-center gap-3 text-[10px] text-theme-text/70">
@@ -2537,6 +2559,7 @@ function App() {
               savedPatterns={savedPatterns}
               activeProjects={activeProjects}
               categoryFilter={categoryFilter}
+              categories={categories}   // ⬅ 新增這行
               onUpdateProject={(p) =>
                 setActiveProjects((prev) =>
                   prev.map((x) => (x.id === p.id ? p : x))
