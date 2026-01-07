@@ -169,7 +169,7 @@ const Icons = {
   ),
 };
 
-// 建立新織圖：這裡加上 category + notes
+// 建立新織圖：包含 category + notes
 const createNewPattern = (type = 'CHART') => ({
   id: crypto.randomUUID(),
   name: '未命名織圖',
@@ -201,7 +201,7 @@ const createNewPattern = (type = 'CHART') => ({
   ],
 });
 
-// 建立新專案：這裡帶入 pattern 的 category，並加 notes
+// 建立新專案：帶入 pattern 的 category，並有 notes
 const createProjectFromPattern = (ptn) => ({
   id: crypto.randomUUID(),
   patternId: ptn.id,
@@ -210,18 +210,13 @@ const createProjectFromPattern = (ptn) => ({
   yarnId: null,
   totalRow: 1,
   sectionRow: 1,
-  notes: '', // ★ 專案備註
+  notes: '',
   lastActive: new Date().toISOString(),
 });
 
 // --- GitHub Sync 對話框 ---
 
-function GitHubSyncDialog({
-  open,
-  onClose,
-  onApplyRemote,
-  currentState,
-}) {
+function GitHubSyncDialog({ open, onClose, onApplyRemote, currentState }) {
   const [owner, setOwner] = useState('');
   const [repo, setRepo] = useState('');
   const [branch, setBranch] = useState('main');
@@ -282,6 +277,7 @@ function GitHubSyncDialog({
         activeProjects: currentState.activeProjects,
         yarns: currentState.yarns,
         themeKey: currentState.themeKey,
+        categories: currentState.categories, // ★ 類別也一起同步
       };
       const result = await saveToGitHub(settings, payload);
       setStatus(`儲存成功 ✓ (sha: ${result.sha.slice(0, 7)}…)`);
@@ -302,9 +298,7 @@ function GitHubSyncDialog({
             <div className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">
               Cloud Sync
             </div>
-            <div className="font-black text-theme-text">
-              GitHub 雲端同步設定
-            </div>
+            <div className="font-black text-theme-text">GitHub 雲端同步設定</div>
           </div>
           <button
             onClick={onClose}
@@ -414,7 +408,6 @@ function GitHubSyncDialog({
     </div>
   );
 }
-
 
 // --- 教學頁 ---
 
@@ -653,7 +646,12 @@ function ProjectView({
         currentProject.totalRow >= startRow &&
         currentProject.totalRow <= cumulativeRows
       ) {
-        activeSection = { ...s, startRow, endRow: cumulativeRows, totalRows: sectionTotal };
+        activeSection = {
+          ...s,
+          startRow,
+          endRow: cumulativeRows,
+          totalRows: sectionTotal,
+        };
       }
 
       return { ...s, totalRows: sectionTotal, startRow, endRow: cumulativeRows };
@@ -948,7 +946,7 @@ function ProjectView({
             </div>
           </div>
 
-          {/* 右邊：說明 / 織圖預覽 */}
+          {/* 右邊：說明 / 織圖預覽 + Pattern Notes 顯示 */}
           <div className="lg:col-span-7 space-y-6">
             <div className="bg-white p-8 rounded-[3rem] shadow-cozy border border-white min-h-[380px]">
               <h4 className="font-black text-theme-text border-b border-theme-bg pb-5 mb-8 flex items-center gap-3 tracking-widest uppercase text-[10px]">
@@ -968,7 +966,7 @@ function ProjectView({
                             : 'border-theme-bg opacity-40 grayscale'
                         }`}
                       >
-                        <div className="flex flex-wrap items中心 gap-3 mb-3">
+                        <div className="flex flex-wrap items-center gap-3 mb-3">
                           <span
                             className={`text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full ${
                               isActive
@@ -1036,7 +1034,6 @@ function ProjectView({
               )}
             </div>
 
-            {/* 若想在右邊展示織圖備註，也可以在這裡加一個只讀的 pattern notes */}
             {currentPattern.notes && (
               <div className="bg-theme-bg/40 p-5 rounded-[2rem] border border-theme-bg/60">
                 <div className="text-[9px] font-black uppercase tracking-[0.2em] opacity-50 mb-2">
@@ -1054,9 +1051,9 @@ function ProjectView({
   );
 }
 
-// --- 織圖編輯器（加分類 + 全域備註） ---
+// --- 織圖編輯器（新增：分類下拉 + 全域備註） ---
 
-function EditorView({ pattern, onUpdate, onBack }) {
+function EditorView({ pattern, onUpdate, onBack, categories }) {
   const [data, setData] = useState({ ...pattern });
   const [activeTab, setActiveTab] = useState('CONTENT');
   const [selectedTool, setSelectedTool] = useState('KNIT');
@@ -1067,11 +1064,21 @@ function EditorView({ pattern, onUpdate, onBack }) {
 
   const totalRows = useMemo(() => {
     if (data.type !== 'TEXT') return 0;
-    return data.textSections.reduce(
+    return (data.textSections || []).reduce(
       (sum, s) => sum + (s.rowsPerLoop || 1) * (s.repeats || 1),
       0
     );
   }, [data.textSections]);
+
+  // 類別下拉選項（如果 pattern 的 category 不在列表中，也會放進來）
+  const categoryOptions = useMemo(() => {
+    const base =
+      Array.isArray(categories) && categories.length
+        ? categories
+        : ['未分類'];
+    const current = data.category || '未分類';
+    return base.includes(current) ? base : [current, ...base];
+  }, [categories, data.category]);
 
   const resizeGrid = (sid, field, value) => {
     const n = Math.max(1, Math.min(60, parseInt(value) || 1));
@@ -1152,7 +1159,7 @@ function EditorView({ pattern, onUpdate, onBack }) {
 
       <div className="flex-1 overflow-y-auto no-scrollbar pb-32">
         <div className="p-10 bg-theme-bg/30 flex justify-between items-end gap-4 flex-wrap">
-          <div className="flex-1 mr-0 md:mr-6 min-w-[200px]">
+          <div className="flex-1 mr-0 md:mr-6 min-w-[220px]">
             <label className="text-[10px] font-black opacity-30 uppercase tracking-widest block mb-2 pl-1 tracking-[0.2em]">
               Pattern Design
             </label>
@@ -1163,20 +1170,24 @@ function EditorView({ pattern, onUpdate, onBack }) {
               className="w-full text-3xl md:text-4xl font-black bg-transparent border-none p-0 focus:ring-0 tracking-tighter"
               placeholder="設計標題..."
             />
-            {/* 分類：簡單文字欄位 */}
+            {/* 分類下拉選單 */}
             <div className="mt-3 flex gap-2 items-center">
               <span className="text-[10px] font-black opacity-40 uppercase tracking-widest">
                 分類
               </span>
-              <input
-                type="text"
+              <select
+                className="flex-1 bg-white/70 rounded-xl border-none px-3 py-1.5 text-[11px] font-bold text-theme-text focus:ring-2 ring-theme-primary/20"
                 value={data.category || '未分類'}
                 onChange={(e) =>
-                  setData({ ...data, category: e.target.value || '未分類' })
+                  setData((prev) => ({ ...prev, category: e.target.value }))
                 }
-                className="flex-1 bg-white/70 rounded-xl border-none px-3 py-1.5 text-[11px] font-bold text-theme-text focus:ring-2 ring-theme-primary/20"
-                placeholder="例：毛衣 / 圍巾 / 童裝"
-              />
+              >
+                {categoryOptions.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
           {data.type === 'TEXT' && (
@@ -1239,7 +1250,7 @@ function EditorView({ pattern, onUpdate, onBack }) {
                     </button>
                   ))}
                 </div>
-                {data.sections.map((s) => (
+                {(data.sections || []).map((s) => (
                   <div
                     key={s.id}
                     className="bg-theme-bg/20 p-10 rounded-[3rem] border-2 border-white shadow-soft"
@@ -1314,7 +1325,7 @@ function EditorView({ pattern, onUpdate, onBack }) {
                       setData({
                         ...data,
                         textSections: [
-                          ...data.textSections,
+                          ...(data.textSections || []),
                           {
                             id: crypto.randomUUID(),
                             title: '新段落',
@@ -1330,7 +1341,7 @@ function EditorView({ pattern, onUpdate, onBack }) {
                     <Icons.Plus />
                   </button>
                 </div>
-                {data.textSections.map((sec) => (
+                {(data.textSections || []).map((sec) => (
                   <div
                     key={sec.id}
                     className="bg-white rounded-[3rem] border-2 border-theme-bg shadow-soft overflow-hidden group animate-fade-in"
@@ -1512,7 +1523,7 @@ function EditorView({ pattern, onUpdate, onBack }) {
                           className="text-[10px] font-black bg-theme-primary/10 text-theme-primary p-3.5 rounded-xl border-none uppercase tracking-widest ml-auto min-w-[140px]"
                         >
                           <option value="ALL">適用所有區段</option>
-                          {data.textSections.map((sec) => (
+                          {(data.textSections || []).map((sec) => (
                             <option key={sec.id} value={sec.id}>
                               限：{sec.title}
                             </option>
@@ -1575,7 +1586,7 @@ function EditorView({ pattern, onUpdate, onBack }) {
   );
 }
 
-// --- 織圖圖庫 ---
+// --- 織圖圖庫（加上「類別庫」區塊 & 傳入 categories） ---
 
 function LibraryView({
   savedPatterns,
@@ -1583,10 +1594,21 @@ function LibraryView({
   onNewPattern,
   onCreateProject,
   onEditPattern,
+  categories,
+  onAddCategory,
 }) {
+  const [newCategory, setNewCategory] = useState('');
+
+  const handleAddCategory = () => {
+    const name = newCategory.trim();
+    if (!name) return;
+    onAddCategory(name);
+    setNewCategory('');
+  };
+
   return (
     <div className="max-w-6xl mx-auto p-6 md:p-12 animate-fade-in pb-24">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-8 px-2">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-8 px-2">
         <div>
           <h2 className="text-4xl font-black text-theme-text tracking-tighter leading-none mb-3">
             Pattern Library
@@ -1595,12 +1617,12 @@ function LibraryView({
             您的私人編織筆記本
           </p>
         </div>
-        <div className="flex gap-4">
+        <div className="flex flex-wrap gap-3">
           <button
             onClick={() => {
               onNewPattern('CHART');
             }}
-            className="bg-theme-primary/10 text-theme-primary px-10 py-4 rounded-[1.5rem] font-black text-[10px] uppercase tracking-widest border-2 border-theme-primary/10 transition-all hover:bg-theme-primary hover:text-white shadow-sm"
+            className="bg-theme-primary/10 text-theme-primary px-7 py-3 rounded-[1.5rem] font-black text-[10px] uppercase tracking-widest border-2 border-theme-primary/10 transition-all hover:bg-theme-primary hover:text-white shadow-sm"
           >
             + CHART
           </button>
@@ -1608,12 +1630,59 @@ function LibraryView({
             onClick={() => {
               onNewPattern('TEXT');
             }}
-            className="bg-theme-primary text-white px-10 py-4 rounded-[1.5rem] font-black text-[10px] uppercase tracking-widest shadow-xl shadow-theme-primary/20 transition-all hover:opacity-80"
+            className="bg-theme-primary text-white px-7 py-3 rounded-[1.5rem] font-black text-[10px] uppercase tracking-widest shadow-xl shadow-theme-primary/20 transition-all hover:opacity-80"
           >
             + TEXT
           </button>
         </div>
       </div>
+
+      {/* 類別庫區塊 */}
+      <div className="bg-white p-6 rounded-[2rem] shadow-cozy border border-theme-bg/60 mb-8">
+        <div className="flex justify-between items-center mb-3">
+          <div>
+            <div className="text-[9px] font-black uppercase tracking-[0.2em] opacity-40">
+              Category Library
+            </div>
+            <div className="text-xs text-theme-text/70">
+              管理作品分類，讓織圖列表更好找。
+            </div>
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-2 mb-4">
+          {categories.length > 0 ? (
+            categories.map((c) => (
+              <span
+                key={c}
+                className="px-3 py-1.5 rounded-full bg-theme-bg text-[11px] font-black text-theme-text/70 tracking-widest"
+              >
+                {c}
+              </span>
+            ))
+          ) : (
+            <span className="text-xs text-gray-400">
+              尚未建立任何分類，可以從下方新增。
+            </span>
+          )}
+        </div>
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={newCategory}
+            onChange={(e) => setNewCategory(e.target.value)}
+            className="flex-1 bg-theme-bg/40 rounded-xl border-none px-3 py-2 text-xs font-medium focus:ring-2 ring-theme-primary/20"
+            placeholder="新增一個新的分類，例如：童裝、披肩…"
+          />
+          <button
+            onClick={handleAddCategory}
+            className="px-4 py-2 rounded-xl bg-theme-primary text-white text-[10px] font-black uppercase tracking-[0.15em]"
+          >
+            新增
+          </button>
+        </div>
+      </div>
+
+      {/* 織圖列表 */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
         {savedPatterns.map((ptn) => (
           <div
@@ -1681,18 +1750,31 @@ function App() {
   const [yarns, setYarns] = useState([]);
   const [currentPattern, setCurrentPattern] = useState(null);
   const [themeKey, setThemeKey] = useState('PURPLE');
+
+  // ★ 全域分類庫
+  const [categories, setCategories] = useState([
+    '未分類',
+    '圍巾',
+    '毛帽',
+    '毛衣',
+    '襪子',
+  ]);
+
   const [syncOpen, setSyncOpen] = useState(false);
 
   useEffect(() => {
     const state = loadAppState();
-    setSavedPatterns(state.savedPatterns);
-    setActiveProjects(state.activeProjects);
-    setYarns(state.yarns);
-    setThemeKey(state.themeKey);
+    setSavedPatterns(state.savedPatterns || []);
+    setActiveProjects(state.activeProjects || []);
+    setYarns(state.yarns || []);
+    setThemeKey(state.themeKey || 'PURPLE');
+    if (state.categories && Array.isArray(state.categories)) {
+      setCategories(state.categories);
+    }
   }, []);
 
   useEffect(() => {
-    saveAppState({ savedPatterns, activeProjects, yarns, themeKey });
+    saveAppState({ savedPatterns, activeProjects, yarns, themeKey, categories });
     const t = THEMES[themeKey] || THEMES.PURPLE;
     const r = document.documentElement;
     r.style.setProperty('--primary-color', t.primary);
@@ -1700,13 +1782,14 @@ function App() {
     r.style.setProperty('--text-color', t.text);
     r.style.setProperty('--accent-color', t.accent);
     r.style.setProperty('--secondary-color', t.bg);
-  }, [savedPatterns, activeProjects, yarns, themeKey]);
+  }, [savedPatterns, activeProjects, yarns, themeKey, categories]);
 
   const appStateForSync = {
     savedPatterns,
     activeProjects,
     yarns,
     themeKey,
+    categories,
   };
 
   const applyRemoteData = (remote) => {
@@ -1714,6 +1797,15 @@ function App() {
     if (remote.activeProjects) setActiveProjects(remote.activeProjects);
     if (remote.yarns) setYarns(remote.yarns);
     if (remote.themeKey) setThemeKey(remote.themeKey);
+    if (remote.categories && Array.isArray(remote.categories)) {
+      setCategories(remote.categories);
+    }
+  };
+
+  const handleAddCategory = (name) => {
+    if (!name.trim()) return;
+    if (categories.includes(name)) return;
+    setCategories((prev) => [...prev, name]);
   };
 
   return (
@@ -1857,6 +1949,8 @@ function App() {
           {view === 'LIBRARY' && (
             <LibraryView
               savedPatterns={savedPatterns}
+              categories={categories}
+              onAddCategory={handleAddCategory}
               onDeletePattern={(id) =>
                 setSavedPatterns((prev) => prev.filter((x) => x.id !== id))
               }
@@ -1881,6 +1975,7 @@ function App() {
           {view === 'EDITOR' && currentPattern && (
             <EditorView
               pattern={currentPattern}
+              categories={categories}
               onUpdate={(p) =>
                 setSavedPatterns((prev) =>
                   prev.find((x) => x.id === p.id)
