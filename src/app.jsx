@@ -741,6 +741,57 @@ function ProjectView({
     }
   }, [currentAlerts.length]);
 
+  const sectionLoopInfo = useMemo(() => {
+    if (!currentProject || !currentPattern) return null;
+
+    // TEXT：用目前 activeSection 的 rowsPerLoop 來算循環內第幾排
+    if (
+      currentPattern.type === 'TEXT' &&
+      projectStats.activeSection &&
+      projectStats.activeSection.rowsPerLoop
+    ) {
+      const sec = projectStats.activeSection;
+      const rowsPerLoop = sec.rowsPerLoop || 1;
+      const offsetFromStart = currentProject.totalRow - sec.startRow; // 0-based
+      if (offsetFromStart < 0) return null;
+
+      const loopRow = (offsetFromStart % rowsPerLoop) + 1; // 循環內第幾排
+      const loopIndex = Math.floor(offsetFromStart / rowsPerLoop) + 1; // 第幾輪
+
+      return {
+        mode: 'TEXT',
+        title: sec.title,
+        loopRow,
+        loopIndex,
+        rowsPerLoop,
+      };
+    }
+
+    // CHART：用 sectionRow + 小節總排數來算
+    if (
+      currentPattern.type === 'CHART' &&
+      currentPattern.sections &&
+      currentPattern.sections[0]
+    ) {
+      const sec = currentPattern.sections[0];
+      const rowsPerLoop = sec.rows || 1;
+      const sr = currentProject.sectionRow || 1;
+      const offset = (sr - 1) % rowsPerLoop;
+      const loopRow = offset + 1;
+      const loopIndex = Math.floor((sr - 1) / rowsPerLoop) + 1;
+
+      return {
+        mode: 'CHART',
+        title: sec.name || '主體',
+        loopRow,
+        loopIndex,
+        rowsPerLoop,
+      };
+    }
+
+    return null;
+  }, [currentProject, currentPattern, projectStats]);
+
   const primaryAlert = currentAlerts[0];
 
   const update = (d) => {
@@ -1025,9 +1076,29 @@ function ProjectView({
                   </button>
                 </div>
               </div>
+              {sectionLoopInfo && (
+                <div className="w-full mt-2 flex justify-between items-center text-[10px] text-theme-text/55">
+                  <span className="font-black uppercase tracking-[0.2em]">
+                    Section Loop
+                  </span>
+                  <span className="tabular-nums text-right">
+                    {sectionLoopInfo.title && (
+                      <span className="mr-1 text-[9px] text-theme-text/40">
+                        {sectionLoopInfo.title} ·
+                      </span>
+                    )}
+                    第{' '}
+                    <span className="font-black text-theme-text/80">
+                      {sectionLoopInfo.loopRow}
+                    </span>{' '}
+                    排（循環共 {sectionLoopInfo.rowsPerLoop} 排，第{' '}
+                    {sectionLoopInfo.loopIndex} 輪）
+                  </span>
+                </div>
+              )}
             </div>
 
-            <div className="bg-white p-6 rounded-[2rem] shadow-cozy border border-white flex justify-between items-center">
+            {/* <div className="bg-white p-6 rounded-[2rem] shadow-cozy border border-white flex justify-between items-center">
               <div className="min-w-0 flex-1">
                 <h3 className="text-[9px] font-black uppercase tracking-widest text-theme-text opacity-50 mb-1">
                   Section Loop
@@ -1044,7 +1115,7 @@ function ProjectView({
               >
                 Reset
               </button>
-            </div>
+            </div> */}
 
             <div className="bg-white p-6 rounded-[2rem] shadow-cozy border border-white space-y-3">
               <div className="flex items-center justify-between gap-2">
