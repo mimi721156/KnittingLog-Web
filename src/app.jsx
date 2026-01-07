@@ -2032,7 +2032,7 @@ function CategoryToolbar({
                 onClick={() => onChangeFilter(c)}
                 className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.18em] border whitespace-nowrap ${
                   active === c
-                    ? 'bg-theme-primary/90 text-white border-theme-primary shadow-sm'
+                    ? 'bg-theme-primary text-white border-theme-primary shadow-sm'
                     : 'bg-theme-bg text-theme-text/70 border-theme-bg'
                 }`}
               >
