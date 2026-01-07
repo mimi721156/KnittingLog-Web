@@ -1,61 +1,98 @@
-(function(){
-  const API_BASE = "https://api.github.com";
+// src/githubContentsApi.js
 
-  function b64encodeUnicode(str) { return btoa(unescape(encodeURIComponent(str))); }
-  function b64decodeUnicode(b64) {
-    const bin = atob(String(b64).replaceAll("\n", ""));
-    return decodeURIComponent(escape(bin));
+function buildHeaders(token) {
+  const headers = {
+    Accept: 'application/vnd.github+json',
+    'X-GitHub-Api-Version': '2022-11-28',
+  };
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+  return headers;
+}
+
+function encodeContent(str) {
+  // 兼容 UTF-8
+  return btoa(unescape(encodeURIComponent(str)));
+}
+
+function decodeContent(base64) {
+  const clean = (base64 || '').replace(/\n/g, '');
+  if (!clean) return '';
+  return decodeURIComponent(escape(atob(clean)));
+}
+
+/**
+ * 從 GitHub 讀取 JSON 檔
+ * @returns {Promise<{data: any, sha: string}>}
+ */
+export async function loadFromGitHub({ owner, repo, branch, path, token }) {
+  const url = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(
+    path
+  )}?ref=${encodeURIComponent(branch)}`;
+
+  const res = await fetch(url, {
+    method: 'GET',
+    headers: buildHeaders(token),
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`載入失敗：${res.status} ${text}`);
   }
 
-  async function getJsonViaContentsApi({ owner, repo, path, branch, token }) {
-    const url = `${API_BASE}/repos/${owner}/${repo}/contents/${path}?ref=${encodeURIComponent(branch)}`;
-    const res = await fetch(url, {
-      headers: {
-        "Accept": "application/vnd.github+json",
-        "Authorization": `Bearer ${token}`,
-        "X-GitHub-Api-Version": "2022-11-28",
-      },
-    });
+  const json = await res.json();
+  const content = decodeContent(json.content);
+  const data = content ? JSON.parse(content) : {};
 
-    if (!res.ok) {
-      const text = await res.text().catch(() => "");
-      throw new Error(`讀取失敗：${res.status}\n${text}`);
-    }
+  return { data, sha: json.sha };
+}
 
-    const data = await res.json();
-    if (!data.content || !data.sha) throw new Error("讀取到的內容不完整（缺 content/sha）");
+/**
+ * 寫入 JSON 到 GitHub
+ * 會先嘗試拿 sha，若檔案不存在則直接新建
+ * @returns {Promise<{sha: string}>}
+ */
+export async function saveToGitHub(settings, data) {
+  const { owner, repo, branch, path, token } = settings;
 
-    const jsonText = b64decodeUnicode(data.content);
-    return { json: JSON.parse(jsonText), sha: data.sha };
+  // 嘗試先抓 sha（檔案不存在就算了）
+  let sha = null;
+  try {
+    const existing = await loadFromGitHub(settings);
+    sha = existing.sha;
+  } catch (err) {
+    // 404 則代表檔案不存在，略過；其他錯誤就直接丟給 PUT 去報
   }
 
-  async function putJsonViaContentsApi({ owner, repo, path, branch, token, jsonObject, sha, message }) {
-    const url = `${API_BASE}/repos/${owner}/${repo}/contents/${path}`;
-    const content = b64encodeUnicode(JSON.stringify(jsonObject, null, 2));
+  const url = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(
+    path
+  )}`;
 
-    const res = await fetch(url, {
-      method: "PUT",
-      headers: {
-        "Accept": "application/vnd.github+json",
-        "Authorization": `Bearer ${token}`,
-        "X-GitHub-Api-Version": "2022-11-28",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        message: message || `Update ${path}`,
-        content,
-        sha,
-        branch,
-      }),
-    });
+  const contentString = JSON.stringify(data, null, 2);
+  const encoded = encodeContent(contentString);
 
-    if (!res.ok) {
-      const text = await res.text().catch(() => "");
-      throw new Error(`寫入失敗：${res.status}\n${text}`);
-    }
+  const body = {
+    message: 'Update knitting data from Cozy Knit',
+    content: encoded,
+    branch,
+  };
+  if (sha) body.sha = sha;
 
-    return await res.json();
+  const res = await fetch(url, {
+    method: 'PUT',
+    headers: {
+      ...buildHeaders(token),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`儲存失敗：${res.status} ${text}`);
   }
 
-  window.CozyKnitGitHub = { getJsonViaContentsApi, putJsonViaContentsApi };
-})();
+  const json = await res.json();
+  return { sha: json.content.sha };
+}
