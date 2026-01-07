@@ -2044,7 +2044,7 @@ function CategoryToolbar({
             
           </div>
         </div>
-        <div className="flex items-center gap-2 mt-1">
+        {/* <div className="flex items-center gap-2 mt-1">
           <input
             value={newCat}
             onChange={(e) => setNewCat(e.target.value)}
@@ -2057,7 +2057,7 @@ function CategoryToolbar({
           >
             新增分類
           </button>
-        </div>
+        </div> */}
       </div>
     </div>
   );
