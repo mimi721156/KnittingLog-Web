@@ -569,7 +569,7 @@ function YarnView({ yarns, onSaveYarn, onDeleteYarn }) {
     <div className="max-w-6xl mx-auto p-8 md:p-12 animate-fade-in pb-32">
       <div className="flex justify-between items-center mb-10">
         <h2 className="text-3xl font-black text-theme-text tracking-tighter">
-          Yarn Stash
+          線材庫
         </h2>
         <button
           onClick={() =>
@@ -822,7 +822,7 @@ function ProjectView({
     return (
       <div className="max-w-5xl mx-auto p-8 md:p-12 animate-fade-in pb-32">
         <h2 className="text-3xl font-black text-theme-text mb-6 tracking-tight">
-          Active Projects
+          進行中專案
         </h2>
         <div className="grid gap-4">
           {listProjects.map(({ project: p, pattern: pat, targetTotal }) => {
@@ -1899,7 +1899,7 @@ function LibraryView({
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-8 px-2">
         <div>
           <h2 className="text-4xl font-black text-theme-text tracking-tighter leading-none mb-3">
-            Collections
+            織圖
           </h2>
           <p className="text-sm font-black opacity-30 uppercase tracking-[0.2em]">
             設計圖收藏庫
@@ -2133,10 +2133,10 @@ function CategoryLibraryView({
       <div className="flex justify-between items-center mb-8 gap-4 flex-wrap">
         <div>
           <h2 className="text-4xl font-black text-theme-text tracking-tighter leading-none mb-3">
-            Category Library
+            類別庫
           </h2>
           <p className="text-sm text-theme-text/60">
-            統一管理「圍巾 / 毛帽 / 毛衣 / 襪子 / 未分類…」等分類。
+            統一管理分類。
           </p>
         </div>
       </div>
