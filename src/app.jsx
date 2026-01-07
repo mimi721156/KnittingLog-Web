@@ -1895,7 +1895,7 @@ function LibraryView({
   onEditPattern,
 }) {
   return (
-    <div className="max-w-6xl mx-auto px-6 md:px-12 pt-10 md:pt-16 animate-fade-in pb-24">
+    <div className="max-w-6xl mx-auto p-6 md:p-12 animate-fade-in pb-24">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-8 px-2">
         <div>
           <h2 className="text-4xl font-black text-theme-text tracking-tighter leading-none mb-3">
@@ -2519,7 +2519,7 @@ function App() {
           </div>
         </div>
 
-        <main className="flex-1 overflow-y-auto no-scrollbar pb-safe">
+        {/* <main className="flex-1 overflow-y-auto no-scrollbar pb-safe">
           {(view === 'PROJECTS' || view === 'LIBRARY') && (
             <CategoryToolbar
               categories={categories}
@@ -2646,7 +2646,116 @@ function App() {
             />
           )}
           {view === 'TUTORIAL' && <TutorialView />}
+        </main> */}
+        <main className="flex-1 bg-theme-bg relative flex flex-col">
+          {/* 上方固定的分類工具列（專案 & 織圖共用） */}
+          {(view === 'PROJECTS' || view === 'LIBRARY') && (
+            <CategoryToolbar
+              categories={categories}
+              categoryFilter={categoryFilter}
+              onChangeFilter={setCategoryFilter}
+              onAddCategory={handleAddCategory}
+              onQuickNewPattern={(type) =>
+                handleNewPattern(type, categoryFilter === 'ALL' ? null : categoryFilter)
+              }
+              onQuickNewProject={(pattern) => {
+                const newProject = createProject(pattern);
+                setActiveProjects((prev) => [newProject, ...prev]);
+                setView('PROJECTS');
+              }}
+              hasPatternInFilter={hasPatternInFilter}
+            />
+          )}
+
+          {/* 下面這一塊才是「會捲動」的內容區 */}
+          <div className="flex-1 overflow-y-auto no-scrollbar pb-safe">
+            {view === 'PROJECTS' && (
+              <ProjectView
+                activeProjects={activeProjects}
+                savedPatterns={savedPatterns}
+                yarns={yarns}
+                onUpdateProject={(updated) => {
+                  setActiveProjects((prev) =>
+                    prev.map((p) => (p.id === updated.id ? updated : p))
+                  );
+                }}
+                onDeleteProject={(id) => {
+                  setActiveProjects((prev) => prev.filter((p) => p.id !== id));
+                }}
+                categoryFilter={categoryFilter}
+                categories={categories}
+              />
+            )}
+
+            {view === 'LIBRARY' && (
+              <LibraryView
+                savedPatterns={savedPatterns}
+                onDeletePattern={(id) => {
+                  setSavedPatterns((prev) => prev.filter((p) => p.id !== id));
+                }}
+                onNewPattern={(type) =>
+                  handleNewPattern(type, categoryFilter === 'ALL' ? null : categoryFilter)
+                }
+                onCreateProject={(ptn) => {
+                  const newP = createProject(ptn);
+                  setActiveProjects((prev) => [newP, ...prev]);
+                  setView('PROJECTS');
+                }}
+                onEditPattern={(p) => {
+                  setCurrentPattern(p);
+                  setView('EDITOR');
+                }}
+                categoryFilter={categoryFilter}
+              />
+            )}
+
+            {view === 'CATEGORIES' && (
+              <CategoryLibraryView
+                categories={categories}
+                savedPatterns={savedPatterns}
+                activeProjects={activeProjects}
+                onAddCategory={handleAddCategory}
+                onRenameCategory={handleRenameCategory}
+                onDeleteCategory={handleDeleteCategory}
+              />
+            )}
+
+            {view === 'YARNS' && (
+              <YarnView
+                yarns={yarns}
+                onSaveYarn={(y) => {
+                  setYarns((prev) => {
+                    const exists = prev.find((x) => x.id === y.id);
+                    return exists
+                      ? prev.map((x) => (x.id === y.id ? y : x))
+                      : [y, ...prev];
+                  });
+                }}
+                onDeleteYarn={(id) =>
+                  setYarns((prev) => prev.filter((y) => y.id !== id))
+                }
+              />
+            )}
+
+            {view === 'TUTORIAL' && <TutorialView />}
+            {view === 'EDITOR' && currentPattern && (
+              <EditorView
+                pattern={currentPattern}
+                onUpdate={(p) => {
+                  setSavedPatterns((prev) => {
+                    const exists = prev.find((x) => x.id === p.id);
+                    return exists
+                      ? prev.map((x) => (x.id === p.id ? p : x))
+                      : [p, ...prev];
+                  });
+                }}
+                onBack={() => setView('LIBRARY')}
+                categories={categories}
+              />
+            )}
+          </div>
         </main>
+
 
         {/* Mobile Bottom Nav */}
         {view !== 'EDITOR' && (
