@@ -196,7 +196,11 @@ const createNewPattern = (type = 'CHART', category = '未分類') => ({
   type,
   category,
   updatedAt: new Date().toISOString(),
-  meta: { castOn: '', needle: '' },
+  meta: { 
+    castOn: '',
+    needle: '',
+    yarnId: null,   // 新增：預設線材
+ },
   notes: '',
   alerts: [],
   sections: [
@@ -228,7 +232,9 @@ const createProjectFromPattern = (ptn) => ({
   patternName: ptn.name, // 保留原圖名稱 snapshot
   projectName: ptn.name, // 使用者可以改
   category: ptn.category || '未分類',
-  yarnId: null,
+  yarnId: ptn.meta?.yarnId ?? null,      // 實際線材（預設用織圖設定）
+  needle: ptn.meta?.needle ?? '',        // 實際針號
+  castOn: ptn.meta?.castOn ?? '',        // 實際起針
   totalRow: 1,
   sectionRow: 1,
   notes: '',
@@ -804,6 +810,12 @@ function ProjectView({
     });
   };
 
+  const findYarnLabel = (id) => {
+    const y = yarns.find((yy) => yy.id === id);
+    if (!y) return null;
+    const main = [y.brand, y.name].filter(Boolean).join(' ');
+    return main || '未命名線材';
+  };
   // === 列表畫面：專案卡片帶進度條、開始時間 ===
   if (!selectedId) {
     return (
@@ -841,6 +853,19 @@ function ProjectView({
                       {p.startAt && (
                         <div className="text-[9px] text-theme-text/40 uppercase tracking-widest mt-0.5">
                           開始 {new Date(p.startAt).toLocaleDateString()}
+                        </div>
+                      )}
+                      {(p.needle || p.castOn || p.yarnId) && (
+                        <div className="text-[9px] text-theme-text/45 mt-0.5 line-clamp-2">
+                          {p.yarnId && (
+                            <>
+                              線材：{findYarnLabel(p.yarnId)}
+                              {(p.needle || p.castOn) && ' · '}
+                            </>
+                          )}
+                          {p.needle && <>針號 {p.needle}</>}
+                          {p.needle && p.castOn && ' · '}
+                          {p.castOn && <>起針 {p.castOn}</>}
                         </div>
                       )}
                     </div>
@@ -983,6 +1008,57 @@ function ProjectView({
                 </span>
               </div>
             )}
+          </div>
+          {/* 新增：線材 + 針號 + 起針數 編輯列 */}
+          <div className="flex flex-wrap items-center gap-3 text-[10px] text-theme-text/70">
+            <div className="flex items-center gap-1">
+              <span className="font-black uppercase tracking-[0.2em]">Yarn</span>
+              <select
+                className="bg-theme-bg/60 rounded-full px-3 py-1 border-none text-[10px]"
+                value={currentProject.yarnId || ''}
+                onChange={(e) =>
+                  onUpdateProject({
+                    ...currentProject,
+                    yarnId: e.target.value || null,
+                  })
+                }
+              >
+                <option value="">未選擇</option>
+                {yarns.map((y) => (
+                  <option key={y.id} value={y.id}>
+                    {[y.brand, y.name].filter(Boolean).join(' ') || '未命名線材'}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex items-center gap-1">
+              <span className="uppercase tracking-[0.2em] font-black opacity-60">
+                Needle
+              </span>
+              <input
+                className="bg-theme-bg/60 rounded-full px-3 py-1 border-none text-[10px] w-20"
+                placeholder="4.0mm"
+                value={currentProject.needle || ''}
+                onChange={(e) =>
+                  onUpdateProject({ ...currentProject, needle: e.target.value })
+                }
+              />
+            </div>
+
+            <div className="flex items-center gap-1">
+              <span className="uppercase tracking-[0.2em] font-black opacity-60">
+                Cast on
+              </span>
+              <input
+                className="bg-theme-bg/60 rounded-full px-3 py-1 border-none text-[10px] w-20"
+                placeholder="例如 112"
+                value={currentProject.castOn || ''}
+                onChange={(e) =>
+                  onUpdateProject({ ...currentProject, castOn: e.target.value })
+                }
+              />
+            </div>
           </div>
         </div>
 
@@ -1249,8 +1325,16 @@ function ProjectView({
 
 // === 織圖編輯器（含 pattern 備註） ===
 
-function EditorView({ pattern, onUpdate, onBack, categories }) {
-  const [data, setData] = useState({ ...pattern });
+function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
+  const [data, setData] = useState({
+     ...pattern ,
+    meta: {
+      castOn: '',
+      needle: '',
+      yarnId: null,
+      ...(pattern.meta || {}),
+    },
+  });
   const [activeTab, setActiveTab] = useState('CONTENT');
   const [selectedTool, setSelectedTool] = useState('KNIT');
 
@@ -2523,6 +2607,7 @@ function App() {
             <EditorView
               pattern={currentPattern}
               categories={categories}
+              yarns={yarns}        // 新增
               onUpdate={(p) =>
                 setSavedPatterns((prev) =>
                   prev.find((x) => x.id === p.id)
