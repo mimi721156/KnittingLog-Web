@@ -1,59 +1,81 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Cozy Knit - 編織小幫手</title>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Cozy Knit V13</title>
 
-  <!-- React and ReactDOM -->
-  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <!-- React & Babel（在瀏覽器內編譯 JSX） -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-  <!-- Babel for JSX (kept to avoid build step) -->
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-
-  <!-- Lucide Icons -->
-  <script src="https://unpkg.com/lucide@latest"></script>
-
-  <script>
+    <!-- Tailwind -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
-                        wool: {
-                            50: '#fdfbf7',  // 羊毛白
-                            100: '#f7f3e8', // 奶油色
-                            200: '#efe6d0',
-                            300: '#e5d3b0',
-                            400: '#d9b98a', // 溫暖駝色
-                            500: '#cc9f6a',
-                            600: '#bf8652',
-                            800: '#7a5230',
-                        },
-                        cozy: {
-                            pink: '#eecaca',
-                            blue: '#b8c6db',
-                            green: '#d4e4bc'
+                        theme: {
+                            primary: 'var(--primary-color)',
+                            secondary: 'var(--secondary-color)',
+                            bg: 'var(--bg-color)',
+                            text: 'var(--text-color)',
+                            accent: 'var(--accent-color)',
                         }
-                    }
+                    },
+                    borderRadius: { 'cozy': '2.5rem', 'card': '1.5rem' }
                 }
             }
         }
     </script>
 
-  <link rel="stylesheet" href="./assets/styles.css" />
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Nunito:wght@600;800&display=swap');
+
+        :root {
+            --primary-color: #8e8499;
+            --bg-color: #f4f2f7;
+            --text-color: #5d5666;
+            --accent-color: #dcd3e3;
+            --secondary-color: #f4f2f7;
+        }
+
+        body {
+            font-family: 'Nunito', 'Noto Sans TC', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: background-color 0.4s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .bg-knitting-pattern {
+            background-color: var(--bg-color);
+            background-image: url("data:image/svg+xml,%3Csvg width='120' height='120' viewBox='0 0 120 120' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23000' fill-opacity='0.015'%3E%3Cpath d='M30 20c-5 0-9 4-9 9s4 9 9 9 9-4 9-9-4-9-9-9zm0 2c4 0 7 3 7 7s-3 7-7 7-7-3-7-7 3-7 7-7z'/%3E%3Ccircle cx='85' cy='85' r='10'/%3E%3Cpath d='M100 40a5 5 0 0 0-5-5 5 5 0 0 0-5 5c0 5 10 10 10 10s10-5 10-10a5 5 0 0 0-5-5 5 5 0 0 0-5 5z'/%3E%3C/g%3E%3C/svg%3E");
+        }
+
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .shadow-cozy { box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.08); }
+        .grid-cell { transition: all 0.1s ease; }
+        .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .theme-dot {
+            width: 26px; height: 26px; border-radius: 50%; cursor: pointer;
+            border: 3px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+    </style>
 </head>
-<body class="h-screen overflow-hidden flex flex-col bg-knit-pattern">
-  <div id="root" class="h-full flex flex-col"></div>
+<body class="h-screen overflow-hidden flex flex-col bg-knitting-pattern">
+<div id="root" class="h-full flex flex-col"></div>
 
-  <!-- Cloud sync helpers -->
-  <script src="./src/githubContentsApi.js"></script>
-  <script src="./src/storage.js"></script>
-
-  <!-- App -->
-  <script type="text/babel" src="./src/app.jsx"></script>
+<!-- 主程式：用 Babel 在瀏覽器內編譯 JSX + ES Modules -->
+<script type="text/babel" data-type="module" src="./src/app.jsx"></script>
 </body>
 </html>
