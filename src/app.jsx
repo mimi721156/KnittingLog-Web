@@ -431,6 +431,121 @@ function TutorialView() {
 }
 
 // --- 子元件: 線材庫 ---
+// function YarnView({ yarns, onSaveYarn, onDeleteYarn }) {
+//   const [editing, setEditing] = useState(null);
+
+//   const handleSave = () => {
+//     if (!editing.brand && !editing.name) return;
+//     onSaveYarn(editing);
+//     setEditing(null);
+//   };
+
+//   if (editing) {
+//     return (
+//       <div className="flex flex-col h-full bg-theme-bg animate-fade-in pb-safe">
+//         <div className="p-4 border-b bg-white flex justify-between items-center sticky top-0 z-10 shadow-sm">
+//           <button
+//             onClick={() => setEditing(null)}
+//             className="text-gray-400 font-bold px-2 uppercase text-xs"
+//           >
+//             Cancel
+//           </button>
+//           <span className="font-black text-theme-text text-sm">
+//             編輯線材資料
+//           </span>
+//           <button
+//             onClick={handleSave}
+//             className="text-theme-primary font-black px-2 uppercase text-xs"
+//           >
+//             Save
+//           </button>
+//         </div>
+//         <div className="p-8 space-y-6 overflow-y-auto">
+//           <div className="bg-white p-8 rounded-[2.5rem] shadow-soft border-2 border-theme-secondary space-y-6">
+//             <div>
+//               <label className="text-[10px] font-black opacity-30 uppercase block mb-1 tracking-widest">
+//                 品牌 Brand
+//               </label>
+//               <input
+//                 type="text"
+//                 value={editing.brand || ''}
+//                 onChange={(e) =>
+//                   setEditing({ ...editing, brand: e.target.value })
+//                 }
+//                 className="w-full bg-theme-bg/30 rounded-xl p-4 border-none font-bold focus:ring-2 ring-theme-primary/20"
+//               />
+//             </div>
+//             <div>
+//               <label className="text-[10px] font-black opacity-30 uppercase block mb-1">
+//                 系列 Name
+//               </label>
+//               <input
+//                 type="text"
+//                 value={editing.name || ''}
+//                 onChange={(e) =>
+//                   setEditing({ ...editing, name: e.target.value })
+//                 }
+//                 className="w-full bg-theme-bg/30 rounded-xl p-4 border-none font-bold focus:ring-2 ring-theme-primary/20"
+//               />
+//             </div>
+//           </div>
+//         </div>
+//       </div>
+//     );
+//   }
+
+//   return (
+//     <div className="max-w-6xl mx-auto p-8 md:p-12 animate-fade-in pb-32">
+//       <div className="flex justify-between items-center mb-10">
+//         <h2 className="text-3xl font-black text-theme-text tracking-tighter">
+//           My Yarn Stash
+//         </h2>
+//         <button
+//           onClick={() =>
+//             setEditing({ id: crypto.randomUUID(), brand: '', name: '' })
+//           }
+//           className="bg-theme-primary text-white px-8 py-3 rounded-2xl shadow-lg font-black text-xs tracking-widest uppercase"
+//         >
+//           + NEW
+//         </button>
+//       </div>
+//       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+//         {yarns.map((y) => (
+//           <div
+//             key={y.id}
+//             onClick={() => setEditing({ ...y })}
+//             className="bg-white p-6 rounded-[2.5rem] shadow-cozy border border-white relative active:scale-[0.98] transition cursor-pointer overflow-hidden group"
+//           >
+//             <div className="absolute top-0 right-0 w-24 h-24 bg-theme-bg rounded-bl-full opacity-50 -mr-8 -mt-8 transition-transform group-hover:scale-110"></div>
+//             <div className="relative z-10 flex gap-4">
+//               <div className="w-16 h-16 bg-theme-bg rounded-2xl flex items-center justify-center text-3xl shadow-inner flex-shrink-0">
+//                 🧶
+//               </div>
+//               <div className="min-w-0 flex-1">
+//                 <h3 className="font-black text-theme-text text-lg truncate">
+//                   {y.name || '未命名'}
+//                 </h3>
+//                 <p className="text-[10px] font-black text-theme-primary uppercase tracking-widest">
+//                   {y.brand}
+//                 </p>
+//               </div>
+//               <button
+//                 onClick={(e) => {
+//                   e.stopPropagation();
+//                   onDeleteYarn(y.id);
+//                 }}
+//                 className="text-gray-200 hover:text-red-400 p-1 self-start transition-colors"
+//               >
+//                 <Icons.Trash />
+//               </button>
+//             </div>
+//           </div>
+//         ))}
+//       </div>
+//     </div>
+//   );
+// }
+// --- 子元件: 線材庫（含材質 / 粗細） ---
 function YarnView({ yarns, onSaveYarn, onDeleteYarn }) {
   const [editing, setEditing] = useState(null);
 
@@ -460,10 +575,11 @@ function YarnView({ yarns, onSaveYarn, onDeleteYarn }) {
             Save
           </button>
         </div>
+
         <div className="p-8 space-y-6 overflow-y-auto">
           <div className="bg-white p-8 rounded-[2.5rem] shadow-soft border-2 border-theme-secondary space-y-6">
             <div>
-              <label className="text-[10px] font-black opacity-30 uppercase block mb-1 tracking-widest">
+              <label className="text-[10px] banc font-black opacity-30 uppercase block mb-1 tracking-widest">
                 品牌 Brand
               </label>
               <input
@@ -475,9 +591,10 @@ function YarnView({ yarns, onSaveYarn, onDeleteYarn }) {
                 className="w-full bg-theme-bg/30 rounded-xl p-4 border-none font-bold focus:ring-2 ring-theme-primary/20"
               />
             </div>
+
             <div>
               <label className="text-[10px] font-black opacity-30 uppercase block mb-1">
-                系列 Name
+                系列 / 名稱 Name
               </label>
               <input
                 type="text"
@@ -486,6 +603,36 @@ function YarnView({ yarns, onSaveYarn, onDeleteYarn }) {
                   setEditing({ ...editing, name: e.target.value })
                 }
                 className="w-full bg-theme-bg/30 rounded-xl p-4 border-none font-bold focus:ring-2 ring-theme-primary/20"
+              />
+            </div>
+
+            <div>
+              <label className="text-[10px] font-black opacity-30 uppercase block mb-1">
+                材質 Material
+              </label>
+              <input
+                type="text"
+                placeholder="例如：100% wool / wool 70% + nylon 30%"
+                value={editing.material || ''}
+                onChange={(e) =>
+                  setEditing({ ...editing, material: e.target.value })
+                }
+                className="w-full bg-theme-bg/30 rounded-xl p-4 border-none text-sm focus:ring-2 ring-theme-primary/20"
+              />
+            </div>
+
+            <div>
+              <label className="text-[10px] font-black opacity-30 uppercase block mb-1">
+                粗細 Weight
+              </label>
+              <input
+                type="text"
+                placeholder="例如：Fingering / DK / 4.0mm / #2"
+                value={editing.weight || ''}
+                onChange={(e) =>
+                  setEditing({ ...editing, weight: e.target.value })
+                }
+                className="w-full bg-theme-bg/30 rounded-xl p-4 border-none text-sm focus:ring-2 ring-theme-primary/20"
               />
             </div>
           </div>
@@ -502,13 +649,20 @@ function YarnView({ yarns, onSaveYarn, onDeleteYarn }) {
         </h2>
         <button
           onClick={() =>
-            setEditing({ id: crypto.randomUUID(), brand: '', name: '' })
+            setEditing({
+              id: crypto.randomUUID(),
+              brand: '',
+              name: '',
+              material: '',
+              weight: '',
+            })
           }
           className="bg-theme-primary text-white px-8 py-3 rounded-2xl shadow-lg font-black text-xs tracking-widest uppercase"
         >
           + NEW
         </button>
       </div>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {yarns.map((y) => (
           <div
@@ -525,9 +679,16 @@ function YarnView({ yarns, onSaveYarn, onDeleteYarn }) {
                 <h3 className="font-black text-theme-text text-lg truncate">
                   {y.name || '未命名'}
                 </h3>
-                <p className="text-[10px] font-black text-theme-primary uppercase tracking-widest">
+                <p className="text-[10px] font-black text-theme-primary uppercase tracking-widest truncate">
                   {y.brand}
                 </p>
+                {(y.material || y.weight) && (
+                  <p className="text-[10px] mt-2 text-gray-500 leading-snug line-clamp-2">
+                    {y.material && <span>{y.material}</span>}
+                    {y.material && y.weight && <span> · </span>}
+                    {y.weight && <span>{y.weight}</span>}
+                  </p>
+                )}
               </div>
               <button
                 onClick={(e) => {
@@ -545,6 +706,8 @@ function YarnView({ yarns, onSaveYarn, onDeleteYarn }) {
     </div>
   );
 }
+
+
 
 // --- 子組件: 專案播放器 (含區段提醒邏輯) ---
 // function ProjectView({
@@ -949,25 +1112,66 @@ function ProjectView({
   }, [currentPattern, currentProject?.totalRow]);
 
   // 計算目前要跳出的提醒（用 useMemo，並在 hook 區塊裡處理）
+  // const currentAlerts = useMemo(() => {
+  //   if (!currentProject || !currentPattern) return [];
+  //   return (
+  //     currentPattern.alerts?.filter((a) => {
+  //       if (
+  //         a.sectionId &&
+  //         a.sectionId !== 'ALL' &&
+  //         projectStats.activeSection?.id !== a.sectionId
+  //       ) {
+  //         return false;
+  //       }
+  //       const val =
+  //         a.type === 'SECTION' ? currentProject.sectionRow : currentProject.totalRow;
+  //       return a.mode === 'EVERY'
+  //         ? val > 0 && val % a.value === 0
+  //         : val === a.value;
+  //     }) || []
+  //   );
+  // }, [currentProject, currentPattern, projectStats]);
+  // 計算目前要跳出的提醒：區段型從該區段起始排數開始算
   const currentAlerts = useMemo(() => {
     if (!currentProject || !currentPattern) return [];
-    return (
-      currentPattern.alerts?.filter((a) => {
-        if (
-          a.sectionId &&
-          a.sectionId !== 'ALL' &&
-          projectStats.activeSection?.id !== a.sectionId
-        ) {
+    const total = currentProject.totalRow;
+
+    return (currentPattern.alerts || []).filter((a) => {
+      let val;
+
+      // 有指定 sectionId（且不是 ALL）：從該區段的起始排數開始計算
+      if (a.sectionId && a.sectionId !== 'ALL') {
+        const sec = projectStats.sectionsSummary?.find(
+          (s) => s.id === a.sectionId
+        );
+        if (!sec) return false;
+
+        // 在這一段裡的第幾排？（第一排是 1）
+        const sectionRowFromStart = total - sec.startRow + 1;
+
+        // 還沒進到這一段，或已經超過這一段，就不用提醒
+        if (sectionRowFromStart < 1 || sectionRowFromStart > sec.totalRows) {
           return false;
         }
-        const val =
-          a.type === 'SECTION' ? currentProject.sectionRow : currentProject.totalRow;
-        return a.mode === 'EVERY'
-          ? val > 0 && val % a.value === 0
-          : val === a.value;
-      }) || []
-    );
+
+        // type 為 SECTION：用「這一段內的第幾排」當計算基準
+        // type 為 TOTAL：還是用總排數（但限制在這一段範圍內）
+        val = a.type === 'SECTION' ? sectionRowFromStart : total;
+      } else {
+        // 沒限定區段（或 ALL）維持原本行為：
+        // SECTION -> 用 sectionRow（會因為 Reset 或循環重算）
+        // TOTAL   -> 用 totalRow
+        val = a.type === 'SECTION' ? currentProject.sectionRow : total;
+      }
+
+      if (a.mode === 'EVERY') {
+        return val > 0 && val % a.value === 0;
+      }
+      return val === a.value;
+    });
   }, [currentProject, currentPattern, projectStats]);
+
+
 
   // 只要新出現提醒，就自動打開浮層
   useEffect(() => {
