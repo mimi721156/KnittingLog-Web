@@ -820,7 +820,10 @@ function ProjectView({
   // === 列表畫面：專案卡片帶進度條、開始時間 ===
   if (!selectedId) {
     return (
-      <div className="mb-6 md:mb-8">
+      <div className="w-full min-h-full">
+        {/* 這一條就是專門拿來「墊高」的緩衝區，讓織圖標題確定出現在 CategoryToolbar 下面 */}
+        <div className="h-4 md:h-6" />
+
         <div className="max-w-5xl mx-auto p-8 md:p-12 animate-fade-in pb-32">
           <h2 className="text-3xl font-black text-theme-text mb-6 tracking-tight">
             進行中專案
@@ -1897,37 +1900,40 @@ function LibraryView({
   onEditPattern,
 }) {
   return (
-    <div className="max-w-6xl mx-auto p-6 md:p-12 animate-fade-in pb-24">
-      <div className="mb-6 md:mb-8">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-8 px-2">
-          <div>
-            <h2 className="text-4xl font-black text-theme-text tracking-tighter leading-none mb-3">
-              織圖
-            </h2>
-            <p className="text-sm font-black opacity-30 uppercase tracking-[0.2em]">
-              設計圖收藏庫
-            </p>
+    <div className="w-full min-h-full">
+      {/* 這一條就是專門拿來「墊高」的緩衝區，讓織圖標題確定出現在 CategoryToolbar 下面 */}
+      <div className="h-4 md:h-6" />
+        <div className="max-w-6xl mx-auto p-6 md:p-12 animate-fade-in pb-24">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-8 px-2">
+            <div>
+              <h2 className="text-4xl font-black text-theme-text tracking-tighter leading-none mb-3">
+                織圖
+              </h2>
+              <p className="text-sm font-black opacity-30 uppercase tracking-[0.2em]">
+                設計圖收藏庫
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <button
+                onClick={() => {
+                  onNewPattern('CHART');
+                }}
+                className="bg-theme-primary/10 text-theme-primary px-7 py-3 rounded-[1.5rem] font-black text-[10px] uppercase tracking-widest border-2 border-theme-primary/10 transition-all hover:bg-theme-primary hover:text-white shadow-sm"
+              >
+                + CHART
+              </button>
+              <button
+                onClick={() => {
+                  onNewPattern('TEXT');
+                }}
+                className="bg-theme-primary text-white px-7 py-3 rounded-[1.5rem] font-black text-[10px] uppercase tracking-widest shadow-xl shadow-theme-primary/20 transition-all hover:opacity-80"
+              >
+                + TEXT
+              </button>
+            </div>
           </div>
-          <div className="flex flex-wrap gap-3">
-            <button
-              onClick={() => {
-                onNewPattern('CHART');
-              }}
-              className="bg-theme-primary/10 text-theme-primary px-7 py-3 rounded-[1.5rem] font-black text-[10px] uppercase tracking-widest border-2 border-theme-primary/10 transition-all hover:bg-theme-primary hover:text-white shadow-sm"
-            >
-              + CHART
-            </button>
-            <button
-              onClick={() => {
-                onNewPattern('TEXT');
-              }}
-              className="bg-theme-primary text-white px-7 py-3 rounded-[1.5rem] font-black text-[10px] uppercase tracking-widest shadow-xl shadow-theme-primary/20 transition-all hover:opacity-80"
-            >
-              + TEXT
-            </button>
           </div>
-        </div>
-      </div>
+
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
         {savedPatterns.map((ptn) => (
