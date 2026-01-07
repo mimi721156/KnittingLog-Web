@@ -169,15 +169,15 @@ const Icons = {
   ),
 };
 
-// 建立新織圖：包含 category + notes
-const createNewPattern = (type = 'CHART') => ({
+// 建立新織圖：可指定 category，含 notes
+const createNewPattern = (type = 'CHART', category = '未分類') => ({
   id: crypto.randomUUID(),
   name: '未命名織圖',
   type,
-  category: '未分類',
+  category,
   updatedAt: new Date().toISOString(),
   meta: { castOn: '', needle: '' },
-  notes: '', // ★ 織圖備註
+  notes: '', // 織圖備註
   alerts: [],
   sections: [
     {
@@ -201,7 +201,7 @@ const createNewPattern = (type = 'CHART') => ({
   ],
 });
 
-// 建立新專案：帶入 pattern 的 category，並有 notes
+// 建立新專案：帶入 pattern 的 category，含 notes
 const createProjectFromPattern = (ptn) => ({
   id: crypto.randomUUID(),
   patternId: ptn.id,
@@ -277,7 +277,7 @@ function GitHubSyncDialog({ open, onClose, onApplyRemote, currentState }) {
         activeProjects: currentState.activeProjects,
         yarns: currentState.yarns,
         themeKey: currentState.themeKey,
-        categories: currentState.categories, // ★ 類別也一起同步
+        categories: currentState.categories,
       };
       const result = await saveToGitHub(settings, payload);
       setStatus(`儲存成功 ✓ (sha: ${result.sha.slice(0, 7)}…)`);
@@ -603,7 +603,7 @@ function YarnView({ yarns, onSaveYarn, onDeleteYarn }) {
   );
 }
 
-// --- 專案播放器（含提醒浮層 + 專案備註） ---
+// --- 專案播放器（含提醒浮層 + 專案備註 + 卡片進度條） ---
 
 function ProjectView({
   activeProjects,
@@ -611,6 +611,7 @@ function ProjectView({
   yarns,
   onUpdateProject,
   onDeleteProject,
+  categoryFilter,
 }) {
   const [selectedId, setSelectedId] = useState(null);
   const [plusN, setPlusN] = useState('');
@@ -660,7 +661,29 @@ function ProjectView({
     return { targetTotal: cumulativeRows, sectionsSummary: summary, activeSection };
   }, [currentPattern, currentProject?.totalRow]);
 
-  // 計算提醒：有指定 sectionId 的，從該段起始排數算
+  // 列表用：帶 pattern & 目標排數（TEXT 織圖才有）
+  const listProjects = useMemo(() => {
+    const filtered =
+      categoryFilter && categoryFilter !== 'ALL'
+        ? activeProjects.filter(
+            (p) => (p.category || '未分類') === categoryFilter
+          )
+        : activeProjects;
+
+    return filtered.map((p) => {
+      const pat = savedPatterns.find((x) => x.id === p.patternId);
+      let targetTotal = null;
+      if (pat && pat.type === 'TEXT' && Array.isArray(pat.textSections)) {
+        targetTotal = pat.textSections.reduce(
+          (sum, s) => sum + (s.rowsPerLoop || 1) * (s.repeats || 1),
+          0
+        );
+      }
+      return { project: p, pattern: pat, targetTotal };
+    });
+  }, [activeProjects, savedPatterns, categoryFilter]);
+
+  // 計算提醒
   const currentAlerts = useMemo(() => {
     if (!currentProject || !currentPattern) return [];
     const total = currentProject.totalRow;
@@ -710,58 +733,104 @@ function ProjectView({
     });
   };
 
-  // 尚未選專案
+  // --- 專案列表畫面（最外層卡片，有進度條） ---
   if (!selectedId) {
     return (
       <div className="max-w-5xl mx-auto p-8 md:p-12 animate-fade-in pb-32">
-        <h2 className="text-3xl font-black text-theme-text mb-10 tracking-tight">
+        <h2 className="text-3xl font-black text-theme-text mb-6 tracking-tight">
           Active Projects
         </h2>
         <div className="grid gap-4">
-          {activeProjects.map((p) => (
-            <div
-              key={p.id}
-              onClick={() => setSelectedId(p.id)}
-              className="bg-white p-6 rounded-[2.5rem] shadow-cozy border border-white flex justify-between items-center active:scale-[0.98] transition cursor-pointer"
-            >
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-theme-bg rounded-2xl flex items-center justify-center text-theme-primary text-xl font-black shadow-inner">
+          {listProjects.map(({ project: p, pattern: pat, targetTotal }) => {
+            const ratio =
+              targetTotal && targetTotal > 0
+                ? Math.min(1, p.totalRow / targetTotal)
+                : null;
+            return (
+              <div
+                key={p.id}
+                onClick={() => setSelectedId(p.id)}
+                className="bg-white px-6 py-5 rounded-[2.25rem] shadow-cozy border border-white flex items-center gap-6 active:scale-[0.98] transition cursor-pointer overflow-hidden relative"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-theme-bg/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 pointer-events-none" />
+
+                <div className="w-12 h-12 bg-theme-bg rounded-2xl flex items-center justify-center text-theme-primary text-xl font-black shadow-inner flex-shrink-0">
                   R
                 </div>
-                <div>
-                  <h3 className="font-bold text-theme-text text-lg leading-tight">
-                    {p.patternName}
-                  </h3>
-                  <div className="text-[10px] text-theme-primary opacity-60 uppercase tracking-widest">
-                    {p.category || '未分類'}
+
+                <div className="flex-1 min-w-0">
+                  <div className="flex justify-between items-center gap-3 mb-1">
+                    <div className="min-w-0">
+                      <h3 className="font-bold text-theme-text text-base leading-tight truncate">
+                        {p.patternName}
+                      </h3>
+                      <div className="text-[9px] text-theme-primary opacity-60 uppercase tracking-widest">
+                        {p.category || '未分類'}
+                        {pat?.type === 'TEXT' ? ' · TEXT' : ' · CHART'}
+                      </div>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <div className="text-xs font-black text-theme-text/60 uppercase tracking-[0.15em] mb-0.5">
+                        Rows
+                      </div>
+                      <div className="text-lg font-black text-theme-primary tabular-nums">
+                        {p.totalRow}
+                        {targetTotal ? (
+                          <>
+                            <span className="opacity-30 mx-1">/</span>
+                            <span className="opacity-80">{targetTotal}</span>
+                          </>
+                        ) : null}
+                      </div>
+                    </div>
                   </div>
+
+                  {targetTotal && (
+                    <div className="mt-2">
+                      <div className="w-full h-2.5 bg-theme-bg rounded-full overflow-hidden shadow-inner">
+                        <div
+                          className="h-full bg-theme-primary/80 transition-all duration-500"
+                          style={{ width: `${ratio * 100}%` }}
+                        />
+                      </div>
+                      <div className="mt-1 flex justify-between text-[10px] text-theme-text/50">
+                        <span>
+                          進度約{' '}
+                          <span className="font-black">
+                            {Math.round(ratio * 100)}%
+                          </span>
+                        </span>
+                        <span>
+                          {p.totalRow} / {targetTotal} rows
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </div>
-              <div className="flex items-center gap-6">
-                <div className="text-4xl font-black text-theme-primary tabular-nums tracking-tighter">
-                  {p.totalRow}
-                </div>
+
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     onDeleteProject(p.id);
                   }}
-                  className="text-gray-200 hover:text-red-400 px-2 transition-colors"
+                  className="text-gray-200 hover:text-red-400 px-2 transition-colors self-start"
                 >
                   <Icons.Trash />
                 </button>
               </div>
-            </div>
-          ))}
-          {activeProjects.length === 0 && (
-            <div className="text-center py-24 opacity-30 font-black tracking-widest uppercase">
-              No Active Projects
+            );
+          })}
+          {listProjects.length === 0 && (
+            <div className="text-center py-24 opacity-30 font-black tracking-widest uppercase text-xs">
+              此分類目前沒有進行中的專案
             </div>
           )}
         </div>
       </div>
     );
   }
+
+  // --- 單一專案播放畫面 ---
 
   if (!currentProject || !currentPattern) return null;
 
@@ -1051,7 +1120,7 @@ function ProjectView({
   );
 }
 
-// --- 織圖編輯器（新增：分類下拉 + 全域備註） ---
+// --- 織圖編輯器（分類下拉 + 全域備註） ---
 
 function EditorView({ pattern, onUpdate, onBack, categories }) {
   const [data, setData] = useState({ ...pattern });
@@ -1070,7 +1139,6 @@ function EditorView({ pattern, onUpdate, onBack, categories }) {
     );
   }, [data.textSections]);
 
-  // 類別下拉選項（如果 pattern 的 category 不在列表中，也會放進來）
   const categoryOptions = useMemo(() => {
     const base =
       Array.isArray(categories) && categories.length
@@ -1170,7 +1238,6 @@ function EditorView({ pattern, onUpdate, onBack, categories }) {
               className="w-full text-3xl md:text-4xl font-black bg-transparent border-none p-0 focus:ring-0 tracking-tighter"
               placeholder="設計標題..."
             />
-            {/* 分類下拉選單 */}
             <div className="mt-3 flex gap-2 items-center">
               <span className="text-[10px] font-black opacity-40 uppercase tracking-widest">
                 分類
@@ -1203,7 +1270,7 @@ function EditorView({ pattern, onUpdate, onBack, categories }) {
         </div>
 
         <div className="p-6 md:p-10 space-y-12">
-          {/* 織圖全域備註：不分圖表 / 文字都顯示 */}
+          {/* Pattern Notes */}
           {activeTab === 'CONTENT' && (
             <div className="bg-white rounded-[2.5rem] p-6 md:p-7 shadow-cozy border border-theme-bg/60 space-y-3">
               <div className="flex items-center justify-between gap-4">
@@ -1586,7 +1653,7 @@ function EditorView({ pattern, onUpdate, onBack, categories }) {
   );
 }
 
-// --- 織圖圖庫（加上「類別庫」區塊 & 傳入 categories） ---
+// --- 織圖圖庫（保留類別庫區塊，本身列表可以被上方工具列篩選） ---
 
 function LibraryView({
   savedPatterns,
@@ -1637,7 +1704,7 @@ function LibraryView({
         </div>
       </div>
 
-      {/* 類別庫區塊 */}
+      {/* 類別庫區塊（管理用） */}
       <div className="bg-white p-6 rounded-[2rem] shadow-cozy border border-theme-bg/60 mb-8">
         <div className="flex justify-between items-center mb-3">
           <div>
@@ -1682,7 +1749,7 @@ function LibraryView({
         </div>
       </div>
 
-      {/* 織圖列表 */}
+      {/* 織圖列表（實際內容會由外層 Category Toolbar 決定篩選結果） */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
         {savedPatterns.map((ptn) => (
           <div
@@ -1736,6 +1803,112 @@ function LibraryView({
             </button>
           </div>
         ))}
+        {savedPatterns.length === 0 && (
+          <div className="col-span-full text-center text-xs text-gray-400 py-10">
+            目前沒有織圖，可以從上方按鈕新增。
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// --- 類別工具列（出現在工具列位置：分類 + 篩選 + 快速新增） ---
+
+function CategoryToolbar({
+  categories,
+  categoryFilter,
+  onChangeFilter,
+  onAddCategory,
+  onQuickNewPattern,
+  onQuickNewProject,
+  hasPatternInFilter,
+}) {
+  const [newCat, setNewCat] = useState('');
+
+  const handleAdd = () => {
+    const name = newCat.trim();
+    if (!name) return;
+    onAddCategory(name);
+    onChangeFilter(name);
+    setNewCat('');
+  };
+
+  const active = categoryFilter || 'ALL';
+
+  return (
+    <div className="px-4 md:px-8 pt-3 pb-3 bg-white/90 border-b border-theme-accent/20 sticky top-0 z-15 backdrop-blur">
+      <div className="max-w-6xl mx-auto flex flex-col gap-2">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
+            <button
+              onClick={() => onChangeFilter('ALL')}
+              className={`px-3 py-1.5 mr-1 rounded-full text-[10px] font-black uppercase tracking-[0.18em] border ${
+                active === 'ALL'
+                  ? 'bg-theme-primary text-white border-theme-primary shadow-sm'
+                  : 'bg-white text-theme-text/60 border-theme-bg'
+              }`}
+            >
+              全部
+            </button>
+            {categories.map((c) => (
+              <button
+                key={c}
+                onClick={() => onChangeFilter(c)}
+                className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.18em] border whitespace-nowrap ${
+                  active === c
+                    ? 'bg-theme-primary/90 text-white border-theme-primary shadow-sm'
+                    : 'bg-theme-bg text-theme-text/70 border-theme-bg'
+                }`}
+              >
+                {c}
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {active !== 'ALL' && (
+              <>
+                <button
+                  onClick={() => onQuickNewPattern('TEXT')}
+                  className="px-3 py-1.5 rounded-full bg-theme-primary text-white text-[10px] font-black uppercase tracking-[0.15em]"
+                >
+                  + Text
+                </button>
+                <button
+                  onClick={() => onQuickNewPattern('CHART')}
+                  className="px-3 py-1.5 rounded-full bg-theme-primary/10 text-theme-primary border border-theme-primary/20 text-[10px] font-black uppercase tracking-[0.15em]"
+                >
+                  + Chart
+                </button>
+                <button
+                  onClick={onQuickNewProject}
+                  disabled={!hasPatternInFilter}
+                  className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.15em] ${
+                    hasPatternInFilter
+                      ? 'bg-theme-text text-white'
+                      : 'bg-theme-bg text-gray-300 cursor-default'
+                  }`}
+                >
+                  + Project
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+        <div className="flex items-center gap-2 mt-1">
+          <input
+            value={newCat}
+            onChange={(e) => setNewCat(e.target.value)}
+            placeholder="快速新增分類…"
+            className="flex-1 bg-theme-bg/40 rounded-full px-3 py-1.5 text-[11px] border-none focus:ring-2 ring-theme-primary/20"
+          />
+          <button
+            onClick={handleAdd}
+            className="px-3 py-1.5 rounded-full bg-theme-bg text-theme-text/60 text-[10px] font-black uppercase tracking-[0.15em]"
+          >
+            新增分類
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -1751,7 +1924,6 @@ function App() {
   const [currentPattern, setCurrentPattern] = useState(null);
   const [themeKey, setThemeKey] = useState('PURPLE');
 
-  // ★ 全域分類庫
   const [categories, setCategories] = useState([
     '未分類',
     '圍巾',
@@ -1760,6 +1932,7 @@ function App() {
     '襪子',
   ]);
 
+  const [categoryFilter, setCategoryFilter] = useState('ALL');
   const [syncOpen, setSyncOpen] = useState(false);
 
   useEffect(() => {
@@ -1774,7 +1947,13 @@ function App() {
   }, []);
 
   useEffect(() => {
-    saveAppState({ savedPatterns, activeProjects, yarns, themeKey, categories });
+    saveAppState({
+      savedPatterns,
+      activeProjects,
+      yarns,
+      themeKey,
+      categories,
+    });
     const t = THEMES[themeKey] || THEMES.PURPLE;
     const r = document.documentElement;
     r.style.setProperty('--primary-color', t.primary);
@@ -1807,6 +1986,17 @@ function App() {
     if (categories.includes(name)) return;
     setCategories((prev) => [...prev, name]);
   };
+
+  const handleNewPattern = (type, defaultCategory) => {
+    const p = createNewPattern(type, defaultCategory || '未分類');
+    setCurrentPattern(p);
+    setView('EDITOR');
+  };
+
+  const hasPatternInFilter =
+    categoryFilter === 'ALL'
+      ? savedPatterns.length > 0
+      : savedPatterns.some((p) => (p.category || '未分類') === categoryFilter);
 
   return (
     <div className="flex h-screen overflow-hidden">
@@ -1916,11 +2106,46 @@ function App() {
         </div>
 
         <main className="flex-1 overflow-y-auto no-scrollbar pb-safe">
+          {/* 類別工具列：只在專案列表/織圖庫顯示 */}
+          {(view === 'PROJECTS' || view === 'LIBRARY') && (
+            <CategoryToolbar
+              categories={categories}
+              categoryFilter={categoryFilter}
+              onChangeFilter={setCategoryFilter}
+              onAddCategory={handleAddCategory}
+              onQuickNewPattern={(type) =>
+                handleNewPattern(
+                  type,
+                  categoryFilter === 'ALL' ? null : categoryFilter
+                )
+              }
+              onQuickNewProject={() => {
+                let basePattern = null;
+                if (categoryFilter === 'ALL') {
+                  basePattern = savedPatterns[0] || null;
+                } else {
+                  basePattern =
+                    savedPatterns.find(
+                      (p) => (p.category || '未分類') === categoryFilter
+                    ) || null;
+                }
+                if (!basePattern) return;
+                setActiveProjects((prev) => [
+                  createProjectFromPattern(basePattern),
+                  ...prev,
+                ]);
+                setView('PROJECTS');
+              }}
+              hasPatternInFilter={hasPatternInFilter}
+            />
+          )}
+
           {view === 'PROJECTS' && (
             <ProjectView
               yarns={yarns}
               savedPatterns={savedPatterns}
               activeProjects={activeProjects}
+              categoryFilter={categoryFilter}
               onUpdateProject={(p) =>
                 setActiveProjects((prev) =>
                   prev.map((x) => (x.id === p.id ? p : x))
@@ -1948,17 +2173,24 @@ function App() {
           )}
           {view === 'LIBRARY' && (
             <LibraryView
-              savedPatterns={savedPatterns}
+              savedPatterns={
+                categoryFilter === 'ALL'
+                  ? savedPatterns
+                  : savedPatterns.filter(
+                      (p) => (p.category || '未分類') === categoryFilter
+                    )
+              }
               categories={categories}
               onAddCategory={handleAddCategory}
               onDeletePattern={(id) =>
                 setSavedPatterns((prev) => prev.filter((x) => x.id !== id))
               }
-              onNewPattern={(t) => {
-                const p = createNewPattern(t);
-                setCurrentPattern(p);
-                setView('EDITOR');
-              }}
+              onNewPattern={(t) =>
+                handleNewPattern(
+                  t,
+                  categoryFilter === 'ALL' ? null : categoryFilter
+                )
+              }
               onCreateProject={(ptn) => {
                 setActiveProjects((prev) => [
                   createProjectFromPattern(ptn),
