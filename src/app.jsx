@@ -547,6 +547,357 @@ function YarnView({ yarns, onSaveYarn, onDeleteYarn }) {
 }
 
 // --- 子組件: 專案播放器 (含區段提醒邏輯) ---
+// function ProjectView({
+//   activeProjects,
+//   savedPatterns,
+//   yarns,
+//   onUpdateProject,
+//   onDeleteProject,
+// }) {
+//   const [selectedId, setSelectedId] = useState(null);
+//   const [plusN, setPlusN] = useState('');
+
+//   const currentProject = useMemo(
+//     () => activeProjects.find((x) => x.id === selectedId),
+//     [activeProjects, selectedId]
+//   );
+//   const currentPattern = useMemo(
+//     () =>
+//       currentProject
+//         ? savedPatterns.find((x) => x.id === currentProject.patternId)
+//         : null,
+//     [currentProject, savedPatterns]
+//   );
+
+//   const projectStats = useMemo(() => {
+//     if (!currentPattern || currentPattern.type !== 'TEXT')
+//       return { targetTotal: 0, activeSection: null };
+
+//     let cumulativeRows = 0;
+//     let activeSection = null;
+//     const summary = (currentPattern.textSections || []).map((s) => {
+//       const sectionTotal = (s.rowsPerLoop || 1) * (s.repeats || 1);
+//       const startRow = cumulativeRows + 1;
+//       cumulativeRows += sectionTotal;
+
+//       if (
+//         currentProject &&
+//         currentProject.totalRow >= startRow &&
+//         currentProject.totalRow <= cumulativeRows
+//       ) {
+//         activeSection = { ...s, startRow, endRow: cumulativeRows };
+//       }
+
+//       return { ...s, totalRows: sectionTotal, startRow, endRow: cumulativeRows };
+//     });
+
+//     return { targetTotal: cumulativeRows, sectionsSummary: summary, activeSection };
+//   }, [currentPattern, currentProject?.totalRow]);
+
+//   if (!selectedId) {
+//     return (
+//       <div className="max-w-5xl mx-auto p-8 md:p-12 animate-fade-in pb-32">
+//         <h2 className="text-3xl font-black text-theme-text mb-10 tracking-tight">
+//           Active Projects
+//         </h2>
+//         <div className="grid gap-4">
+//           {activeProjects.map((p) => (
+//             <div
+//               key={p.id}
+//               onClick={() => setSelectedId(p.id)}
+//               className="bg-white p-6 rounded-[2.5rem] shadow-cozy border border-white flex justify-between items-center active:scale-[0.98] transition cursor-pointer"
+//             >
+//               <div className="flex items-center gap-5">
+//                 <div className="w-14 h-14 bg-theme-bg rounded-2xl flex items-center justify-center text-theme-primary text-2xl font-black shadow-inner">
+//                   R
+//                 </div>
+//                 <h3 className="font-bold text-theme-text text-xl leading-tight">
+//                   {p.patternName}
+//                 </h3>
+//               </div>
+//               <div className="flex items-center gap-8">
+//                 <div className="text-5xl font-black text-theme-primary tabular-nums tracking-tighter">
+//                   {p.totalRow}
+//                 </div>
+//                 <button
+//                   onClick={(e) => {
+//                     e.stopPropagation();
+//                     onDeleteProject(p.id);
+//                   }}
+//                   className="text-gray-200 hover:text-red-400 px-2 transition-colors"
+//                 >
+//                   <Icons.Trash />
+//                 </button>
+//               </div>
+//             </div>
+//           ))}
+//           {activeProjects.length === 0 && (
+//             <div className="text-center py-24 opacity-30 font-black tracking-widest uppercase">
+//               No Active Projects
+//             </div>
+//           )}
+//         </div>
+//       </div>
+//     );
+//   }
+
+//   if (!currentProject || !currentPattern) return null;
+
+//   const update = (d) =>
+//     onUpdateProject({
+//       ...currentProject,
+//       totalRow: Math.max(1, currentProject.totalRow + d),
+//       sectionRow: Math.max(1, currentProject.sectionRow + d),
+//     });
+
+//   const currentAlerts =
+//     currentPattern.alerts?.filter((a) => {
+//       if (
+//         a.sectionId &&
+//         a.sectionId !== 'ALL' &&
+//         projectStats.activeSection?.id !== a.sectionId
+//       ) {
+//         return false;
+//       }
+//       const val =
+//         a.type === 'SECTION' ? currentProject.sectionRow : currentProject.totalRow;
+//       return a.mode === 'EVERY'
+//         ? val > 0 && val % a.value === 0
+//         : val === a.value;
+//     }) || [];
+
+//   return (
+//     <div className="flex flex-col h-full bg-theme-bg animate-fade-in pb-20 overflow-hidden">
+//       <div className="bg-white/80 backdrop-blur p-4 border-b flex justify-between items-center sticky top-0 z-30 shadow-sm">
+//         <button
+//           onClick={() => setSelectedId(null)}
+//           className="text-gray-400 font-bold px-2 uppercase text-[10px] tracking-widest"
+//         >
+//           ← Back
+//         </button>
+//         <h2 className="font-black text-theme-text truncate text-sm tracking-tight px-4">
+//           {currentProject.patternName}
+//         </h2>
+//         <div className="w-10"></div>
+//       </div>
+
+//       <div className="flex-1 overflow-y-auto p-4 md:p-12 space-y-10 no-scrollbar pb-40">
+//         {currentPattern.type === 'TEXT' && projectStats.targetTotal > 0 && (
+//           <div className="bg-white p-8 rounded-[2.5rem] shadow-cozy border border-white space-y-4">
+//             <div className="flex justify-between items-end">
+//               <div>
+//                 <span className="text-[10px] font-black uppercase opacity-40 tracking-widest block mb-1">
+//                   Currently Knitting 目前階段
+//                 </span>
+//                 <span className="font-black text-theme-text text-xl tracking-tight">
+//                   {projectStats.activeSection?.title || 'Unknown'}
+//                 </span>
+//               </div>
+//               <span className="font-black text-theme-primary tabular-nums text-2xl">
+//                 {currentProject.totalRow}{' '}
+//                 <span className="opacity-20 mx-1">/</span>{' '}
+//                 {projectStats.targetTotal}{' '}
+//                 <span className="text-[10px] opacity-40 uppercase">Rows</span>
+//               </span>
+//             </div>
+//             <div className="w-full h-3 bg-theme-bg rounded-full overflow-hidden shadow-inner">
+//               <div
+//                 className="h-full bg-theme-primary transition-all duration-700"
+//                 style={{
+//                   width: `${Math.min(
+//                     100,
+//                     (currentProject.totalRow / projectStats.targetTotal) * 100
+//                   )}%`,
+//                 }}
+//               ></div>
+//             </div>
+//           </div>
+//         )}
+
+//         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+//           <div className="lg:col-span-5 space-y-8">
+//             <div className="bg-white rounded-[4rem] p-12 flex flex-col items-center shadow-cozy border-2 border-white">
+//               <h3 className="text-theme-primary font-black uppercase tracking-widest text-[10px] mb-4 opacity-50">
+//                 Row Counter
+//               </h3>
+//               <div className="text-9xl md:text-[11rem] font-black text-theme-text tabular-nums leading-none mb-12 tracking-tighter drop-shadow-md">
+//                 {currentProject.totalRow}
+//               </div>
+
+//               <div className="w-full space-y-8">
+//                 <div className="grid grid-cols-2 gap-6 w-full">
+//                   <button
+//                     onClick={() => update(-1)}
+//                     className="py-8 bg-theme-bg rounded-[2.5rem] text-theme-primary shadow-inner font-black text-4xl active:scale-95 transition"
+//                   >
+//                     −
+//                   </button>
+//                   <button
+//                     onClick={() => update(1)}
+//                     className="py-8 bg-theme-primary text-white rounded-[2.5rem] shadow-xl shadow-theme-primary/20 font-black text-5xl active:scale-95 transition"
+//                   >
+//                     +
+//                   </button>
+//                 </div>
+
+//                 <div className="flex items-stretch gap-2 bg-theme-bg/50 p-2.5 rounded-[2rem] shadow-inner w-full">
+//                   <input
+//                     type="number"
+//                     value={plusN}
+//                     onChange={(e) => setPlusN(e.target.value)}
+//                     placeholder="+n"
+//                     className="flex-1 min-w-0 bg-transparent border-none text-center font-black text-2xl focus:ring-0 tabular-nums placeholder:opacity-20"
+//                   />
+//                   <button
+//                     onClick={() => {
+//                       const n = parseInt(plusN);
+//                       if (!isNaN(n)) update(n);
+//                       setPlusN('');
+//                     }}
+//                     className="bg-theme-text text-white px-10 py-5 rounded-[1.5rem] font-black text-xs tracking-widest transition-all active:scale-95 shadow-lg uppercase"
+//                   >
+//                     Go
+//                   </button>
+//                 </div>
+//               </div>
+//             </div>
+//             <div className="bg-white p-8 rounded-[2rem] shadow-cozy border border-white flex justify-between items-center">
+//               <div className="min-w-0 flex-1">
+//                 <h3 className="text-theme-primary font-black uppercase tracking-widest text-[10px] mb-1 opacity-40">
+//                   Section Loop
+//                 </h3>
+//                 <div className="text-6xl font-black text-theme-text tabular-nums tracking-tighter">
+//                   {currentProject.sectionRow}
+//                 </div>
+//               </div>
+//               <button
+//                 onClick={() =>
+//                   onUpdateProject({ ...currentProject, sectionRow: 1 })
+//                 }
+//                 className="text-[10px] font-black text-theme-primary border-2 border-theme-primary/10 px-6 py-3 rounded-full hover:bg-theme-bg transition uppercase tracking-widest flex-shrink-0 ml-4"
+//               >
+//                 Reset
+//               </button>
+//             </div>
+//           </div>
+
+//           <div className="lg:col-span-7 space-y-6">
+//             {currentAlerts.map((a) => (
+//               <div
+//                 key={a.id}
+//                 className="bg-theme-primary p-8 rounded-[3rem] text-whiteproduk shadow-xl animate-fade-in relative overflow-hidden group border border-white/20"
+//               >
+//                 <div className="absolute -right-5 -bottom-5 w-32 h-32 bg-white/10 rounded-full"></div>
+//                 <div className="relative z-10 flex items-start gap-6">
+//                   <div className="w-16 h-16 bg-white/20 rounded-3xl flex items-center justify-center text-4xl animate-bounce">
+//                     🔔
+//                   </div>
+//                   <div className="flex-1">
+//                     <div className="text-[10px] font-black uppercase opacity-60 mb-1 tracking-widest">
+//                       {a.mode === 'EVERY' ? 'Every' : 'At'} {a.value} Rows ·{' '}
+//                       {a.type === 'SECTION' ? 'Section' : 'Global'}
+//                     </div>
+//                     <div className="text-2xl font-black leading-tight tracking-tight">
+//                       {a.message}
+//                     </div>
+//                   </div>
+//                 </div>
+//               </div>
+//             ))}
+
+//             <div className="bg-white p-10 rounded-[3.5rem] shadow-cozy border border-white min-h-[450px]">
+//               <h4 className="font-black text-theme-text border-b border-theme-bg pb-6 mb-10 flex items-center gap-3 tracking-widest uppercase text-xs">
+//                 <Icons.Library /> Instruction Manual
+//               </h4>
+//               {currentPattern.type === 'TEXT' ? (
+//                 <div className="space-y-12">
+//                   {currentPattern.textSections?.map((sec) => {
+//                     const isActive =
+//                       projectStats.activeSection?.id === sec.id;
+//                     return (
+//                       <div
+//                         key={sec.id}
+//                         className={`relative pl-8 border-l-4 transition-all group ${
+//                           isActive
+//                             ? 'border-theme-primary scale-[1.02]'
+//                             : 'border-theme-bg opacity-40 grayscale'
+//                         }`}
+//                       >
+//                         <div className="flex flex-wrap items-center gap-3 mb-4">
+//                           <span
+//                             className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full ${
+//                               isActive
+//                                 ? 'bg-theme-primary text-white shadow-md'
+//                                 : 'bg-theme-bg'
+//                             }`}
+//                           >
+//                             {sec.title}
+//                           </span>
+//                           <span className="text-[9px] font-bold opacity-30 uppercase tracking-tighter">
+//                             {sec.rowsPerLoop} rows × {sec.repeats} times
+//                           </span>
+//                         </div>
+//                         <div
+//                           className={`font-mono text-lg leading-relaxed whitespace-pre-wrap ${
+//                             isActive
+//                               ? 'text-theme-text font-bold'
+//                               : 'text-gray-400'
+//                           }`}
+//                         >
+//                           {sec.content}
+//                         </div>
+//                       </div>
+//                     );
+//                   })}
+//                 </div>
+//               ) : (
+//                 <div className="flex flex-col items-center">
+//                   {currentPattern.sections?.[0] && (
+//                     <div className="inline-block bg-white border-4 border-theme-bg rounded-2xl p-2 shadow-inner overflow-x-auto max-w-full">
+//                       <div
+//                         className="grid gap-[1px] bg-theme-accent/30"
+//                         style={{
+//                           gridTemplateColumns: `repeat(${currentPattern.sections[0].cols}, 24px)`,
+//                         }}
+//                       >
+//                         {currentPattern.sections[0].grid.map((row, r) =>
+//                           row.map((cell, c) => {
+//                             const localIdx =
+//                               (currentProject.sectionRow - 1) %
+//                               currentPattern.sections[0].rows;
+//                             const isHighlight =
+//                               r ===
+//                               currentPattern.sections[0].rows - 1 - localIdx;
+//                             return (
+//                               <div
+//                                 key={`${r}-${c}`}
+//                                 className={`w-6 h-6 flex items-center justify-center text-[10px] font-mono select-none ${
+//                                   SYMBOLS[cell]?.color || 'bg-white'
+//                                 } ${
+//                                   isHighlight
+//                                     ? 'ring-2 ring-theme-primary z-10 scale-110 shadow-lg'
+//                                     : 'opacity-40 grayscale'
+//                                 }`}
+//                               >
+//                                 {SYMBOLS[cell]?.symbol}
+//                               </div>
+//                             );
+//                           })
+//                         )}
+//                       </div>
+//                     </div>
+//                   )}
+//                 </div>
+//               )}
+//             </div>
+//           </div>
+//         </div>
+//       </div>
+//     </div>
+//   );
+// }
+
+// --- 子組件: 專案播放器 (含區段提醒邏輯，提醒浮在 counter 上方) ---
 function ProjectView({
   activeProjects,
   savedPatterns,
@@ -556,6 +907,7 @@ function ProjectView({
 }) {
   const [selectedId, setSelectedId] = useState(null);
   const [plusN, setPlusN] = useState('');
+  const [showAlertOverlay, setShowAlertOverlay] = useState(false); // NEW：控制提醒浮層顯示
 
   const currentProject = useMemo(
     () => activeProjects.find((x) => x.id === selectedId),
@@ -608,15 +960,15 @@ function ProjectView({
               className="bg-white p-6 rounded-[2.5rem] shadow-cozy border border-white flex justify-between items-center active:scale-[0.98] transition cursor-pointer"
             >
               <div className="flex items-center gap-5">
-                <div className="w-14 h-14 bg-theme-bg rounded-2xl flex items-center justify-center text-theme-primary text-2xl font-black shadow-inner">
+                <div className="w-12 h-12 bg-theme-bg rounded-2xl flex items-center justify-center text-theme-primary text-xl font-black shadow-inner">
                   R
                 </div>
-                <h3 className="font-bold text-theme-text text-xl leading-tight">
+                <h3 className="font-bold text-theme-text text-lg leading-tight">
                   {p.patternName}
                 </h3>
               </div>
-              <div className="flex items-center gap-8">
-                <div className="text-5xl font-black text-theme-primary tabular-nums tracking-tighter">
+              <div className="flex items-center gap-6">
+                <div className="text-4xl font-black text-theme-primary tabular-nums tracking-tighter">
                   {p.totalRow}
                 </div>
                 <button
@@ -643,6 +995,7 @@ function ProjectView({
 
   if (!currentProject || !currentPattern) return null;
 
+  // 目前排數變化
   const update = (d) =>
     onUpdateProject({
       ...currentProject,
@@ -650,6 +1003,7 @@ function ProjectView({
       sectionRow: Math.max(1, currentProject.sectionRow + d),
     });
 
+  // 計算目前要跳出的提醒
   const currentAlerts =
     currentPattern.alerts?.filter((a) => {
       if (
@@ -666,8 +1020,44 @@ function ProjectView({
         : val === a.value;
     }) || [];
 
+  // 只要新出現提醒，就自動打開浮層
+  useEffect(() => {
+    if (currentAlerts.length > 0) {
+      setShowAlertOverlay(true);
+    }
+  }, [currentAlerts.length]);
+
+  const primaryAlert = currentAlerts[0];
+
   return (
-    <div className="flex flex-col h-full bg-theme-bg animate-fade-in pb-20 overflow-hidden">
+    <div className="flex flex-col h-full bg-theme-bg animate-fade-in pb-20 overflow-hidden relative">
+      {/* 浮在 counter 上方的提醒 */}
+      {showAlertOverlay && primaryAlert && (
+        <div className="absolute inset-x-0 top-20 z-40 px-4 md:px-0">
+          <div className="max-w-xl mx-auto bg-theme-primary text-white rounded-[2.25rem] shadow-2xl border border-white/30 px-6 py-4 flex items-start gap-3">
+            <div className="w-10 h-10 bg-white/15 rounded-2xl flex items-center justify-center text-2xl">
+              🔔
+            </div>
+            <div className="flex-1">
+              <div className="text-[10px] font-black uppercase tracking-[0.18em] opacity-70 mb-1">
+                Row Alert ·{' '}
+                {primaryAlert.type === 'SECTION' ? 'Section' : 'Total'} ·{' '}
+                {primaryAlert.mode === 'EVERY' ? 'Every' : 'At'} {primaryAlert.value}
+              </div>
+              <div className="text-sm font-bold leading-snug">
+                {primaryAlert.message || '下一段變化來了～'}
+              </div>
+            </div>
+            <button
+              onClick={() => setShowAlertOverlay(false)}
+              className="text-xs font-black uppercase tracking-[0.15em] px-3 py-1 rounded-full bg-white/15 hover:bg-white/25 transition flex-shrink-0"
+            >
+              關閉
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="bg-white/80 backdrop-blur p-4 border-b flex justify-between items-center sticky top-0 z-30 shadow-sm">
         <button
           onClick={() => setSelectedId(null)}
@@ -681,26 +1071,26 @@ function ProjectView({
         <div className="w-10"></div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 md:p-12 space-y-10 no-scrollbar pb-40">
+      <div className="flex-1 overflow-y-auto p-4 md:p-10 space-y-8 no-scrollbar pb-40">
         {currentPattern.type === 'TEXT' && projectStats.targetTotal > 0 && (
-          <div className="bg-white p-8 rounded-[2.5rem] shadow-cozy border border-white space-y-4">
+          <div className="bg-white p-6 rounded-[2rem] shadow-cozy border border-white space-y-3 mt-6">
             <div className="flex justify-between items-end">
               <div>
-                <span className="text-[10px] font-black uppercase opacity-40 tracking-widest block mb-1">
+                <span className="text-[9px] font-black uppercase opacity-40 tracking-widest block mb-1">
                   Currently Knitting 目前階段
                 </span>
-                <span className="font-black text-theme-text text-xl tracking-tight">
+                <span className="font-black text-theme-text text-base tracking-tight">
                   {projectStats.activeSection?.title || 'Unknown'}
                 </span>
               </div>
-              <span className="font-black text-theme-primary tabular-nums text-2xl">
-                {currentProject.totalRow}{' '}
-                <span className="opacity-20 mx-1">/</span>{' '}
-                {projectStats.targetTotal}{' '}
-                <span className="text-[10px] opacity-40 uppercase">Rows</span>
+              <span className="font-black text-theme-primary tabular-nums text-lg">
+                {currentProject.totalRow}
+                <span className="opacity-20 mx-1">/</span>
+                {projectStats.targetTotal}
+                <span className="text-[9px] opacity-40 uppercase ml-1">Rows</span>
               </span>
             </div>
-            <div className="w-full h-3 bg-theme-bg rounded-full overflow-hidden shadow-inner">
+            <div className="w-full h-2.5 bg-theme-bg rounded-full overflow-hidden shadow-inner">
               <div
                 className="h-full bg-theme-primary transition-all duration-700"
                 style={{
@@ -714,59 +1104,70 @@ function ProjectView({
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-          <div className="lg:col-span-5 space-y-8">
-            <div className="bg-white rounded-[4rem] p-12 flex flex-col items-center shadow-cozy border-2 border-white">
-              <h3 className="text-theme-primary font-black uppercase tracking-widest text-[10px] mb-4 opacity-50">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mt-4">
+          {/* 左邊：比較小一點的 counter */}
+          <div className="lg:col-span-5 space-y-6">
+            <div className="bg-white rounded-[3rem] p-8 flex flex-col items-center shadow-cozy border-2 border-white">
+              <h3 className="text-theme-primary font-black uppercase tracking-widest text-[9px] mb-3 opacity-50">
                 Row Counter
               </h3>
-              <div className="text-9xl md:text-[11rem] font-black text-theme-text tabular-nums leading-none mb-12 tracking-tighter drop-shadow-md">
+              <div className="text-7xl md:text-8xl font-black text-theme-text tabular-nums leading-none mb-8 tracking-tighter drop-shadow-md">
                 {currentProject.totalRow}
               </div>
 
-              <div className="w-full space-y-8">
-                <div className="grid grid-cols-2 gap-6 w-full">
+              <div className="w-full space-y-6">
+                <div className="grid grid-cols-2 gap-4 w-full">
                   <button
-                    onClick={() => update(-1)}
-                    className="py-8 bg-theme-bg rounded-[2.5rem] text-theme-primary shadow-inner font-black text-4xl active:scale-95 transition"
+                    onClick={() => {
+                      update(-1);
+                      setShowAlertOverlay(false); // 按 - 也順便收提醒
+                    }}
+                    className="py-5 bg-theme-bg rounded-[2rem] text-theme-primary shadow-inner font-black text-3xl active:scale-95 transition"
                   >
                     −
                   </button>
                   <button
-                    onClick={() => update(1)}
-                    className="py-8 bg-theme-primary text-white rounded-[2.5rem] shadow-xl shadow-theme-primary/20 font-black text-5xl active:scale-95 transition"
+                    onClick={() => {
+                      update(1);
+                      setShowAlertOverlay(false); // 你要的：按 + 後提醒收起
+                    }}
+                    className="py-6 bg-theme-primary text-white rounded-[2.25rem] shadow-xl shadow-theme-primary/20 font-black text-4xl active:scale-95 transition"
                   >
                     +
                   </button>
                 </div>
 
-                <div className="flex items-stretch gap-2 bg-theme-bg/50 p-2.5 rounded-[2rem] shadow-inner w-full">
+                <div className="flex items-stretch gap-2 bg-theme-bg/60 p-2 rounded-[1.75rem] shadow-inner w-full">
                   <input
                     type="number"
                     value={plusN}
                     onChange={(e) => setPlusN(e.target.value)}
                     placeholder="+n"
-                    className="flex-1 min-w-0 bg-transparent border-none text-center font-black text-2xl focus:ring-0 tabular-nums placeholder:opacity-20"
+                    className="flex-1 min-w-0 bg-transparent border-none text-center font-black text-xl focus:ring-0 tabular-nums placeholder:opacity-20"
                   />
                   <button
                     onClick={() => {
                       const n = parseInt(plusN);
-                      if (!isNaN(n)) update(n);
+                      if (!isNaN(n)) {
+                        update(n);
+                        setShowAlertOverlay(false);
+                      }
                       setPlusN('');
                     }}
-                    className="bg-theme-text text-white px-10 py-5 rounded-[1.5rem] font-black text-xs tracking-widest transition-all active:scale-95 shadow-lg uppercase"
+                    className="bg-theme-text text-white px-8 py-4 rounded-[1.5rem] font-black text-[10px] tracking-widest transition-all active:scale-95 shadow-lg uppercase"
                   >
                     Go
                   </button>
                 </div>
               </div>
             </div>
-            <div className="bg-white p-8 rounded-[2rem] shadow-cozy border border-white flex justify-between items-center">
+
+            <div className="bg-white p-6 rounded-[2rem] shadow-cozy border border-white flex justify-between items-center">
               <div className="min-w-0 flex-1">
-                <h3 className="text-theme-primary font-black uppercase tracking-widest text-[10px] mb-1 opacity-40">
+                <h3 className="text-[9px] font-black uppercase tracking-widest text-theme-text opacity-50 mb-1">
                   Section Loop
                 </h3>
-                <div className="text-6xl font-black text-theme-text tabular-nums tracking-tighter">
+                <div className="text-4xl font-black text-theme-text tabular-nums tracking-tighter">
                   {currentProject.sectionRow}
                 </div>
               </div>
@@ -774,58 +1175,36 @@ function ProjectView({
                 onClick={() =>
                   onUpdateProject({ ...currentProject, sectionRow: 1 })
                 }
-                className="text-[10px] font-black text-theme-primary border-2 border-theme-primary/10 px-6 py-3 rounded-full hover:bg-theme-bg transition uppercase tracking-widest flex-shrink-0 ml-4"
+                className="text-[9px] font-black text-theme-primary border-2 border-theme-primary/10 px-5 py-2.5 rounded-full hover:bg-theme-bg transition uppercase tracking-widest flex-shrink-0 ml-4"
               >
                 Reset
               </button>
             </div>
           </div>
 
+          {/* 右邊：提醒從這裡移走了，專心放說明 / 圖表 */}
           <div className="lg:col-span-7 space-y-6">
-            {currentAlerts.map((a) => (
-              <div
-                key={a.id}
-                className="bg-theme-primary p-8 rounded-[3rem] text-whiteproduk shadow-xl animate-fade-in relative overflow-hidden group border border-white/20"
-              >
-                <div className="absolute -right-5 -bottom-5 w-32 h-32 bg-white/10 rounded-full"></div>
-                <div className="relative z-10 flex items-start gap-6">
-                  <div className="w-16 h-16 bg-white/20 rounded-3xl flex items-center justify-center text-4xl animate-bounce">
-                    🔔
-                  </div>
-                  <div className="flex-1">
-                    <div className="text-[10px] font-black uppercase opacity-60 mb-1 tracking-widest">
-                      {a.mode === 'EVERY' ? 'Every' : 'At'} {a.value} Rows ·{' '}
-                      {a.type === 'SECTION' ? 'Section' : 'Global'}
-                    </div>
-                    <div className="text-2xl font-black leading-tight tracking-tight">
-                      {a.message}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-
-            <div className="bg-white p-10 rounded-[3.5rem] shadow-cozy border border-white min-h-[450px]">
-              <h4 className="font-black text-theme-text border-b border-theme-bg pb-6 mb-10 flex items-center gap-3 tracking-widest uppercase text-xs">
+            <div className="bg-white p-8 rounded-[3rem] shadow-cozy border border-white min-h-[380px]">
+              <h4 className="font-black text-theme-text border-b border-theme-bg pb-5 mb-8 flex items-center gap-3 tracking-widest uppercase text-[10px]">
                 <Icons.Library /> Instruction Manual
               </h4>
               {currentPattern.type === 'TEXT' ? (
-                <div className="space-y-12">
+                <div className="space-y-10">
                   {currentPattern.textSections?.map((sec) => {
                     const isActive =
                       projectStats.activeSection?.id === sec.id;
                     return (
                       <div
                         key={sec.id}
-                        className={`relative pl-8 border-l-4 transition-all group ${
+                        className={`relative pl-6 border-l-4 transition-all group ${
                           isActive
                             ? 'border-theme-primary scale-[1.02]'
                             : 'border-theme-bg opacity-40 grayscale'
                         }`}
                       >
-                        <div className="flex flex-wrap items-center gap-3 mb-4">
+                        <div className="flex flex-wrap items-center gap-3 mb-3">
                           <span
-                            className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full ${
+                            className={`text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full ${
                               isActive
                                 ? 'bg-theme-primary text-white shadow-md'
                                 : 'bg-theme-bg'
@@ -833,12 +1212,12 @@ function ProjectView({
                           >
                             {sec.title}
                           </span>
-                          <span className="text-[9px] font-bold opacity-30 uppercase tracking-tighter">
+                          <span className="text-[8px] font-bold opacity-30 uppercase tracking-tighter">
                             {sec.rowsPerLoop} rows × {sec.repeats} times
                           </span>
                         </div>
                         <div
-                          className={`font-mono text-lg leading-relaxed whitespace-pre-wrap ${
+                          className={`font-mono text-base leading-relaxed whitespace-pre-wrap ${
                             isActive
                               ? 'text-theme-text font-bold'
                               : 'text-gray-400'
@@ -896,6 +1275,7 @@ function ProjectView({
     </div>
   );
 }
+
 
 // --- 子組件: 織圖編輯器 ---
 function EditorView({ pattern, onUpdate, onBack }) {
