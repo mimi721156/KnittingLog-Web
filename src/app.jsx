@@ -220,8 +220,8 @@ function GitHubSyncDialog({
     if (!open) return;
     const s = loadSyncSettings();
     const t = loadToken();
-    setOwner(s.owner || '');
-    setRepo(s.repo || '');
+    setOwner(s.owner || 'mimi721156');
+    setRepo(s.repo || 'KnittingLog-Data');
     setBranch(s.branch || 'main');
     setPath(s.path || 'data/knitting.json');
     setToken(t || '');
