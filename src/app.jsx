@@ -2014,7 +2014,9 @@ function CategoryToolbar({
   const active = categoryFilter || 'ALL';
 
   return (
-    <div className="px-4 md:px-8 pt-3 pb-3 bg-white/90 border-b border-theme-accent/20 sticky top-0 z-15 backdrop-blur">
+    <div className="px-4 md:px-8 pt-3 pb-3
+      bg-white/90 border-b border-theme-accent/20
+      sticky top-16 md:top-0 z-15 backdrop-blur">
       <div className="max-w-6xl mx-auto flex flex-col gap-2">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
