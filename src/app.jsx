@@ -1895,7 +1895,7 @@ function LibraryView({
   onEditPattern,
 }) {
   return (
-    <div className="max-w-6xl mx-auto p-6 md:p-12 animate-fade-in pb-24">
+    <div className="max-w-6xl mx-auto px-6 md:px-12 pt-10 md:pt-16 animate-fade-in pb-24">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-8 px-2">
         <div>
           <h2 className="text-4xl font-black text-theme-text tracking-tighter leading-none mb-3">
