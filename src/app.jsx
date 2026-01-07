@@ -907,12 +907,13 @@ function ProjectView({
 }) {
   const [selectedId, setSelectedId] = useState(null);
   const [plusN, setPlusN] = useState('');
-  const [showAlertOverlay, setShowAlertOverlay] = useState(false); // NEW：控制提醒浮層顯示
+  const [showAlertOverlay, setShowAlertOverlay] = useState(false); // 控制提醒浮層顯示
 
   const currentProject = useMemo(
     () => activeProjects.find((x) => x.id === selectedId),
     [activeProjects, selectedId]
   );
+
   const currentPattern = useMemo(
     () =>
       currentProject
@@ -927,6 +928,7 @@ function ProjectView({
 
     let cumulativeRows = 0;
     let activeSection = null;
+
     const summary = (currentPattern.textSections || []).map((s) => {
       const sectionTotal = (s.rowsPerLoop || 1) * (s.repeats || 1);
       const startRow = cumulativeRows + 1;
@@ -945,6 +947,48 @@ function ProjectView({
 
     return { targetTotal: cumulativeRows, sectionsSummary: summary, activeSection };
   }, [currentPattern, currentProject?.totalRow]);
+
+  // 計算目前要跳出的提醒（用 useMemo，並在 hook 區塊裡處理）
+  const currentAlerts = useMemo(() => {
+    if (!currentProject || !currentPattern) return [];
+    return (
+      currentPattern.alerts?.filter((a) => {
+        if (
+          a.sectionId &&
+          a.sectionId !== 'ALL' &&
+          projectStats.activeSection?.id !== a.sectionId
+        ) {
+          return false;
+        }
+        const val =
+          a.type === 'SECTION' ? currentProject.sectionRow : currentProject.totalRow;
+        return a.mode === 'EVERY'
+          ? val > 0 && val % a.value === 0
+          : val === a.value;
+      }) || []
+    );
+  }, [currentProject, currentPattern, projectStats]);
+
+  // 只要新出現提醒，就自動打開浮層
+  useEffect(() => {
+    if (currentAlerts.length > 0) {
+      setShowAlertOverlay(true);
+    }
+  }, [currentAlerts.length]);
+
+  const primaryAlert = currentAlerts[0];
+
+  // 目前排數變化（放在 hooks 之後、return 之前 OK）
+  const update = (d) => {
+    if (!currentProject) return;
+    onUpdateProject({
+      ...currentProject,
+      totalRow: Math.max(1, currentProject.totalRow + d),
+      sectionRow: Math.max(1, currentProject.sectionRow + d),
+    });
+  };
+
+  // ---- 下面才開始做條件 return（不會再插入新的 hook）----
 
   if (!selectedId) {
     return (
@@ -994,40 +1038,6 @@ function ProjectView({
   }
 
   if (!currentProject || !currentPattern) return null;
-
-  // 目前排數變化
-  const update = (d) =>
-    onUpdateProject({
-      ...currentProject,
-      totalRow: Math.max(1, currentProject.totalRow + d),
-      sectionRow: Math.max(1, currentProject.sectionRow + d),
-    });
-
-  // 計算目前要跳出的提醒
-  const currentAlerts =
-    currentPattern.alerts?.filter((a) => {
-      if (
-        a.sectionId &&
-        a.sectionId !== 'ALL' &&
-        projectStats.activeSection?.id !== a.sectionId
-      ) {
-        return false;
-      }
-      const val =
-        a.type === 'SECTION' ? currentProject.sectionRow : currentProject.totalRow;
-      return a.mode === 'EVERY'
-        ? val > 0 && val % a.value === 0
-        : val === a.value;
-    }) || [];
-
-  // 只要新出現提醒，就自動打開浮層
-  useEffect(() => {
-    if (currentAlerts.length > 0) {
-      setShowAlertOverlay(true);
-    }
-  }, [currentAlerts.length]);
-
-  const primaryAlert = currentAlerts[0];
 
   return (
     <div className="flex flex-col h-full bg-theme-bg animate-fade-in pb-20 overflow-hidden relative">
@@ -1105,7 +1115,7 @@ function ProjectView({
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mt-4">
-          {/* 左邊：比較小一點的 counter */}
+          {/* 左邊：縮小後的 counter */}
           <div className="lg:col-span-5 space-y-6">
             <div className="bg-white rounded-[3rem] p-8 flex flex-col items-center shadow-cozy border-2 border-white">
               <h3 className="text-theme-primary font-black uppercase tracking-widest text-[9px] mb-3 opacity-50">
@@ -1129,7 +1139,7 @@ function ProjectView({
                   <button
                     onClick={() => {
                       update(1);
-                      setShowAlertOverlay(false); // 你要的：按 + 後提醒收起
+                      setShowAlertOverlay(false); // 按 + 後提醒收起
                     }}
                     className="py-6 bg-theme-primary text-white rounded-[2.25rem] shadow-xl shadow-theme-primary/20 font-black text-4xl active:scale-95 transition"
                   >
@@ -1182,7 +1192,7 @@ function ProjectView({
             </div>
           </div>
 
-          {/* 右邊：提醒從這裡移走了，專心放說明 / 圖表 */}
+          {/* 右邊：說明 / 織圖 */}
           <div className="lg:col-span-7 space-y-6">
             <div className="bg-white p-8 rounded-[3rem] shadow-cozy border border-white min-h-[380px]">
               <h4 className="font-black text-theme-text border-b border-theme-bg pb-5 mb-8 flex items-center gap-3 tracking-widest uppercase text-[10px]">
