@@ -1,961 +1,1771 @@
-const { useState, useEffect, useRef, useMemo } = React;
+// src/app.jsx
+import {
+  loadAppState,
+  saveAppState,
+  loadSyncSettings,
+  saveSyncSettings,
+  loadToken,
+  saveToken,
+} from './storage.js';
+import { loadFromGitHub, saveToGitHub } from './githubContentsApi.js';
 
-        // --- Cloud Sync (GitHub private repo JSON) ---
-        const CLOUD_CFG_KEY = 'cozy_knit_github_cfg_v1';
-        const CLOUD_CACHE_KEY = 'cozy_knit_data_cache_v1';
+const { useState, useEffect, useMemo, useRef } = React;
 
-        const readCloudCfg = () => {
-            try { return JSON.parse(localStorage.getItem(CLOUD_CFG_KEY) || '{}'); }
-            catch { return {}; }
-        };
+// --- 1. 定義輔助組件與邏輯 ---
 
-        const writeCloudCfg = (cfg) => {
-            localStorage.setItem(CLOUD_CFG_KEY, JSON.stringify(cfg));
-        };
+const SYMBOLS = {
+  KNIT: { id: 'KNIT', label: '下針', symbol: '│', color: 'bg-white' },
+  PURL: { id: 'PURL', label: '上針', symbol: '─', color: 'bg-gray-100' },
+  YO: { id: 'YO', label: '掛針', symbol: '○', color: 'bg-blue-50' },
+  K2TOG: { id: 'K2TOG', label: '左上二併', symbol: '人', color: 'bg-red-50' },
+  SSK: { id: 'SSK', label: '右上二併', symbol: '入', color: 'bg-red-50' },
+  SLIP: { id: 'SLIP', label: '滑針', symbol: 'V', color: 'bg-yellow-50' },
+  M1R: { id: 'M1R', label: '右加針', symbol: '⅄', color: 'bg-green-50' },
+  M1L: { id: 'M1L', label: '左加針', symbol: 'λ', color: 'bg-green-50' },
+  CABLE: { id: 'CABLE', label: '麻花', symbol: '⚡', color: 'bg-purple-50' },
+  NO_STITCH: {
+    id: 'NO_STITCH',
+    label: '無針',
+    symbol: '✕',
+    color: 'bg-gray-200 text-gray-400',
+  },
+};
 
-        const SettingsModal = ({ open, onClose, cfg, setCfg, status, onLoad, onSave }) => {
-            if (!open) return null;
-            return (
-                <div className="fixed inset-0 z-50 modal-overlay flex items-end md:items-center justify-center p-4">
-                    <div className="bg-white w-full md:max-w-xl rounded-t-3xl md:rounded-3xl shadow-xl border border-wool-100 overflow-hidden">
-                        <div className="p-4 border-b border-wool-50 flex items-center justify-between">
-                            <div>
-                                <h3 className="font-bold text-wool-800">雲端同步設定</h3>
-                                <p className="text-xs text-gray-400">資料存在私有 repo 的 JSON（需要 Fine-grained PAT）</p>
-                            </div>
-                            <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-600">✕</button>
-                        </div>
+const THEMES = {
+  PURPLE: {
+    id: 'PURPLE',
+    primary: '#8e8499',
+    bg: '#f4f2f7',
+    text: '#5d5666',
+    accent: '#dcd3e3',
+  },
+  BLUE: {
+    id: 'BLUE',
+    primary: '#7da1c4',
+    bg: '#f0f5f9',
+    text: '#4e6173',
+    accent: '#cfe0eb',
+  },
+  PINK: {
+    id: 'PINK',
+    primary: '#c48e8e',
+    bg: '#faf3f3',
+    text: '#735252',
+    accent: '#ebcfcf',
+  },
+  DARK: {
+    id: 'DARK',
+    primary: '#1a1a1a',
+    bg: '#ffffff',
+    text: '#1a1a1a',
+    accent: '#eeeeee',
+  },
+};
 
-                        <div className="p-4 space-y-3">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                <div>
-                                    <label className="text-xs text-gray-500">Owner</label>
-                                    <input value={cfg.owner || ''} onChange={(e) => setCfg(prev => ({...prev, owner: e.target.value.trim()}))}
-                                        className="mt-1 w-full border border-gray-200 rounded-xl p-2 text-sm" placeholder="你的 GitHub 帳號" />
-                                </div>
-                                <div>
-                                    <label className="text-xs text-gray-500">Repo（私有資料 repo）</label>
-                                    <input value={cfg.repo || ''} onChange={(e) => setCfg(prev => ({...prev, repo: e.target.value.trim()}))}
-                                        className="mt-1 w-full border border-gray-200 rounded-xl p-2 text-sm" placeholder="KnittingLog-Data" />
-                                </div>
-                                <div>
-                                    <label className="text-xs text-gray-500">Branch</label>
-                                    <input value={cfg.branch || 'main'} onChange={(e) => setCfg(prev => ({...prev, branch: e.target.value.trim()}))}
-                                        className="mt-1 w-full border border-gray-200 rounded-xl p-2 text-sm" placeholder="main" />
-                                </div>
-                                <div>
-                                    <label className="text-xs text-gray-500">Path</label>
-                                    <input value={cfg.path || 'data/knitting.json'} onChange={(e) => setCfg(prev => ({...prev, path: e.target.value.trim()}))}
-                                        className="mt-1 w-full border border-gray-200 rounded-xl p-2 text-sm" placeholder="data/knitting.json" />
-                                </div>
-                                <div className="md:col-span-2">
-                                    <label className="text-xs text-gray-500">Fine-grained Token（Contents read/write）</label>
-                                    <input type="password" value={cfg.token || ''} onChange={(e) => setCfg(prev => ({...prev, token: e.target.value}))}
-                                        className="mt-1 w-full border border-gray-200 rounded-xl p-2 text-sm" placeholder="貼上 PAT（只存在此瀏覽器）" />
-                                </div>
-                            </div>
+const Icons = {
+  Play: () => (
+    <svg
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <polygon points="5 3 19 12 5 21 5 3" />
+    </svg>
+  ),
+  Library: () => (
+    <svg
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+    </svg>
+  ),
+  Yarn: () => (
+    <svg
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="12" cy="12" r="10" />
+      <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+      <path d="M2 12h20" />
+    </svg>
+  ),
+  Info: () => (
+    <svg
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="12" cy="12" r="10" />
+      <path d="M12 16v-4" />
+      <path d="M12 8h.01" />
+    </svg>
+  ),
+  Trash: () => (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <polyline points="3 6 5 6 21 6" />
+      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+    </svg>
+  ),
+  Plus: () => (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="3"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <line x1="12" y1="5" x2="12" y2="19" />
+      <line x1="5" y1="12" x2="19" y2="12" />
+    </svg>
+  ),
+  Cloud: () => (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M18 10a4 4 0 0 0-7.9-1A4 4 0 0 0 6 17h11a3 3 0 0 0 1-5.83" />
+    </svg>
+  ),
+};
 
-                            <div className="flex gap-2 pt-1">
-                                <button onClick={onLoad} className="flex-1 py-3 bg-wool-100 text-wool-800 rounded-xl font-bold border border-wool-200">
-                                    從 GitHub 載入
-                                </button>
-                                <button onClick={onSave} className="flex-1 py-3 bg-wool-800 text-white rounded-xl font-bold">
-                                    存到 GitHub
-                                </button>
-                            </div>
+const createNewPattern = (type = 'CHART') => ({
+  id: crypto.randomUUID(),
+  name: '未命名織圖',
+  type,
+  category: '未分類',
+  updatedAt: new Date().toISOString(),
+  meta: { castOn: '', needle: '' },
+  alerts: [],
+  sections: [
+    {
+      id: crypto.randomUUID(),
+      name: '主體',
+      rows: 8,
+      cols: 10,
+      grid: Array(8)
+        .fill()
+        .map(() => Array(10).fill('KNIT')),
+    },
+  ],
+  textSections: [
+    {
+      id: crypto.randomUUID(),
+      title: '起針段',
+      content: '',
+      repeats: 1,
+      rowsPerLoop: 1,
+    },
+  ],
+});
 
-                            <div className="text-xs text-gray-600 whitespace-pre-wrap bg-wool-50 border border-wool-100 rounded-xl p-3 min-h-[44px]">
-                                {status || '小提醒：第一次先「載入」確認連線，再存檔。若開兩個分頁同時存，可能需要重新載入。'}
-                            </div>
-                        </div>
+// --- GitHub Sync 對話框 ---
 
-                        <div className="p-4 border-t border-wool-50 flex justify-end">
-                            <button onClick={onClose} className="px-4 py-2 rounded-xl bg-gray-100 text-gray-600 font-bold">關閉</button>
-                        </div>
-                    </div>
-                </div>
-            );
-        };
+function GitHubSyncDialog({
+  open,
+  onClose,
+  onApplyRemote,
+  currentState,
+}) {
+  const [owner, setOwner] = useState('');
+  const [repo, setRepo] = useState('');
+  const [branch, setBranch] = useState('main');
+  const [path, setPath] = useState('data/knitting.json');
+  const [token, setToken] = useState('');
+  const [status, setStatus] = useState('');
+  const [statusType, setStatusType] = useState('info');
+  const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    if (!open) return;
+    const s = loadSyncSettings();
+    const t = loadToken();
+    setOwner(s.owner || '');
+    setRepo(s.repo || '');
+    setBranch(s.branch || 'main');
+    setPath(s.path || 'data/knitting.json');
+    setToken(t || '');
+    setStatus('');
+    setStatusType('info');
+  }, [open]);
 
-        // --- 1. 定義符號與資料結構 ---
+  if (!open) return null;
 
-        const SYMBOLS = {
-            KNIT:     { id: 'KNIT', label: '下針', symbol: '│', color: 'bg-white' },
-            PURL:     { id: 'PURL', label: '上針', symbol: '─', color: 'bg-gray-100' },
-            YO:       { id: 'YO',   label: '掛針', symbol: '○', color: 'bg-blue-50' },
-            K2TOG:    { id: 'K2TOG',label: '左上二併', symbol: '人', color: 'bg-red-50' },
-            SSK:      { id: 'SSK',  label: '右上二併', symbol: '入', color: 'bg-red-50' },
-            SLIP:     { id: 'SLIP', label: '滑針', symbol: 'V', color: 'bg-yellow-50' },
-            M1R:      { id: 'M1R',  label: '右加針', symbol: '⅄', color: 'bg-green-50' },
-            M1L:      { id: 'M1L',  label: '左加針', symbol: 'λ', color: 'bg-green-50' },
-            NO_STITCH:{ id: 'NO_STITCH', label: '無針', symbol: '✕', color: 'bg-gray-200 text-gray-400' }
-        };
+  const settings = { owner, repo, branch, path, token };
 
-        const CATEGORIES = ['未分類', '毛帽', '毛衣', '圍巾', '手套', '襪子', '家飾'];
+  const persistSettings = () => {
+    saveSyncSettings({ owner, repo, branch, path });
+    saveToken(token);
+  };
 
-        // V6 Updated Structure: Added 'meta' and 'textSections' for TEXT type
-        const createNewPattern = (type = 'CHART') => ({
-            id: crypto.randomUUID(),
-            name: type === 'CHART' ? '新織圖專案' : '新文字說明專案',
-            type: type, 
-            category: '未分類',
-            updatedAt: new Date().toISOString(),
-            // Text Pattern Specific Fields
-            meta: {
-                castOn: '',
-                needle: '',
-                yarn: ''
-            },
-            textSections: [
-                { id: crypto.randomUUID(), title: '區段 1', content: '' }
-            ],
-            // Legacy / Fallback
-            textContent: '', 
-            
-            alerts: [], 
-            // Chart Pattern Specific Fields
-            sections: [
-                {
-                    id: crypto.randomUUID(),
-                    name: '圖解區段 A',
-                    repeats: 1,
-                    castOn: 10,
-                    rows: 6,
-                    cols: 10,
-                    grid: Array(6).fill().map(() => Array(10).fill('KNIT'))
-                }
-            ]
-        });
+  const handleLoad = async () => {
+    setLoading(true);
+    setStatus('正在從 GitHub 載入資料…');
+    setStatusType('info');
+    try {
+      persistSettings();
+      const result = await loadFromGitHub(settings);
+      onApplyRemote(result.data || {});
+      setStatus(`載入成功 ✓ (sha: ${result.sha.slice(0, 7)}…)`);
+      setStatusType('success');
+    } catch (err) {
+      setStatus(String(err.message || err));
+      setStatusType('error');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-        const createProject = (patternId, patternName) => ({
-            id: crypto.randomUUID(),
-            patternId: patternId,
-            patternName: patternName,
-            currentRow: 1,
-            startDate: new Date().toISOString(),
-            lastActive: new Date().toISOString()
-        });
+  const handleSave = async () => {
+    setLoading(true);
+    setStatus('正在將目前資料存到 GitHub…');
+    setStatusType('info');
+    try {
+      persistSettings();
+      const payload = {
+        savedPatterns: currentState.savedPatterns,
+        activeProjects: currentState.activeProjects,
+        yarns: currentState.yarns,
+        themeKey: currentState.themeKey,
+      };
+      const result = await saveToGitHub(settings, payload);
+      setStatus(`儲存成功 ✓ (sha: ${result.sha.slice(0, 7)}…)`);
+      setStatusType('success');
+    } catch (err) {
+      setStatus(String(err.message || err));
+      setStatusType('error');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-        // --- 2. 頁面元件：教學 ---
-        const TutorialView = () => (
-            <div className="max-w-4xl mx-auto space-y-6 animate-fade-in p-4 pb-24 md:pb-8">
-                <header className="border-b border-wool-200 pb-4">
-                    <h2 className="text-2xl font-bold text-wool-800">教學與說明</h2>
-                    <p className="text-gray-500">JIS 記號對照與 App 使用指南</p>
-                </header>
-
-                {/* 1. App Usage / New Features */}
-                <section className="space-y-4">
-                    <h3 className="text-lg font-bold text-wool-600 uppercase tracking-widest">App 功能指南</h3>
-                    <div className="grid md:grid-cols-2 gap-4">
-                        <div className="bg-green-50 p-5 rounded-3xl shadow-sm border border-green-100">
-                            <h4 className="font-bold text-green-800 mb-2">✨ 文字織圖模式</h4>
-                            <p className="text-sm text-gray-600 mb-2">設定「起針數」、「針號」等固定資訊，並將織圖拆分成多個區段。支援快捷插入常用術語。</p>
-                        </div>
-                        <div className="bg-white p-5 rounded-3xl shadow-sm border border-wool-50">
-                            <h4 className="font-bold text-wool-800 mb-2">🔔 智能提醒</h4>
-                            <p className="text-sm text-gray-600">在編輯模式設定提醒（如：第6段加針），編織時計數器會自動跳出通知。</p>
-                        </div>
-                    </div>
-                </section>
-
-                {/* 2. Symbol Chart & Text Explanations */}
-                <section className="space-y-4">
-                    <h3 className="text-lg font-bold text-wool-600 uppercase tracking-widest">基礎符號與織法 (JIS)</h3>
-                    
-                    {/* Visual Grid */}
-                    <div className="bg-white rounded-3xl shadow-sm border border-wool-100 overflow-hidden">
-                        <div className="grid grid-cols-3 md:grid-cols-4 divide-x divide-y divide-wool-50">
-                            {Object.values(SYMBOLS).map(s => (
-                                <div key={s.id} className="p-4 flex flex-col items-center text-center">
-                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg font-mono mb-2 border shadow-sm ${s.color === 'bg-white' ? 'border-gray-200' : 'border-transparent'} ${s.color}`}>
-                                        {s.symbol}
-                                    </div>
-                                    <span className="text-sm font-bold text-gray-700">{s.label}</span>
-                                    <span className="text-[10px] text-gray-400 mt-1 font-mono">{s.id}</span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* RESTORED: Detailed Explanations */}
-                    <div className="bg-white p-6 rounded-3xl shadow-sm border border-wool-100 space-y-6">
-                        <div>
-                            <h4 className="font-bold text-wool-800 mb-2 flex items-center">
-                                <span className="w-2 h-2 bg-blue-400 rounded-full mr-2"></span>
-                                基礎針法
-                            </h4>
-                            <ul className="text-sm text-gray-600 space-y-2 ml-4 list-disc marker:text-blue-300">
-                                <li><strong>下針 (│)</strong>：正面呈現 V 型。線在後方，從左側線圈左前方插入。</li>
-                                <li><strong>上針 (─)</strong>：正面呈現波浪橫紋。線在前方，從左側線圈右後方插入。</li>
-                            </ul>
-                        </div>
-                        
-                        <div>
-                            <h4 className="font-bold text-wool-800 mb-2 flex items-center">
-                                <span className="w-2 h-2 bg-red-400 rounded-full mr-2"></span>
-                                減針 (Decreases)
-                            </h4>
-                            <ul className="text-sm text-gray-600 space-y-2 ml-4 list-disc marker:text-red-300">
-                                <li><strong>左上二併 (人 / K2tog)</strong>：兩針一起織下針，織片向右傾斜。</li>
-                                <li><strong>右上二併 (入 / SSK)</strong>：滑1織1，將滑針蓋過織針，織片向左傾斜。</li>
-                            </ul>
-                        </div>
-
-                        <div>
-                            <h4 className="font-bold text-wool-800 mb-2 flex items-center">
-                                <span className="w-2 h-2 bg-green-400 rounded-full mr-2"></span>
-                                加針 (Increases)
-                            </h4>
-                            <ul className="text-sm text-gray-600 space-y-2 ml-4 list-disc marker:text-green-300">
-                                <li><strong>掛針 (○ / YO)</strong>：繞線不織，形成洞孔（蕾絲花樣用）。</li>
-                                <li><strong>右加針 (⅄ / M1R)</strong>：挑起橫線織前腳（向右扭轉）。</li>
-                                <li><strong>左加針 (λ / M1L)</strong>：挑起橫線織後腳（向左扭轉）。</li>
-                            </ul>
-                        </div>
-                    </div>
-                </section>
-
-                {/* RESTORED: Reading Tips */}
-                <section className="bg-wool-100 p-6 rounded-3xl border border-wool-200">
-                    <h3 className="font-bold text-wool-800 mb-2 flex items-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
-                        新手小撇步：背面怎麼織？
-                    </h3>
-                    <div className="text-sm text-wool-800 mb-2">
-                        記住口訣：「<strong>看著圖織相反</strong>」。
-                    </div>
-                    <ul className="list-disc list-inside text-sm text-wool-700 ml-1 space-y-1">
-                        <li>圖上畫「│」(下針) → 片織背面時織「<strong>上針</strong>」</li>
-                        <li>圖上畫「─」(上針) → 片織背面時織「<strong>下針</strong>」</li>
-                        <li className="text-wool-500 mt-2 text-xs ml-0 list-none pl-4 border-l-2 border-wool-300">註：圈織（一直繞圈）因為永遠在正面，直接照圖織即可。</li>
-                    </ul>
-                </section>
+  return (
+    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 px-4">
+      <div className="bg-white rounded-[2.5rem] shadow-2xl max-w-xl w-full overflow-hidden">
+        <div className="px-6 py-4 border-b flex items-center justify-between">
+          <div>
+            <div className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">
+              Cloud Sync
             </div>
-        );
+            <div className="font-black text-theme-text">
+              GitHub 雲端同步設定
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 text-xl font-bold px-2"
+          >
+            ×
+          </button>
+        </div>
 
-        // --- 3. 頁面元件：專案管理 (Player) ---
-        const ProjectView = ({ activeProjects, savedPatterns, onDeleteProject, onUpdateProject, onNavigateToLibrary }) => {
-            if (activeProjects.length === 0) {
-                return (
-                    <div className="flex flex-col items-center justify-center h-full p-8 text-center animate-fade-in pb-20">
-                        <div className="bg-white p-8 rounded-full mb-6 shadow-sm border border-wool-100">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#d9b98a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                        </div>
-                        <h2 className="text-2xl font-bold text-wool-800 mb-2">還沒有編織專案</h2>
-                        <p className="text-gray-500 max-w-xs mb-8">挑選一份織圖，泡杯熱茶，開始您的編織時光吧！</p>
-                        <button onClick={onNavigateToLibrary} className="px-8 py-3 bg-wool-600 text-white rounded-2xl shadow-lg shadow-wool-200 hover:bg-wool-500 font-bold tracking-wide transform transition active:scale-95">
-                            去挑選織圖
-                        </button>
-                    </div>
-                );
-            }
+        <div className="p-6 space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-[10px] font-black uppercase tracking-widest opacity-40 block mb-1">
+                Owner
+              </label>
+              <input
+                className="w-full rounded-xl bg-slate-50 border-none px-3 py-2 text-sm"
+                value={owner}
+                onChange={(e) => setOwner(e.target.value)}
+                placeholder="例如：mimi721156"
+              />
+            </div>
+            <div>
+              <label className="text-[10px] font-black uppercase tracking-widest opacity-40 block mb-1">
+                Repo
+              </label>
+              <input
+                className="w-full rounded-xl bg-slate-50 border-none px-3 py-2 text-sm"
+                value={repo}
+                onChange={(e) => setRepo(e.target.value)}
+                placeholder="KnittingLog-Data"
+              />
+            </div>
+          </div>
 
-            const [selectedProjectId, setSelectedProjectId] = useState(null);
-            const currentProject = activeProjects.find(p => p.id === selectedProjectId);
-            const currentPattern = currentProject ? savedPatterns.find(p => p.id === currentProject.patternId) : null;
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-[10px] font-black uppercase tracking-widest opacity-40 block mb-1">
+                Branch
+              </label>
+              <input
+                className="w-full rounded-xl bg-slate-50 border-none px-3 py-2 text-sm"
+                value={branch}
+                onChange={(e) => setBranch(e.target.value)}
+                placeholder="main"
+              />
+            </div>
+            <div>
+              <label className="text-[10px] font-black uppercase tracking-widest opacity-40 block mb-1">
+                Path
+              </label>
+              <input
+                className="w-full rounded-xl bg-slate-50 border-none px-3 py-2 text-sm"
+                value={path}
+                onChange={(e) => setPath(e.target.value)}
+                placeholder="data/knitting.json"
+              />
+            </div>
+          </div>
 
-            const activeAlert = useMemo(() => {
-                if (!currentProject || !currentPattern || !currentPattern.alerts) return null;
-                return currentPattern.alerts.find(a => a.row === currentProject.currentRow);
-            }, [currentProject?.currentRow, currentPattern]);
+          <div>
+            <label className="text-[10px] font-black uppercase tracking-widest opacity-40 block mb-1">
+              Fine-grained Token（Contents read/write）
+            </label>
+            <input
+              type="password"
+              className="w-full rounded-xl bg-slate-50 border-none px-3 py-2 text-sm"
+              value={token}
+              onChange={(e) => setToken(e.target.value)}
+              placeholder="只會存在瀏覽器，不會上傳"
+            />
+          </div>
 
-            // 詳細播放器模式 (Player Mode)
-            if (selectedProjectId && currentProject && currentPattern) {
-                const updateRow = (delta) => {
-                    const newRow = Math.max(1, currentProject.currentRow + delta);
-                    onUpdateProject({ 
-                        ...currentProject, 
-                        currentRow: newRow, 
-                        lastActive: new Date().toISOString() 
-                    });
-                };
+          <div className="flex gap-3 pt-2">
+            <button
+              onClick={handleLoad}
+              disabled={loading}
+              className="flex-1 bg-slate-100 text-theme-text rounded-2xl py-3 text-sm font-black uppercase tracking-[0.15em] disabled:opacity-50"
+            >
+              從 GitHub 載入
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={loading}
+              className="flex-1 bg-theme-primary text-white rounded-2xl py-3 text-sm font-black uppercase tracking-[0.15em] shadow-md disabled:opacity-50"
+            >
+              存到 GitHub
+            </button>
+          </div>
 
-                // Chart Logic
-                let displaySection = null;
-                let displayRowIndex = -1;
-                if (currentPattern.type === 'CHART' && currentPattern.sections.length > 0) {
-                    displaySection = currentPattern.sections[0];
-                    const localRow = (currentProject.currentRow - 1) % displaySection.rows; 
-                    displayRowIndex = displaySection.rows - 1 - localRow;
+          {status && (
+            <div
+              className={
+                'mt-2 text-xs rounded-2xl px-3 py-2 ' +
+                (statusType === 'success'
+                  ? 'bg-emerald-50 text-emerald-700'
+                  : statusType === 'error'
+                  ? 'bg-rose-50 text-rose-600'
+                  : 'bg-slate-50 text-slate-600')
+              }
+            >
+              {status}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// --- 子元件: 教學 ---
+function TutorialView() {
+  return (
+    <div className="max-w-4xl mx-auto p-8 md:p-12 animate-fade-in pb-32">
+      <h2 className="text-4xl font-black text-theme-text mb-12 tracking-tighter">
+        編織指南與符號
+      </h2>
+      <div className="bg-white p-10 rounded-[3rem] shadow-cozy border border-white">
+        <h3 className="font-black text-theme-primary text-xl mb-10 border-b border-theme-bg pb-5 tracking-widest uppercase">
+          JIS Symbols 基礎符號
+        </h3>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-8">
+          {Object.values(SYMBOLS).map((s) => (
+            <div key={s.id} className="text-center group">
+              <div
+                className={`w-16 h-16 rounded-[1.5rem] flex items-center justify-center text-3xl mb-3 mx-auto transition-all shadow-inner border-2 border-theme-bg ${s.color}`}
+              >
+                {s.symbol}
+              </div>
+              <div className="text-[10px] font-black text-theme-text uppercase tracking-widest opacity-80">
+                {s.label}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// --- 子元件: 線材庫 ---
+function YarnView({ yarns, onSaveYarn, onDeleteYarn }) {
+  const [editing, setEditing] = useState(null);
+
+  const handleSave = () => {
+    if (!editing.brand && !editing.name) return;
+    onSaveYarn(editing);
+    setEditing(null);
+  };
+
+  if (editing) {
+    return (
+      <div className="flex flex-col h-full bg-theme-bg animate-fade-in pb-safe">
+        <div className="p-4 border-b bg-white flex justify-between items-center sticky top-0 z-10 shadow-sm">
+          <button
+            onClick={() => setEditing(null)}
+            className="text-gray-400 font-bold px-2 uppercase text-xs"
+          >
+            Cancel
+          </button>
+          <span className="font-black text-theme-text text-sm">
+            編輯線材資料
+          </span>
+          <button
+            onClick={handleSave}
+            className="text-theme-primary font-black px-2 uppercase text-xs"
+          >
+            Save
+          </button>
+        </div>
+        <div className="p-8 space-y-6 overflow-y-auto">
+          <div className="bg-white p-8 rounded-[2.5rem] shadow-soft border-2 border-theme-secondary space-y-6">
+            <div>
+              <label className="text-[10px] font-black opacity-30 uppercase block mb-1 tracking-widest">
+                品牌 Brand
+              </label>
+              <input
+                type="text"
+                value={editing.brand || ''}
+                onChange={(e) =>
+                  setEditing({ ...editing, brand: e.target.value })
                 }
+                className="w-full bg-theme-bg/30 rounded-xl p-4 border-none font-bold focus:ring-2 ring-theme-primary/20"
+              />
+            </div>
+            <div>
+              <label className="text-[10px] font-black opacity-30 uppercase block mb-1">
+                系列 Name
+              </label>
+              <input
+                type="text"
+                value={editing.name || ''}
+                onChange={(e) =>
+                  setEditing({ ...editing, name: e.target.value })
+                }
+                className="w-full bg-theme-bg/30 rounded-xl p-4 border-none font-bold focus:ring-2 ring-theme-primary/20"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-                // Text Pattern Sections
-                const textSections = currentPattern.textSections || [];
+  return (
+    <div className="max-w-6xl mx-auto p-8 md:p-12 animate-fade-in pb-32">
+      <div className="flex justify-between items-center mb-10">
+        <h2 className="text-3xl font-black text-theme-text tracking-tighter">
+          My Yarn Stash
+        </h2>
+        <button
+          onClick={() =>
+            setEditing({ id: crypto.randomUUID(), brand: '', name: '' })
+          }
+          className="bg-theme-primary text-white px-8 py-3 rounded-2xl shadow-lg font-black text-xs tracking-widest uppercase"
+        >
+          + NEW
+        </button>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {yarns.map((y) => (
+          <div
+            key={y.id}
+            onClick={() => setEditing({ ...y })}
+            className="bg-white p-6 rounded-[2.5rem] shadow-cozy border border-white relative active:scale-[0.98] transition cursor-pointer overflow-hidden group"
+          >
+            <div className="absolute top-0 right-0 w-24 h-24 bg-theme-bg rounded-bl-full opacity-50 -mr-8 -mt-8 transition-transform group-hover:scale-110"></div>
+            <div className="relative z-10 flex gap-4">
+              <div className="w-16 h-16 bg-theme-bg rounded-2xl flex items-center justify-center text-3xl shadow-inner flex-shrink-0">
+                🧶
+              </div>
+              <div className="min-w-0 flex-1">
+                <h3 className="font-black text-theme-text text-lg truncate">
+                  {y.name || '未命名'}
+                </h3>
+                <p className="text-[10px] font-black text-theme-primary uppercase tracking-widest">
+                  {y.brand}
+                </p>
+              </div>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDeleteYarn(y.id);
+                }}
+                className="text-gray-200 hover:text-red-400 p-1 self-start transition-colors"
+              >
+                <Icons.Trash />
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
-                return (
-                    <div className="flex flex-col h-full animate-fade-in bg-white md:bg-transparent pb-20 md:pb-0">
-                        {/* Mobile Header */}
-                        <div className="bg-white/90 backdrop-blur p-4 shadow-sm flex items-center justify-between sticky top-0 z-30">
-                            <button onClick={() => setSelectedProjectId(null)} className="p-2 -ml-2 text-gray-500 hover:bg-gray-100 rounded-full">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-                            </button>
-                            <div className="text-center">
-                                <h2 className="font-bold text-wool-800 text-lg">{currentProject.patternName}</h2>
-                            </div>
-                            <div className="w-8"></div>
-                        </div>
+// --- 子組件: 專案播放器 (含區段提醒邏輯) ---
+function ProjectView({
+  activeProjects,
+  savedPatterns,
+  yarns,
+  onUpdateProject,
+  onDeleteProject,
+}) {
+  const [selectedId, setSelectedId] = useState(null);
+  const [plusN, setPlusN] = useState('');
 
-                        {/* Info Bar for Text Pattern (Fixed Info) */}
-                        {currentPattern.type === 'TEXT' && currentPattern.meta && (
-                            <div className="bg-wool-50 px-6 py-3 border-b border-wool-100 flex gap-6 text-sm overflow-x-auto">
-                                {currentPattern.meta.castOn && (
-                                    <div className="flex flex-col flex-shrink-0">
-                                        <span className="text-[10px] text-gray-400 font-bold uppercase">起針 Cast On</span>
-                                        <span className="font-bold text-wool-800">{currentPattern.meta.castOn} 針</span>
-                                    </div>
-                                )}
-                                {currentPattern.meta.needle && (
-                                    <div className="flex flex-col flex-shrink-0">
-                                        <span className="text-[10px] text-gray-400 font-bold uppercase">針號 Needle</span>
-                                        <span className="font-bold text-wool-800">{currentPattern.meta.needle}</span>
-                                    </div>
-                                )}
-                                {currentPattern.meta.yarn && (
-                                    <div className="flex flex-col flex-shrink-0">
-                                        <span className="text-[10px] text-gray-400 font-bold uppercase">線材 Yarn</span>
-                                        <span className="font-bold text-wool-800">{currentPattern.meta.yarn}</span>
-                                    </div>
-                                )}
-                            </div>
-                        )}
+  const currentProject = useMemo(
+    () => activeProjects.find((x) => x.id === selectedId),
+    [activeProjects, selectedId]
+  );
+  const currentPattern = useMemo(
+    () =>
+      currentProject
+        ? savedPatterns.find((x) => x.id === currentProject.patternId)
+        : null,
+    [currentProject, savedPatterns]
+  );
 
-                        {/* Main Content */}
-                        <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-6 flex flex-col md:flex-row gap-6">
-                            
-                            {/* Counter Section */}
-                            <div className="w-full md:w-1/3 flex flex-col gap-4 order-1 md:order-1">
-                                <div className="bg-wool-50 rounded-3xl shadow-inner p-6 flex flex-col items-center justify-center border border-wool-100 relative">
-                                    {activeAlert && (
-                                        <div className="absolute top-4 left-4 right-4 bg-yellow-100 text-yellow-800 text-center py-2 rounded-xl font-bold animate-pulse text-sm shadow-sm border border-yellow-200">
-                                            🔔 {activeAlert.message}
-                                        </div>
-                                    )}
+  const projectStats = useMemo(() => {
+    if (!currentPattern || currentPattern.type !== 'TEXT')
+      return { targetTotal: 0, activeSection: null };
 
-                                    <h3 className="text-wool-400 font-bold uppercase tracking-widest text-xs mb-2 mt-8">目前段數 ROW</h3>
-                                    <div className="text-[6rem] md:text-8xl font-black text-wool-800 tabular-nums leading-none mb-8 drop-shadow-sm">
-                                        {currentProject.currentRow}
-                                    </div>
-                                    
-                                    {/* Big Control Buttons for Touch */}
-                                    <div className="grid grid-cols-2 gap-4 w-full">
-                                        <button onClick={() => updateRow(-1)} className="py-6 bg-white rounded-2xl text-gray-400 shadow-sm border border-gray-100 active:bg-gray-50 active:scale-95 transition-all text-xl font-bold">
-                                            -1
-                                        </button>
-                                        <button onClick={() => updateRow(1)} className="py-6 bg-wool-600 text-white rounded-2xl shadow-lg shadow-wool-200 active:bg-wool-700 active:scale-95 transition-all text-3xl font-bold">
-                                            +1
-                                        </button>
-                                    </div>
-                                    <div className="flex justify-center gap-4 mt-4 w-full">
-                                        <button onClick={() => updateRow(-5)} className="px-4 py-2 text-xs text-gray-400 bg-white rounded-lg border border-gray-100">-5</button>
-                                        <button onClick={() => updateRow(5)} className="px-4 py-2 text-xs text-wool-600 bg-white rounded-lg border border-wool-100">+5</button>
-                                    </div>
-                                </div>
-                            </div>
+    let cumulativeRows = 0;
+    let activeSection = null;
+    const summary = (currentPattern.textSections || []).map((s) => {
+      const sectionTotal = (s.rowsPerLoop || 1) * (s.repeats || 1);
+      const startRow = cumulativeRows + 1;
+      cumulativeRows += sectionTotal;
 
-                            {/* Pattern Display Section */}
-                            <div className="flex-1 bg-white rounded-3xl shadow-sm border border-wool-100 p-6 overflow-hidden flex flex-col order-2 md:order-2 min-h-[300px]">
-                                <h4 className="font-bold text-wool-800 mb-4 flex items-center">
-                                    <span className="w-2 h-6 bg-wool-400 rounded-full mr-2"></span>
-                                    織圖內容
-                                </h4>
-                                <div className="flex-1 overflow-auto bg-gray-50 rounded-xl p-4 shadow-inner relative">
-                                    {currentPattern.type === 'TEXT' ? (
-                                        <div className="space-y-6">
-                                            {/* Legacy Support */}
-                                            {(!textSections || textSections.length === 0) && currentPattern.textContent && (
-                                                 <div className="whitespace-pre-wrap font-mono text-gray-700 text-base leading-relaxed">
-                                                    {currentPattern.textContent}
-                                                </div>
-                                            )}
+      if (
+        currentProject &&
+        currentProject.totalRow >= startRow &&
+        currentProject.totalRow <= cumulativeRows
+      ) {
+        activeSection = { ...s, startRow, endRow: cumulativeRows };
+      }
 
-                                            {/* Sections Display */}
-                                            {textSections.map((section, idx) => (
-                                                <div key={section.id || idx} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
-                                                    <h5 className="font-bold text-wool-700 border-b border-gray-100 pb-2 mb-2">{section.title}</h5>
-                                                    <div className="whitespace-pre-wrap font-mono text-gray-700 text-base leading-relaxed">
-                                                        {section.content || <span className="text-gray-400 italic">無內容</span>}
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    ) : (
-                                        displaySection && (
-                                            <div className="flex flex-col items-center min-w-max">
-                                                <div className="inline-block relative bg-white border-2 border-wool-200 rounded p-1 shadow-sm">
-                                                    <div 
-                                                        className="grid gap-[1px] bg-wool-200 border border-wool-200"
-                                                        style={{
-                                                            gridTemplateColumns: `repeat(${displaySection.cols}, 28px)`,
-                                                            gridTemplateRows: `repeat(${displaySection.rows}, 28px)`
-                                                        }}
-                                                    >
-                                                        {displaySection.grid.map((row, rIndex) => (
-                                                            row.map((cellType, cIndex) => (
-                                                                <div
-                                                                    key={`${rIndex}-${cIndex}`}
-                                                                    className={`
-                                                                        flex items-center justify-center text-xs font-mono select-none
-                                                                        ${SYMBOLS[cellType]?.color || 'bg-white'}
-                                                                        ${rIndex === displayRowIndex ? 'ring-2 ring-wool-600 z-10 font-bold' : 'opacity-60 grayscale-[0.5]'}
-                                                                    `}
-                                                                >
-                                                                    {SYMBOLS[cellType]?.symbol}
-                                                                </div>
-                                                            ))
-                                                        ))}
-                                                    </div>
-                                                    {/* Highlight Bar */}
-                                                    <div 
-                                                        className="absolute left-0 right-0 border-2 border-wool-600 rounded pointer-events-none shadow-[0_0_15px_rgba(191,134,82,0.3)]"
-                                                        style={{
-                                                            top: `${displayRowIndex * 29}px`, // 28px + gap
-                                                            height: '30px',
-                                                            display: displayRowIndex >= 0 ? 'block' : 'none'
-                                                        }}
-                                                    ></div>
-                                                </div>
-                                            </div>
-                                        )
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                );
-            }
+      return { ...s, totalRows: sectionTotal, startRow, endRow: cumulativeRows };
+    });
 
-            // --- 列表模式 (List View) ---
-            return (
-                <div className="max-w-5xl mx-auto p-4 animate-fade-in pb-24 md:pb-8">
-                    <h2 className="text-2xl font-bold text-wool-800 mb-6 pl-2">進行中的專案</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {activeProjects.map(proj => {
-                            const ptn = savedPatterns.find(p => p.id === proj.patternId);
-                            return (
-                                <div key={proj.id} onClick={() => setSelectedProjectId(proj.id)} className="bg-white rounded-3xl shadow-sm border border-wool-50 p-5 cursor-pointer active:scale-[0.98] transition-all relative overflow-hidden">
-                                    <div className="absolute top-0 right-0 w-20 h-20 bg-wool-50 rounded-bl-full -mr-4 -mt-4 z-0"></div>
-                                    <div className="relative z-10 flex items-center justify-between mb-4">
-                                        <div className="flex items-center">
-                                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mr-4 shadow-sm ${ptn?.type === 'CHART' ? 'bg-indigo-50 text-indigo-400' : 'bg-green-50 text-green-500'}`}>
-                                                {ptn?.type === 'CHART' ? 
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg> : 
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-                                                }
-                                            </div>
-                                            <div>
-                                                <h3 className="font-bold text-gray-700 truncate max-w-[150px]">{proj.patternName}</h3>
-                                                <p className="text-xs text-gray-400">{new Date(proj.lastActive).toLocaleDateString()}</p>
-                                            </div>
-                                        </div>
-                                        <button onClick={(e) => { e.stopPropagation(); onDeleteProject(proj.id); }} className="text-gray-300 hover:text-red-400 p-2">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                                        </button>
-                                    </div>
-                                    <div className="bg-wool-50 rounded-2xl p-4 flex justify-between items-end relative z-10">
-                                        <span className="text-xs text-wool-400 font-bold uppercase tracking-wider mb-1">Row</span>
-                                        <span className="text-3xl font-black text-wool-600">{proj.currentRow}</span>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
+    return { targetTotal: cumulativeRows, sectionsSummary: summary, activeSection };
+  }, [currentPattern, currentProject?.totalRow]);
+
+  if (!selectedId) {
+    return (
+      <div className="max-w-5xl mx-auto p-8 md:p-12 animate-fade-in pb-32">
+        <h2 className="text-3xl font-black text-theme-text mb-10 tracking-tight">
+          Active Projects
+        </h2>
+        <div className="grid gap-4">
+          {activeProjects.map((p) => (
+            <div
+              key={p.id}
+              onClick={() => setSelectedId(p.id)}
+              className="bg-white p-6 rounded-[2.5rem] shadow-cozy border border-white flex justify-between items-center active:scale-[0.98] transition cursor-pointer"
+            >
+              <div className="flex items-center gap-5">
+                <div className="w-14 h-14 bg-theme-bg rounded-2xl flex items-center justify-center text-theme-primary text-2xl font-black shadow-inner">
+                  R
                 </div>
-            );
-        };
-
-        // --- 4. 頁面元件：圖庫 (Library) ---
-        const LibraryView = ({ savedPatterns, onSelectPattern, onDeletePattern, onImport, onNewPattern, onCreateProject }) => {
-            const [filter, setFilter] = useState('ALL');
-            const fileInputRef = useRef(null);
-            
-            const handleNew = (type) => onNewPattern(type);
-            const filtered = savedPatterns.filter(p => filter === 'ALL' ? true : p.category === filter);
-            const handleFileChange = (e) => {
-                const file = e.target.files[0];
-                if (!file) return;
-                const reader = new FileReader();
-                reader.onload = (event) => { try { const json = JSON.parse(event.target.result); onImport(json); } catch (err) { alert("格式錯誤"); } };
-                reader.readAsText(file);
-                e.target.value = null;
-            };
-
-            return (
-                <div className="max-w-6xl mx-auto p-4 animate-fade-in pb-24 md:pb-8">
-                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-                        <div className="pl-2">
-                            <h2 className="text-2xl font-bold text-wool-800">織圖資料庫</h2>
-                            <p className="text-sm text-gray-500">所有的織圖與文字說明</p>
-                        </div>
-                        <div className="flex gap-2 w-full md:w-auto overflow-x-auto pb-1">
-                            <input type="file" accept=".json" className="hidden" ref={fileInputRef} onChange={handleFileChange} />
-                            <button onClick={() => fileInputRef.current.click()} className="flex-shrink-0 flex items-center px-4 py-2 bg-white border border-wool-200 rounded-xl text-wool-700 hover:bg-wool-50 text-sm font-bold shadow-sm">
-                                匯入
-                            </button>
-                            
-                            <div className="flex gap-2">
-                                <button onClick={() => handleNew('CHART')} className="flex-shrink-0 flex items-center px-4 py-2 bg-indigo-50 text-indigo-600 rounded-xl shadow-sm text-sm font-bold border border-indigo-100">
-                                    + 格子
-                                </button>
-                                <button onClick={() => handleNew('TEXT')} className="flex-shrink-0 flex items-center px-4 py-2 bg-green-50 text-green-600 rounded-xl shadow-sm text-sm font-bold border border-green-100">
-                                    + 文字
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="flex gap-2 overflow-x-auto pb-4 mb-2 scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
-                        <button onClick={() => setFilter('ALL')} className={`flex-shrink-0 px-5 py-2 rounded-full text-sm font-bold transition-all ${filter === 'ALL' ? 'bg-wool-800 text-white shadow-md' : 'bg-white text-gray-500 border border-gray-100'}`}>全部</button>
-                        {CATEGORIES.map(cat => (
-                            <button key={cat} onClick={() => setFilter(cat)} className={`flex-shrink-0 px-5 py-2 rounded-full text-sm font-bold transition-all ${filter === cat ? 'bg-wool-800 text-white shadow-md' : 'bg-white text-gray-500 border border-gray-100'}`}>{cat}</button>
-                        ))}
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {filtered.map(pattern => (
-                            <div key={pattern.id} className="bg-white rounded-3xl shadow-sm border border-gray-100 p-5 flex flex-col relative overflow-hidden active:scale-[0.99] transition-transform">
-                                <div onClick={() => onSelectPattern(pattern)} className="cursor-pointer flex-1 relative z-10">
-                                    <div className="flex items-start justify-between mb-3">
-                                        <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${pattern.type === 'TEXT' ? 'bg-green-50 text-green-500' : 'bg-indigo-50 text-indigo-400'}`}>
-                                            {pattern.type === 'TEXT' ? 
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg> : 
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>
-                                            }
-                                        </div>
-                                        <button onClick={(e) => { e.stopPropagation(); onDeletePattern(pattern.id); }} className="text-gray-300 hover:text-red-400 p-1">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                                        </button>
-                                    </div>
-                                    <h3 className="font-bold text-gray-800 text-lg truncate mb-1">{pattern.name}</h3>
-                                    <span className="text-xs px-2 py-1 bg-gray-50 text-gray-500 rounded-lg">{pattern.category}</span>
-                                </div>
-                                <div className="mt-4 pt-4 border-t border-gray-50 relative z-10">
-                                    <button onClick={() => onCreateProject(pattern)} className="w-full py-3 bg-wool-100 text-wool-800 rounded-xl hover:bg-wool-200 text-sm font-bold flex items-center justify-center transition-colors">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                                        開始編織
-                                    </button>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
+                <h3 className="font-bold text-theme-text text-xl leading-tight">
+                  {p.patternName}
+                </h3>
+              </div>
+              <div className="flex items-center gap-8">
+                <div className="text-5xl font-black text-theme-primary tabular-nums tracking-tighter">
+                  {p.totalRow}
                 </div>
-            );
-        };
-
-        const EditorView = ({ pattern, onUpdate, onBack }) => {
-            const [data, setData] = useState(pattern);
-            const [activeTab, setActiveTab] = useState('CONTENT'); 
-            const [selectedTool, setSelectedTool] = useState('KNIT');
-
-            // Initialize new structure for legacy patterns
-            useEffect(() => {
-                let updated = false;
-                const newData = { ...data };
-                if (data.type === 'TEXT') {
-                    if (!data.meta) { newData.meta = { castOn: '', needle: '', yarn: '' }; updated = true; }
-                    if (!data.textSections) { 
-                        newData.textSections = data.textContent ? [{id: crypto.randomUUID(), title: '說明', content: data.textContent}] : [{id: crypto.randomUUID(), title: '區段 1', content: ''}];
-                        updated = true;
-                    }
-                }
-                if (updated) {
-                    setData(newData);
-                    // Don't auto-save here to avoid infinite loop or side effects, wait for user action
-                }
-            }, []);
-
-            useEffect(() => { onUpdate(data); }, [data]);
-            const updateMeta = (f, v) => setData(p => ({ ...p, [f]: v, updatedAt: new Date().toISOString() }));
-            const updateTextMeta = (f, v) => setData(p => ({ ...p, meta: { ...(p.meta || {}), [f]: v }, updatedAt: new Date().toISOString() }));
-
-            // Alert Logic
-            const addAlert = () => setData(p => ({ ...p, alerts: [...(p.alerts || []), { row: 1, message: '' }] }));
-            const updateAlert = (idx, f, v) => {
-                const newAlerts = [...(data.alerts || [])];
-                newAlerts[idx] = { ...newAlerts[idx], [f]: v };
-                setData(p => ({ ...p, alerts: newAlerts }));
-            };
-            const removeAlert = (idx) => {
-                const newAlerts = [...(data.alerts || [])];
-                newAlerts.splice(idx, 1);
-                setData(p => ({ ...p, alerts: newAlerts }));
-            };
-
-            // Text Section Logic
-            const addTextSection = () => setData(p => ({ ...p, textSections: [...(p.textSections || []), { id: crypto.randomUUID(), title: '新區段', content: '' }] }));
-            const updateTextSection = (idx, f, v) => {
-                const newSections = [...(data.textSections || [])];
-                newSections[idx] = { ...newSections[idx], [f]: v };
-                setData(p => ({ ...p, textSections: newSections }));
-            };
-            const removeTextSection = (idx) => {
-                if(confirm('刪除此區段？')) {
-                    const newSections = [...(data.textSections || [])];
-                    newSections.splice(idx, 1);
-                    setData(p => ({ ...p, textSections: newSections }));
-                }
-            };
-            const insertText = (idx, text) => {
-                 const newSections = [...(data.textSections || [])];
-                 const currentContent = newSections[idx].content || '';
-                 newSections[idx].content = currentContent + (currentContent ? ' ' : '') + text;
-                 setData(p => ({ ...p, textSections: newSections }));
-            };
-
-            // Chart Cell Logic
-            const handleCellClick = (sectionId, r, c) => {
-                 setData(prev => ({
-                    ...prev,
-                    sections: prev.sections.map(s => {
-                        if (s.id !== sectionId) return s;
-                        const newGrid = s.grid.map(row => [...row]);
-                        newGrid[r][c] = selectedTool;
-                        return { ...s, grid: newGrid };
-                    })
-                }));
-            };
-
-            return (
-                <div className="flex flex-col h-full animate-fade-in bg-white pb-safe">
-                    {/* Header */}
-                    <div className="bg-white border-b border-gray-100 px-4 py-3 shadow-sm flex items-center justify-between sticky top-0 z-30">
-                        <button onClick={onBack} className="p-2 -ml-2 text-gray-500">← 返回</button>
-                        <div className="flex bg-gray-100 p-1 rounded-lg">
-                            <button onClick={() => setActiveTab('CONTENT')} className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${activeTab === 'CONTENT' ? 'bg-white shadow text-wool-800' : 'text-gray-400'}`}>內容</button>
-                            <button onClick={() => setActiveTab('ALERTS')} className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${activeTab === 'ALERTS' ? 'bg-white shadow text-yellow-600' : 'text-gray-400'}`}>提醒</button>
-                        </div>
-                        <div className="w-8"></div>
-                    </div>
-
-                    <div className="p-4 border-b border-gray-50 bg-gray-50/50">
-                        <input type="text" value={data.name} onChange={(e) => updateMeta('name', e.target.value)} className="w-full font-bold text-lg text-wool-800 bg-transparent border-none p-0 focus:ring-0 mb-2" placeholder="專案名稱" />
-                        <select value={data.category} onChange={(e) => updateMeta('category', e.target.value)} className="text-sm border-gray-200 rounded-lg py-1 px-2 bg-white text-gray-600">
-                            {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-                        </select>
-                    </div>
-
-                    <div className="flex-1 overflow-auto bg-white p-4 pb-20">
-                        {activeTab === 'ALERTS' ? (
-                            <div className="space-y-3">
-                                <div className="flex justify-between items-center mb-2">
-                                    <h3 className="font-bold text-gray-700">段數提醒</h3>
-                                    <button onClick={addAlert} className="text-sm bg-yellow-50 text-yellow-700 px-3 py-1 rounded-lg font-bold border border-yellow-100">+ 新增</button>
-                                </div>
-                                <div className="text-xs text-gray-400 mb-4 bg-yellow-50 p-2 rounded">
-                                    小提示：這裡設定的提醒會在您編織到該段數時自動跳出。
-                                </div>
-                                {(data.alerts || []).map((alert, idx) => (
-                                    <div key={idx} className="flex gap-2 items-center bg-gray-50 p-3 rounded-xl border border-gray-100">
-                                        <span className="text-sm text-gray-500 whitespace-nowrap">第</span>
-                                        <input type="number" value={alert.row} onChange={(e) => updateAlert(idx, 'row', parseInt(e.target.value))} className="w-12 border border-gray-200 rounded text-center py-1" />
-                                        <span className="text-sm text-gray-500 whitespace-nowrap">段：</span>
-                                        <input type="text" value={alert.message} onChange={(e) => updateAlert(idx, 'message', e.target.value)} className="flex-1 border border-gray-200 rounded px-2 py-1 text-sm" placeholder="提醒內容" />
-                                        <button onClick={() => removeAlert(idx)} className="text-red-300 p-2"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-                                    </div>
-                                ))}
-                            </div>
-                        ) : data.type === 'TEXT' ? (
-                            <div className="space-y-6">
-                                {/* Fixed Info Fields */}
-                                <div className="bg-wool-50 p-4 rounded-xl border border-wool-100">
-                                    <h3 className="text-xs font-bold text-wool-400 uppercase mb-3">基本資訊</h3>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="block text-xs text-gray-500 mb-1">起針數 (sts)</label>
-                                            <input type="text" value={data.meta?.castOn || ''} onChange={(e) => updateTextMeta('castOn', e.target.value)} className="w-full border border-gray-200 rounded p-2 text-sm" placeholder="ex: 60" />
-                                        </div>
-                                        <div>
-                                            <label className="block text-xs text-gray-500 mb-1">針號 (Needle)</label>
-                                            <input type="text" value={data.meta?.needle || ''} onChange={(e) => updateTextMeta('needle', e.target.value)} className="w-full border border-gray-200 rounded p-2 text-sm" placeholder="ex: 5.0mm" />
-                                        </div>
-                                        <div className="col-span-2">
-                                            <label className="block text-xs text-gray-500 mb-1">線材 (Yarn)</label>
-                                            <input type="text" value={data.meta?.yarn || ''} onChange={(e) => updateTextMeta('yarn', e.target.value)} className="w-full border border-gray-200 rounded p-2 text-sm" placeholder="ex: 美麗諾羊毛" />
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Text Sections */}
-                                <div className="space-y-4">
-                                    <div className="flex justify-between items-center">
-                                        <h3 className="text-xs font-bold text-wool-400 uppercase">織圖區段</h3>
-                                    </div>
-                                    {(data.textSections || []).map((section, idx) => (
-                                        <div key={section.id} className="border border-gray-200 rounded-xl overflow-hidden shadow-sm">
-                                            <div className="bg-gray-50 p-2 flex justify-between items-center border-b border-gray-100">
-                                                <input 
-                                                    type="text" 
-                                                    value={section.title} 
-                                                    onChange={(e) => updateTextSection(idx, 'title', e.target.value)} 
-                                                    className="bg-transparent font-bold text-gray-700 text-sm focus:outline-none w-full"
-                                                />
-                                                <button onClick={() => removeTextSection(idx)} className="text-gray-400 hover:text-red-400 px-2">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                                                </button>
-                                            </div>
-                                            <div className="p-2 bg-white">
-                                                {/* Quick Insert Tags */}
-                                                <div className="flex gap-2 overflow-x-auto pb-2 mb-1 no-scrollbar">
-                                                    <button onClick={() => insertText(idx, 'K2tog')} className="px-2 py-1 bg-gray-100 rounded text-xs text-gray-600 hover:bg-gray-200 whitespace-nowrap">+ K2tog</button>
-                                                    <button onClick={() => insertText(idx, 'SSK')} className="px-2 py-1 bg-gray-100 rounded text-xs text-gray-600 hover:bg-gray-200 whitespace-nowrap">+ SSK</button>
-                                                    <button onClick={() => insertText(idx, 'M1R')} className="px-2 py-1 bg-gray-100 rounded text-xs text-gray-600 hover:bg-gray-200 whitespace-nowrap">+ M1R</button>
-                                                    <button onClick={() => insertText(idx, 'YO')} className="px-2 py-1 bg-gray-100 rounded text-xs text-gray-600 hover:bg-gray-200 whitespace-nowrap">+ YO</button>
-                                                </div>
-                                                <textarea 
-                                                    value={section.content} 
-                                                    onChange={(e) => updateTextSection(idx, 'content', e.target.value)}
-                                                    className="w-full h-32 text-sm p-2 focus:ring-0 border-none resize-none font-mono text-gray-600"
-                                                    placeholder="輸入此區段的編織說明..."
-                                                ></textarea>
-                                            </div>
-                                        </div>
-                                    ))}
-                                    <button onClick={addTextSection} className="w-full py-3 border border-dashed border-gray-300 rounded-xl text-gray-500 text-sm hover:bg-gray-50">
-                                        + 新增區段
-                                    </button>
-                                </div>
-                            </div>
-                        ) : (
-                            <div className="space-y-6">
-                                {/* Tool Palette - Horizontal Scroll */}
-                                <div className="bg-white border-b border-gray-100 py-2 flex overflow-x-auto gap-2 items-center sticky top-0 z-10 -mx-4 px-4 shadow-sm">
-                                    {Object.values(SYMBOLS).map((tool) => (
-                                        <button key={tool.id} onClick={() => setSelectedTool(tool.id)} className={`flex-shrink-0 flex flex-col items-center justify-center w-10 h-10 rounded-lg border transition-all ${selectedTool === tool.id ? 'bg-wool-800 text-white shadow-md scale-105' : 'bg-white text-gray-400 border-gray-100'}`}>
-                                            <span className="text-sm font-mono">{tool.symbol}</span>
-                                        </button>
-                                    ))}
-                                </div>
-                                {data.sections.map(section => (
-                                    <div key={section.id} className="bg-gray-50 p-4 rounded-2xl border border-gray-100 overflow-hidden">
-                                        <h4 className="font-bold mb-2 text-wool-700">{section.name}</h4>
-                                        <div className="overflow-x-auto pb-2">
-                                            <div className="grid gap-[1px] bg-gray-300 border border-gray-300 inline-block rounded overflow-hidden" style={{ gridTemplateColumns: `repeat(${section.cols}, 26px)` }}>
-                                                {section.grid.map((row, r) => row.map((cell, c) => (
-                                                    <div key={`${r}-${c}`} onClick={() => handleCellClick(section.id, r, c)} className={`h-[26px] w-[26px] bg-white flex items-center justify-center text-xs cursor-pointer hover:bg-blue-50`}>{SYMBOLS[cell]?.symbol}</div>
-                                                )))}
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                </div>
-            );
-        };
-
-        // --- 5. 主程式 ---
-        const App = () => {
-
-            const [cloudOpen, setCloudOpen] = useState(false);
-            const [cloudStatus, setCloudStatus] = useState('');
-            const [cloudCfg, setCloudCfg] = useState(() => {
-                const c = readCloudCfg();
-                return {
-                    owner: c.owner || '',
-                    repo: c.repo || 'KnittingLog-Data',
-                    branch: c.branch || 'main',
-                    path: c.path || 'data/knitting.json',
-                    token: c.token || ''
-                };
-            });
-            const cloudShaRef = useRef(null);
-
-            const persistCloudCfg = (cfg) => {
-                writeCloudCfg(cfg);
-                setCloudCfg(cfg);
-            };
-
-            const loadFromCloud = async () => {
-                const cfg = { ...cloudCfg };
-                persistCloudCfg(cfg);
-
-                if (!cfg.owner || !cfg.repo || !cfg.branch || !cfg.path || !cfg.token) {
-                    setCloudStatus('請先填 Owner / Token（Token 需對私有資料 repo 有 Contents read/write）。');
-                    return;
-                }
-
-                setCloudStatus('載入中…');
-                try {
-                    const { data, sha } = await window.CozyKnitStorage.loadData(cfg);
-                    cloudShaRef.current = sha;
-                    setSavedPatterns(data.savedPatterns || []);
-                    setActiveProjects(data.activeProjects || []);
-                    localStorage.setItem(CLOUD_CACHE_KEY, JSON.stringify(data));
-                    setCloudStatus(`載入成功 ✅（sha: ${String(sha).slice(0,7)}…）`);
-                } catch (e) {
-                    console.error(e);
-                    setCloudStatus('載入失敗：' + (e?.message || String(e)));
-                }
-            };
-
-            const saveToCloud = async () => {
-                const cfg = { ...cloudCfg };
-                persistCloudCfg(cfg);
-
-                if (!cfg.owner || !cfg.repo || !cfg.branch || !cfg.path || !cfg.token) {
-                    setCloudStatus('請先填 Owner / Token（Token 需對私有資料 repo 有 Contents read/write）。');
-                    return;
-                }
-
-                if (!cloudShaRef.current) {
-                    setCloudStatus('還沒載入過雲端資料，先按「從 GitHub 載入」。');
-                    return;
-                }
-
-                setCloudStatus('存檔中…');
-                try {
-                    const payload = {
-                        version: 1,
-                        updatedAt: new Date().toISOString(),
-                        savedPatterns,
-                        activeProjects
-                    };
-                    await window.CozyKnitStorage.saveData(cfg, payload, cloudShaRef.current);
-                    // refresh sha after save
-                    await loadFromCloud();
-                    setCloudStatus('已存到 GitHub ✅');
-                } catch (e) {
-                    console.error(e);
-                    setCloudStatus('存檔失敗：' + (e?.message || String(e)) + '\n若你同時開了兩個分頁，請重新載入後再存。');
-                }
-            };
-            const [view, setView] = useState('PROJECTS');
-            const [savedPatterns, setSavedPatterns] = useState([]);
-            const [activeProjects, setActiveProjects] = useState([]);
-            const [currentPattern, setCurrentPattern] = useState(null);
-
-            useEffect(() => {
-                // 1) Local cache first (fast)
-                const cache = localStorage.getItem(CLOUD_CACHE_KEY);
-                if (cache) {
-                    try {
-                        const d = JSON.parse(cache);
-                        if (Array.isArray(d.savedPatterns)) setSavedPatterns(d.savedPatterns);
-                        if (Array.isArray(d.activeProjects)) setActiveProjects(d.activeProjects);
-                    } catch(e) {}
-                } else {
-                    const savedP = localStorage.getItem('cozy_knit_patterns_v6');
-                    const savedProj = localStorage.getItem('cozy_knit_projects_v6');
-                    if (savedP) try { setSavedPatterns(JSON.parse(savedP)); } catch(e) {}
-                    if (savedProj) try { setActiveProjects(JSON.parse(savedProj)); } catch(e) {}
-                }
-
-                // 2) Cloud auto-load if config exists
-                const c = readCloudCfg();
-                if (c?.owner && c?.repo && c?.token) {
-                    setCloudCfg({
-                        owner: c.owner,
-                        repo: c.repo || 'KnittingLog-Data',
-                        branch: c.branch || 'main',
-                        path: c.path || 'data/knitting.json',
-                        token: c.token
-                    });
-                    setTimeout(() => { loadFromCloud(); }, 50);
-                }
-            }, []);
-
-            useEffect(() => {
-                localStorage.setItem('cozy_knit_patterns_v6', JSON.stringify(savedPatterns));
-                try {
-                    const cur = JSON.parse(localStorage.getItem(CLOUD_CACHE_KEY) || '{}');
-                    localStorage.setItem(CLOUD_CACHE_KEY, JSON.stringify({ ...cur, version: 1, updatedAt: new Date().toISOString(), savedPatterns }));
-                } catch(e) {}
-            }, [savedPatterns]);
-            useEffect(() => {
-                localStorage.setItem('cozy_knit_projects_v6', JSON.stringify(activeProjects));
-                try {
-                    const cur = JSON.parse(localStorage.getItem(CLOUD_CACHE_KEY) || '{}');
-                    localStorage.setItem(CLOUD_CACHE_KEY, JSON.stringify({ ...cur, version: 1, updatedAt: new Date().toISOString(), activeProjects }));
-                } catch(e) {}
-            }, [activeProjects]);
-
-            const handleNewPattern = (type) => { setCurrentPattern(createNewPattern(type)); setView('EDITOR'); };
-            const handleSelectPattern = (p) => { setCurrentPattern({...p}); setView('EDITOR'); };
-            const handleDeletePattern = (id) => { if(confirm('刪除織圖？')) setSavedPatterns(p => p.filter(x => x.id !== id)); };
-            const handleSavePattern = (p) => {
-                setCurrentPattern(p);
-                setSavedPatterns(prev => {
-                    const idx = prev.findIndex(x => x.id === p.id);
-                    return idx >= 0 ? prev.map((item, i) => i === idx ? p : item) : [p, ...prev];
-                });
-            };
-            const handleImport = (json) => setSavedPatterns(p => [{...json, id: crypto.randomUUID(), name: json.name + '(匯入)'}, ...p]);
-            const handleCreateProject = (pattern) => {
-                const newProject = createProject(pattern.id, pattern.name);
-                setActiveProjects(prev => [newProject, ...prev]);
-                setView('PROJECTS');
-            };
-            const handleUpdateProject = (updatedProj) => { setActiveProjects(prev => prev.map(p => p.id === updatedProj.id ? updatedProj : p)); };
-            const handleDeleteProject = (id) => { if(confirm('結束專案？')) setActiveProjects(p => p.filter(x => x.id !== id)); };
-
-            // Navigation Components
-            const NavIcon = ({ icon, label, active, onClick }) => (
-                <button onClick={onClick} className={`flex flex-col items-center justify-center p-2 transition-all duration-300 ${active ? 'text-wool-800 scale-105' : 'text-gray-400 hover:text-gray-500'}`}>
-                    {icon}
-                    <span className={`text-[10px] mt-1 font-bold ${active ? 'opacity-100' : 'opacity-0 md:opacity-100'}`}>{label}</span>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDeleteProject(p.id);
+                  }}
+                  className="text-gray-200 hover:text-red-400 px-2 transition-colors"
+                >
+                  <Icons.Trash />
                 </button>
-            );
+              </div>
+            </div>
+          ))}
+          {activeProjects.length === 0 && (
+            <div className="text-center py-24 opacity-30 font-black tracking-widest uppercase">
+              No Active Projects
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
 
-            return (
-                <div className="flex h-screen overflow-hidden">
-                    {/* Desktop Sidebar */}
-                    <div className="hidden md:flex w-24 bg-white border-r border-wool-100 flex-col items-center py-8 space-y-8 z-30 shadow-sm relative">
-                        <div className="w-12 h-12 bg-wool-800 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-wool-200">
-                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.2 16.6l-5.6-3.2 5.6-3.2c.8-.5.8-1.9-.3-2.3L15.3 5.4c-.9-.4-2-.2-2.5.5L7.9 14.5c-.5.8-1.7.8-2.2-.1L3.3 12c-.5-.9.1-1.9 1.1-1.9H12"/><path d="M12 22V12"/></svg>
-                        </div>
-                        <nav className="flex flex-col space-y-6 w-full items-center">
-                            <NavIcon active={view === 'PROJECTS'} onClick={() => setView('PROJECTS')} icon={<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>} label="專案" />
-                            <NavIcon active={view === 'LIBRARY' || view === 'EDITOR'} onClick={() => setView('LIBRARY')} icon={<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>} label="圖庫" />
-                            <NavIcon active={view === 'TUTORIAL'} onClick={() => setView('TUTORIAL')} icon={<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>} label="教學" />
-                        </nav>
-                        <button onClick={() => setCloudOpen(true)} className="mt-auto mb-2 text-xs font-bold text-gray-400 hover:text-wool-700">⚙︎ 雲端同步</button>
-                    </div>
+  if (!currentProject || !currentPattern) return null;
 
-                    {/* Main Area */}
-                    <div className="flex-1 flex flex-col h-full overflow-hidden relative pb-safe">
-                         {/* Mobile Top Bar (Only visible on main views) */}
-                         <div className="md:hidden p-4 flex items-center justify-between bg-white/50 backdrop-blur sticky top-0 z-20">
-                             <div className="flex items-center gap-2">
-                                <div className="w-8 h-8 bg-wool-800 text-white rounded-lg flex items-center justify-center">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.2 16.6l-5.6-3.2 5.6-3.2c.8-.5.8-1.9-.3-2.3L15.3 5.4c-.9-.4-2-.2-2.5.5L7.9 14.5c-.5.8-1.7.8-2.2-.1L3.3 12c-.5-.9.1-1.9 1.1-1.9H12"/><path d="M12 22V12"/></svg>
-                                </div>
-                                <span className="font-bold text-wool-800 text-lg">Cozy Knit</span>
-                             </div>
-                             <button onClick={() => setCloudOpen(true)} className="px-3 py-2 bg-white border border-wool-100 rounded-xl text-xs font-bold text-wool-700 shadow-sm">同步</button>
-                         </div>
+  const update = (d) =>
+    onUpdateProject({
+      ...currentProject,
+      totalRow: Math.max(1, currentProject.totalRow + d),
+      sectionRow: Math.max(1, currentProject.sectionRow + d),
+    });
 
-                        <div className="flex-1 overflow-y-auto">
-                            {view === 'TUTORIAL' && <TutorialView />}
-                            {view === 'PROJECTS' && <ProjectView activeProjects={activeProjects} savedPatterns={savedPatterns} onDeleteProject={handleDeleteProject} onUpdateProject={handleUpdateProject} onNavigateToLibrary={() => setView('LIBRARY')} />}
-                            {view === 'LIBRARY' && <LibraryView savedPatterns={savedPatterns} onSelectPattern={handleSelectPattern} onDeletePattern={handleDeletePattern} onImport={handleImport} onNewPattern={handleNewPattern} onCreateProject={handleCreateProject} />}
-                            {view === 'EDITOR' && currentPattern && <EditorView pattern={currentPattern} onUpdate={handleSavePattern} onBack={() => setView('LIBRARY')} />}
-                        </div>
-                    </div>
+  const currentAlerts =
+    currentPattern.alerts?.filter((a) => {
+      if (
+        a.sectionId &&
+        a.sectionId !== 'ALL' &&
+        projectStats.activeSection?.id !== a.sectionId
+      ) {
+        return false;
+      }
+      const val =
+        a.type === 'SECTION' ? currentProject.sectionRow : currentProject.totalRow;
+      return a.mode === 'EVERY'
+        ? val > 0 && val % a.value === 0
+        : val === a.value;
+    }) || [];
 
-                    
-                    <SettingsModal
-                        open={cloudOpen}
-                        onClose={() => setCloudOpen(false)}
-                        cfg={cloudCfg}
-                        setCfg={setCloudCfg}
-                        status={cloudStatus}
-                        onLoad={loadFromCloud}
-                        onSave={saveToCloud}
-                    />
+  return (
+    <div className="flex flex-col h-full bg-theme-bg animate-fade-in pb-20 overflow-hidden">
+      <div className="bg-white/80 backdrop-blur p-4 border-b flex justify-between items-center sticky top-0 z-30 shadow-sm">
+        <button
+          onClick={() => setSelectedId(null)}
+          className="text-gray-400 font-bold px-2 uppercase text-[10px] tracking-widest"
+        >
+          ← Back
+        </button>
+        <h2 className="font-black text-theme-text truncate text-sm tracking-tight px-4">
+          {currentProject.patternName}
+        </h2>
+        <div className="w-10"></div>
+      </div>
 
-{/* Mobile Bottom Navigation (Hidden on Desktop) */}
-                    {view !== 'EDITOR' && (
-                        <div className="md:hidden fixed bottom-0 w-full bg-white border-t border-wool-100 flex justify-around py-3 pb-safe z-40 shadow-[0_-5px_15px_rgba(0,0,0,0.02)]">
-                            <NavIcon active={view === 'PROJECTS'} onClick={() => setView('PROJECTS')} icon={<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>} label="專案" />
-                            <NavIcon active={view === 'LIBRARY'} onClick={() => setView('LIBRARY')} icon={<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>} label="圖庫" />
-                            <NavIcon active={view === 'TUTORIAL'} onClick={() => setView('TUTORIAL')} icon={<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>} label="教學" />
-                        </div>
-                    )}
+      <div className="flex-1 overflow-y-auto p-4 md:p-12 space-y-10 no-scrollbar pb-40">
+        {currentPattern.type === 'TEXT' && projectStats.targetTotal > 0 && (
+          <div className="bg-white p-8 rounded-[2.5rem] shadow-cozy border border-white space-y-4">
+            <div className="flex justify-between items-end">
+              <div>
+                <span className="text-[10px] font-black uppercase opacity-40 tracking-widest block mb-1">
+                  Currently Knitting 目前階段
+                </span>
+                <span className="font-black text-theme-text text-xl tracking-tight">
+                  {projectStats.activeSection?.title || 'Unknown'}
+                </span>
+              </div>
+              <span className="font-black text-theme-primary tabular-nums text-2xl">
+                {currentProject.totalRow}{' '}
+                <span className="opacity-20 mx-1">/</span>{' '}
+                {projectStats.targetTotal}{' '}
+                <span className="text-[10px] opacity-40 uppercase">Rows</span>
+              </span>
+            </div>
+            <div className="w-full h-3 bg-theme-bg rounded-full overflow-hidden shadow-inner">
+              <div
+                className="h-full bg-theme-primary transition-all duration-700"
+                style={{
+                  width: `${Math.min(
+                    100,
+                    (currentProject.totalRow / projectStats.targetTotal) * 100
+                  )}%`,
+                }}
+              ></div>
+            </div>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+          <div className="lg:col-span-5 space-y-8">
+            <div className="bg-white rounded-[4rem] p-12 flex flex-col items-center shadow-cozy border-2 border-white">
+              <h3 className="text-theme-primary font-black uppercase tracking-widest text-[10px] mb-4 opacity-50">
+                Row Counter
+              </h3>
+              <div className="text-9xl md:text-[11rem] font-black text-theme-text tabular-nums leading-none mb-12 tracking-tighter drop-shadow-md">
+                {currentProject.totalRow}
+              </div>
+
+              <div className="w-full space-y-8">
+                <div className="grid grid-cols-2 gap-6 w-full">
+                  <button
+                    onClick={() => update(-1)}
+                    className="py-8 bg-theme-bg rounded-[2.5rem] text-theme-primary shadow-inner font-black text-4xl active:scale-95 transition"
+                  >
+                    −
+                  </button>
+                  <button
+                    onClick={() => update(1)}
+                    className="py-8 bg-theme-primary text-white rounded-[2.5rem] shadow-xl shadow-theme-primary/20 font-black text-5xl active:scale-95 transition"
+                  >
+                    +
+                  </button>
                 </div>
-            );
-        };
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
+                <div className="flex items-stretch gap-2 bg-theme-bg/50 p-2.5 rounded-[2rem] shadow-inner w-full">
+                  <input
+                    type="number"
+                    value={plusN}
+                    onChange={(e) => setPlusN(e.target.value)}
+                    placeholder="+n"
+                    className="flex-1 min-w-0 bg-transparent border-none text-center font-black text-2xl focus:ring-0 tabular-nums placeholder:opacity-20"
+                  />
+                  <button
+                    onClick={() => {
+                      const n = parseInt(plusN);
+                      if (!isNaN(n)) update(n);
+                      setPlusN('');
+                    }}
+                    className="bg-theme-text text-white px-10 py-5 rounded-[1.5rem] font-black text-xs tracking-widest transition-all active:scale-95 shadow-lg uppercase"
+                  >
+                    Go
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white p-8 rounded-[2rem] shadow-cozy border border-white flex justify-between items-center">
+              <div className="min-w-0 flex-1">
+                <h3 className="text-theme-primary font-black uppercase tracking-widest text-[10px] mb-1 opacity-40">
+                  Section Loop
+                </h3>
+                <div className="text-6xl font-black text-theme-text tabular-nums tracking-tighter">
+                  {currentProject.sectionRow}
+                </div>
+              </div>
+              <button
+                onClick={() =>
+                  onUpdateProject({ ...currentProject, sectionRow: 1 })
+                }
+                className="text-[10px] font-black text-theme-primary border-2 border-theme-primary/10 px-6 py-3 rounded-full hover:bg-theme-bg transition uppercase tracking-widest flex-shrink-0 ml-4"
+              >
+                Reset
+              </button>
+            </div>
+          </div>
+
+          <div className="lg:col-span-7 space-y-6">
+            {currentAlerts.map((a) => (
+              <div
+                key={a.id}
+                className="bg-theme-primary p-8 rounded-[3rem] text-whiteproduk shadow-xl animate-fade-in relative overflow-hidden group border border-white/20"
+              >
+                <div className="absolute -right-5 -bottom-5 w-32 h-32 bg-white/10 rounded-full"></div>
+                <div className="relative z-10 flex items-start gap-6">
+                  <div className="w-16 h-16 bg-white/20 rounded-3xl flex items-center justify-center text-4xl animate-bounce">
+                    🔔
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-[10px] font-black uppercase opacity-60 mb-1 tracking-widest">
+                      {a.mode === 'EVERY' ? 'Every' : 'At'} {a.value} Rows ·{' '}
+                      {a.type === 'SECTION' ? 'Section' : 'Global'}
+                    </div>
+                    <div className="text-2xl font-black leading-tight tracking-tight">
+                      {a.message}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+
+            <div className="bg-white p-10 rounded-[3.5rem] shadow-cozy border border-white min-h-[450px]">
+              <h4 className="font-black text-theme-text border-b border-theme-bg pb-6 mb-10 flex items-center gap-3 tracking-widest uppercase text-xs">
+                <Icons.Library /> Instruction Manual
+              </h4>
+              {currentPattern.type === 'TEXT' ? (
+                <div className="space-y-12">
+                  {currentPattern.textSections?.map((sec) => {
+                    const isActive =
+                      projectStats.activeSection?.id === sec.id;
+                    return (
+                      <div
+                        key={sec.id}
+                        className={`relative pl-8 border-l-4 transition-all group ${
+                          isActive
+                            ? 'border-theme-primary scale-[1.02]'
+                            : 'border-theme-bg opacity-40 grayscale'
+                        }`}
+                      >
+                        <div className="flex flex-wrap items-center gap-3 mb-4">
+                          <span
+                            className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full ${
+                              isActive
+                                ? 'bg-theme-primary text-white shadow-md'
+                                : 'bg-theme-bg'
+                            }`}
+                          >
+                            {sec.title}
+                          </span>
+                          <span className="text-[9px] font-bold opacity-30 uppercase tracking-tighter">
+                            {sec.rowsPerLoop} rows × {sec.repeats} times
+                          </span>
+                        </div>
+                        <div
+                          className={`font-mono text-lg leading-relaxed whitespace-pre-wrap ${
+                            isActive
+                              ? 'text-theme-text font-bold'
+                              : 'text-gray-400'
+                          }`}
+                        >
+                          {sec.content}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center">
+                  {currentPattern.sections?.[0] && (
+                    <div className="inline-block bg-white border-4 border-theme-bg rounded-2xl p-2 shadow-inner overflow-x-auto max-w-full">
+                      <div
+                        className="grid gap-[1px] bg-theme-accent/30"
+                        style={{
+                          gridTemplateColumns: `repeat(${currentPattern.sections[0].cols}, 24px)`,
+                        }}
+                      >
+                        {currentPattern.sections[0].grid.map((row, r) =>
+                          row.map((cell, c) => {
+                            const localIdx =
+                              (currentProject.sectionRow - 1) %
+                              currentPattern.sections[0].rows;
+                            const isHighlight =
+                              r ===
+                              currentPattern.sections[0].rows - 1 - localIdx;
+                            return (
+                              <div
+                                key={`${r}-${c}`}
+                                className={`w-6 h-6 flex items-center justify-center text-[10px] font-mono select-none ${
+                                  SYMBOLS[cell]?.color || 'bg-white'
+                                } ${
+                                  isHighlight
+                                    ? 'ring-2 ring-theme-primary z-10 scale-110 shadow-lg'
+                                    : 'opacity-40 grayscale'
+                                }`}
+                              >
+                                {SYMBOLS[cell]?.symbol}
+                              </div>
+                            );
+                          })
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// --- 子組件: 織圖編輯器 ---
+function EditorView({ pattern, onUpdate, onBack }) {
+  const [data, setData] = useState({ ...pattern });
+  const [activeTab, setActiveTab] = useState('CONTENT');
+  const [selectedTool, setSelectedTool] = useState('KNIT');
+
+  useEffect(() => {
+    onUpdate(data);
+  }, [data]);
+
+  const totalRows = useMemo(() => {
+    if (data.type !== 'TEXT') return 0;
+    return data.textSections.reduce(
+      (sum, s) => sum + (s.rowsPerLoop || 1) * (s.repeats || 1),
+      0
+    );
+  }, [data.textSections]);
+
+  const resizeGrid = (sid, field, value) => {
+    const n = Math.max(1, Math.min(60, parseInt(value) || 1));
+    setData((prev) => ({
+      ...prev,
+      sections: prev.sections.map((s) => {
+        if (s.id !== sid) return s;
+        const rs = field === 'rows' ? n : s.rows;
+        const cs = field === 'cols' ? n : s.cols;
+        const grid = Array(rs)
+          .fill()
+          .map((_, r) =>
+            Array(cs)
+              .fill()
+              .map((_, c) => (s.grid[r] && s.grid[r][c]) || 'KNIT')
+          );
+        return { ...s, rows: rs, cols: cs, grid };
+      }),
+    }));
+  };
+
+  const toggleCell = (sid, r, c) => {
+    setData((prev) => ({
+      ...prev,
+      sections: prev.sections.map((s) =>
+        s.id === sid
+          ? {
+              ...s,
+              grid: s.grid.map((row, ri) =>
+                ri === r
+                  ? row.map((cell, ci) => (ci === c ? selectedTool : cell))
+                  : row
+              ),
+            }
+          : s
+      ),
+    }));
+  };
+
+  return (
+    <div className="flex flex-col h-full bg-white animate-fade-in pb-safe overflow-hidden">
+      <div className="p-4 border-b bg-white flex justify-between items-center sticky top-0 z-20 shadow-sm">
+        <button
+          onClick={onBack}
+          className="text-gray-400 font-bold px-2 text-xs uppercase tracking-widest"
+        >
+          Cancel
+        </button>
+        <div className="flex bg-theme-bg p-1 rounded-2xl shadow-inner">
+          <button
+            onClick={() => setActiveTab('CONTENT')}
+            className={`px-6 py-2 text-[10px] font-black rounded-xl transition ${
+              activeTab === 'CONTENT'
+                ? 'bg-white shadow text-theme-text'
+                : 'opacity-30'
+            }`}
+          >
+            編輯內容
+          </button>
+          <button
+            onClick={() => setActiveTab('ALERTS')}
+            className={`px-6 py-2 text-[10px] font-black rounded-xl transition ${
+              activeTab === 'ALERTS'
+                ? 'bg-white shadow text-theme-text'
+                : 'opacity-30'
+            }`}
+          >
+            提醒規則
+          </button>
+        </div>
+        <button
+          onClick={onBack}
+          className="text-theme-primary font-black px-2 text-xs uppercase tracking-widest"
+        >
+          Save
+        </button>
+      </div>
+
+      <div className="flex-1 overflow-y-auto no-scrollbar pb-32">
+        <div className="p-10 bg-theme-bg/30 flex justify-between items-end">
+          <div className="flex-1 mr-6">
+            <label className="text-[10px] font-black opacity-30 uppercase tracking-widest block mb-2 pl-1 tracking-[0.2em]">
+              Pattern Design
+            </label>
+            <input
+              type="text"
+              value={data.name}
+              onChange={(e) => setData({ ...data, name: e.target.value })}
+              className="w-full text-4xl font-black bg-transparent border-none p-0 focus:ring-0 tracking-tighter"
+              placeholder="設計標題..."
+            />
+          </div>
+          {data.type === 'TEXT' && (
+            <div className="text-right pb-1">
+              <div className="text-[10px] font-black opacity-30 uppercase">
+                總排數計算
+              </div>
+              <div className="text-2xl font-black text-theme-primary tabular-nums tracking-tighter">
+                {totalRows} 排
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="p-6 md:p-10 space-y-12">
+          {activeTab === 'CONTENT' ? (
+            data.type === 'CHART' ? (
+              <div className="space-y-12">
+                <div className="flex gap-2 overflow-x-auto pb-4 sticky top-0 bg-white/90 backdrop-blur z-10 no-scrollbar py-4">
+                  {Object.values(SYMBOLS).map((t) => (
+                    <button
+                      key={t.id}
+                      onClick={() => setSelectedTool(t.id)}
+                      className={`flex-shrink-0 w-12 h-12 rounded-2xl border-2 flex flex-col items-center justify-center transition-all ${
+                        selectedTool === t.id
+                          ? 'border-theme-primary bg-theme-primary text-white scale-110 shadow-lg shadow-theme-primary/20'
+                          : 'border-theme-bg opacity-40'
+                      }`}
+                    >
+                      <span className="font-mono font-black text-lg">
+                        {t.symbol}
+                      </span>
+                      <span className="text-[7px] font-black uppercase mt-0.5">
+                        {t.label}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+                {data.sections.map((s) => (
+                  <div
+                    key={s.id}
+                    className="bg-theme-bg/20 p-10 rounded-[3rem] border-2 border-white shadow-soft"
+                  >
+                    <div className="flex justify-between items-center mb-8">
+                      <input
+                        value={s.name}
+                        onChange={(e) =>
+                          setData({
+                            ...data,
+                            sections: data.sections.map((sec) =>
+                              sec.id === s.id
+                                ? { ...sec, name: e.target.value }
+                                : sec
+                            ),
+                          })
+                        }
+                        className="bg-transparent font-black text-xl focus:ring-0 border-none p-0 w-1/2 tracking-tighter"
+                        placeholder="區段名稱"
+                      />
+                      <div className="flex gap-2 bg-white/50 p-2.5 rounded-xl border border-white">
+                        <input
+                          type="number"
+                          value={s.cols}
+                          onChange={(e) =>
+                            resizeGrid(s.id, 'cols', e.target.value)
+                          }
+                          className="w-12 text-center font-black text-xs bg-transparent"
+                        />
+                        <span className="opacity-20 font-black">×</span>
+                        <input
+                          type="number"
+                          value={s.rows}
+                          onChange={(e) =>
+                            resizeGrid(s.id, 'rows', e.target.value)
+                          }
+                          className="w-12 text-center font-black text-xs bg-transparent"
+                        />
+                      </div>
+                    </div>
+                    <div className="overflow-x-auto pb-4 scrollbar-hide">
+                      <div
+                        className="grid gap-[1px] bg-theme-accent border-4 border-theme-accent inline-block rounded-xl overflow-hidden shadow-2xl"
+                        style={{ gridTemplateColumns: `repeat(${s.cols}, 32px)` }}
+                      >
+                        {s.grid.map((row, r) =>
+                          row.map((cell, c) => (
+                            <div
+                              key={`${r}-${c}`}
+                              onClick={() => toggleCell(s.id, r, c)}
+                              className={`w-8 h-8 flex items-center justify-center text-xs font-mono font-black cursor-pointer hover:opacity-50 transition-all ${
+                                SYMBOLS[cell].color
+                              }`}
+                            >
+                              {SYMBOLS[cell].symbol}
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-8">
+                <div className="flex justify-between items-center px-4">
+                  <h3 className="font-black text-theme-text uppercase text-xs tracking-widest opacity-50">
+                    文字段落管理 Sections
+                  </h3>
+                  <button
+                    onClick={() =>
+                      setData({
+                        ...data,
+                        textSections: [
+                          ...data.textSections,
+                          {
+                            id: crypto.randomUUID(),
+                            title: '新段落',
+                            content: '',
+                            repeats: 1,
+                            rowsPerLoop: 1,
+                          },
+                        ],
+                      })
+                    }
+                    className="bg-theme-primary text-white p-2.5 rounded-full shadow-lg transition-transform hover:scale-110 shadow-theme-primary/20"
+                  >
+                    <Icons.Plus />
+                  </button>
+                </div>
+                {data.textSections.map((sec) => (
+                  <div
+                    key={sec.id}
+                    className="bg-white rounded-[3rem] border-2 border-theme-bg shadow-soft overflow-hidden group animate-fade-in"
+                  >
+                    <div className="bg-theme-bg/40 p-8 space-y-6 border-b border-theme-bg">
+                      <div className="flex justify-between items-center">
+                        <input
+                          value={sec.title}
+                          onChange={(e) => {
+                            const ns = data.textSections.map((s) =>
+                              s.id === sec.id
+                                ? { ...s, title: e.target.value }
+                                : s
+                            );
+                            setData({ ...data, textSections: ns });
+                          }}
+                          className="bg-transparent font-black text-base uppercase focus:ring-0 border-none w-1/2 p-0 tracking-widest"
+                          placeholder="段落標題"
+                        />
+                        <button
+                          onClick={() => {
+                            setData({
+                              ...data,
+                              textSections: data.textSections.filter(
+                                (s) => s.id !== sec.id
+                              ),
+                            });
+                          }}
+                          className="text-red-400 opacity-20 group-hover:opacity-100 transition-opacity p-2"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                      <div className="grid grid-cols-2 gap-6">
+                        <div className="bg-white rounded-[1.25rem] p-5 shadow-sm space-y-1">
+                          <label className="text-[9px] font-black opacity-30 uppercase block mb-1">
+                            循環排數 / Rows per Loop
+                          </label>
+                          <input
+                            type="number"
+                            value={sec.rowsPerLoop}
+                            onChange={(e) => {
+                              const ns = data.textSections.map((s) =>
+                                s.id === sec.id
+                                  ? {
+                                      ...s,
+                                      rowsPerLoop: parseInt(e.target.value) || 1,
+                                    }
+                                  : s
+                              );
+                              setData({ ...data, textSections: ns });
+                            }}
+                            className="w-full text-2xl font-black border-none p-0 focus:ring-0 tabular-nums"
+                          />
+                        </div>
+                        <div className="bg-white rounded-[1.25rem] p-5 shadow-sm space-y-1">
+                          <label className="text-[9px] font-black opacity-30 uppercase block mb-1">
+                            重複次數 / Repeats
+                          </label>
+                          <input
+                            type="number"
+                            value={sec.repeats}
+                            onChange={(e) => {
+                              const ns = data.textSections.map((s) =>
+                                s.id === sec.id
+                                  ? {
+                                      ...s,
+                                      repeats: parseInt(e.target.value) || 1,
+                                    }
+                                  : s
+                              );
+                              setData({ ...data, textSections: ns });
+                            }}
+                            className="w-full text-2xl font-black border-none p-0 focus:ring-0 tabular-nums"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <textarea
+                      value={sec.content}
+                      onChange={(e) => {
+                        const ns = data.textSections.map((s) =>
+                          s.id === sec.id
+                            ? { ...s, content: e.target.value }
+                            : s
+                        );
+                        setData({ ...data, textSections: ns });
+                      }}
+                      className="w-full h-48 p-10 text-lg font-mono focus:ring-0 border-none resize-none leading-relaxed text-theme-text bg-white"
+                      placeholder="輸入此階段編織說明..."
+                    />
+                  </div>
+                ))}
+              </div>
+            )
+          ) : (
+            <div className="space-y-8">
+              <div className="flex justify-between items-center px-4">
+                <h3 className="font-black text-theme-text text-xl tracking-tighter uppercase tracking-widest opacity-60">
+                  Smart Notifications
+                </h3>
+                <button
+                  onClick={() =>
+                    setData({
+                      ...data,
+                      alerts: [
+                        ...(data.alerts || []),
+                        {
+                          id: crypto.randomUUID(),
+                          value: 1,
+                          mode: 'SPECIFIC',
+                          type: 'TOTAL',
+                          sectionId: 'ALL',
+                          message: '',
+                        },
+                      ],
+                    })
+                  }
+                  className="bg-theme-primary text-white px-8 py-3 rounded-2xl font-black text-[10px] uppercase shadow-lg shadow-theme-primary/20 tracking-[0.1em] transition-all hover:scale-105"
+                >
+                  + Add New Rule
+                </button>
+              </div>
+              <div className="grid gap-6">
+                {(data.alerts || []).map((a) => (
+                  <div
+                    key={a.id}
+                    className="bg-white p-10 rounded-[3rem] shadow-cozy border-2 border-theme-bg flex flex-col gap-6 animate-fade-in group hover:border-theme-primary/20 transition-all"
+                  >
+                    <div className="flex flex-wrap gap-6 items-center">
+                      <select
+                        value={a.mode}
+                        onChange={(e) => {
+                          const na = data.alerts.map((rule) =>
+                            rule.id === a.id
+                              ? { ...rule, mode: e.target.value }
+                              : rule
+                          );
+                          setData({ ...data, alerts: na });
+                        }}
+                        className="text-[10px] font-black bg-theme-bg p-3.5 rounded-xl border-none uppercase tracking-widest"
+                      >
+                        <option value="SPECIFIC">第幾排提醒 (Once)</option>
+                        <option value="EVERY">每幾排提醒 (Interval)</option>
+                      </select>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          value={a.value}
+                          onChange={(e) => {
+                            const na = data.alerts.map((rule) =>
+                              rule.id === a.id
+                                ? {
+                                    ...rule,
+                                    value: parseInt(e.target.value) || 1,
+                                  }
+                                : rule
+                            );
+                            setData({ ...data, alerts: na });
+                          }}
+                          className="w-24 text-center font-black text-lg p-3.5 rounded-xl bg-theme-bg border-none tabular-nums focus:ring-2 ring-theme-primary/20"
+                        />
+                        <span className="text-[10px] font-black opacity-30 uppercase tracking-widest tracking-[0.1em]">
+                          排
+                        </span>
+                      </div>
+
+                      {data.type === 'TEXT' && (
+                        <select
+                          value={a.sectionId || 'ALL'}
+                          onChange={(e) => {
+                            const na = data.alerts.map((rule) =>
+                              rule.id === a.id
+                                ? { ...rule, sectionId: e.target.value }
+                                : rule
+                            );
+                            setData({ ...data, alerts: na });
+                          }}
+                          className="text-[10px] font-black bg-theme-primary/10 text-theme-primary p-3.5 rounded-xl border-none uppercase tracking-widest ml-auto min-w-[140px]"
+                        >
+                          <option value="ALL">適用所有區段</option>
+                          {data.textSections.map((sec) => (
+                            <option key={sec.id} value={sec.id}>
+                              限：{sec.title}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+
+                      <select
+                        value={a.type}
+                        onChange={(e) => {
+                          const na = data.alerts.map((rule) =>
+                            rule.id === a.id
+                              ? { ...rule, type: e.target.value }
+                              : rule
+                          );
+                          setData({ ...data, alerts: na });
+                        }}
+                        className={`text-[10px] font-black bg-theme-bg p-3.5 rounded-xl border-none uppercase tracking-widest ${
+                          data.type !== 'TEXT' ? 'ml-auto' : ''
+                        }`}
+                      >
+                        <option value="TOTAL">累計總排數</option>
+                        <option value="SECTION">區段/花樣段</option>
+                      </select>
+                      <button
+                        onClick={() => {
+                          setData({
+                            ...data,
+                            alerts: data.alerts.filter(
+                              (rule) => rule.id !== a.id
+                            ),
+                          });
+                        }}
+                        className="text-red-400 p-2 opacity-20 group-hover:opacity-100 transition-opacity"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                    <input
+                      value={a.message}
+                      onChange={(e) => {
+                        const na = data.alerts.map((rule) =>
+                          rule.id === a.id
+                            ? { ...rule, message: e.target.value }
+                            : rule
+                        );
+                        setData({ ...data, alerts: na });
+                      }}
+                      className="w-full text-lg font-bold bg-theme-bg/30 p-6 rounded-[2rem] border-none focus:ring-2 ring-theme-primary/20 text-theme-text"
+                      placeholder="提醒內容 (例如: 該扭麻花了!、該加一針了...)"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// --- 子組件: 織圖圖庫 ---
+function LibraryView({
+  savedPatterns,
+  onDeletePattern,
+  onNewPattern,
+  onCreateProject,
+  onEditPattern,
+}) {
+  return (
+    <div className="max-w-6xl mx-auto p-6 md:p-12 animate-fade-in pb-24">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-8 px-2">
+        <div>
+          <h2 className="text-4xl font-black text-theme-text tracking-tighter leading-none mb-3">
+            Pattern Library
+          </h2>
+          <p className="text-sm font-black opacity-30 uppercase tracking-[0.2em]">
+            您的私人編織筆記本
+          </p>
+        </div>
+        <div className="flex gap-4">
+          <button
+            onClick={() => {
+              onNewPattern('CHART');
+            }}
+            className="bg-theme-primary/10 text-theme-primary px-10 py-4 rounded-[1.5rem] font-black text-[10px] uppercase tracking-widest border-2 border-theme-primary/10 transition-all hover:bg-theme-primary hover:text-white shadow-sm"
+          >
+            + CHART
+          </button>
+          <button
+            onClick={() => {
+              onNewPattern('TEXT');
+            }}
+            className="bg-theme-primary text-white px-10 py-4 rounded-[1.5rem] font-black text-[10px] uppercase tracking-widest shadow-xl shadow-theme-primary/20 transition-all hover:opacity-80"
+          >
+            + TEXT
+          </button>
+        </div>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+        {savedPatterns.map((ptn) => (
+          <div
+            key={ptn.id}
+            className="bg-white p-10 rounded-[3rem] shadow-cozy border border-white flex flex-col active:scale-[0.98] transition relative overflow-hidden group"
+          >
+            <div className="absolute top-0 right-0 w-32 h-32 bg-theme-bg rounded-bl-full -mr-12 -mt-12 opacity-60 transition-transform group-hover:scale-110"></div>
+            <div className="flex justify-between items-start mb-8 relative z-10">
+              <div
+                className={`w-16 h-16 rounded-[1.5rem] flex items-center justify-center text-3xl shadow-inner ${
+                  ptn.type === 'CHART'
+                    ? 'bg-indigo-50 text-indigo-400'
+                    : 'bg-amber-50 text-amber-500'
+                }`}
+              >
+                {ptn.type === 'CHART' ? '▦' : '≡'}
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEditPattern(ptn);
+                  }}
+                  className="text-theme-primary p-3 hover:bg-theme-bg rounded-2xl transition-all shadow-sm"
+                >
+                  <Icons.Library />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDeletePattern(ptn.id);
+                  }}
+                  className="text-gray-200 hover:text-red-400 p-3 transition-colors"
+                >
+                  <Icons.Trash />
+                </button>
+              </div>
+            </div>
+            <h3 className="font-black text-theme-text text-2xl mb-2 relative z-10 tracking-tighter leading-tight">
+              {ptn.name}
+            </h3>
+            <div className="text-[10px] font-black text-theme-primary opacity-50 uppercase tracking-widest mb-10 relative z-10">
+              {ptn.category} · {new Date(ptn.updatedAt).toLocaleDateString()}
+            </div>
+            <button
+              onClick={() =>
+                onCreateProject(ptn)
+              }
+              className="w-full py-6 bg-theme-primary text-white rounded-[2rem] font-black text-[11px] uppercase tracking-[0.3em] shadow-xl hover:shadow-2xl hover:shadow-theme-primary/30 transition-all mt-auto"
+            >
+              Start Knitting
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// --- 根組件: App ---
+function App() {
+  const [view, setView] = useState('PROJECTS');
+  const [savedPatterns, setSavedPatterns] = useState([]);
+  const [activeProjects, setActiveProjects] = useState([]);
+  const [yarns, setYarns] = useState([]);
+  const [currentPattern, setCurrentPattern] = useState(null);
+  const [themeKey, setThemeKey] = useState('PURPLE');
+  const [syncOpen, setSyncOpen] = useState(false);
+
+  // 載入 localStorage
+  useEffect(() => {
+    const state = loadAppState();
+    setSavedPatterns(state.savedPatterns);
+    setActiveProjects(state.activeProjects);
+    setYarns(state.yarns);
+    setThemeKey(state.themeKey);
+  }, []);
+
+  // 儲存到 localStorage & 套用主題
+  useEffect(() => {
+    saveAppState({ savedPatterns, activeProjects, yarns, themeKey });
+    const t = THEMES[themeKey] || THEMES.PURPLE;
+    const r = document.documentElement;
+    r.style.setProperty('--primary-color', t.primary);
+    r.style.setProperty('--bg-color', t.bg);
+    r.style.setProperty('--text-color', t.text);
+    r.style.setProperty('--accent-color', t.accent);
+    r.style.setProperty('--secondary-color', t.bg);
+  }, [savedPatterns, activeProjects, yarns, themeKey]);
+
+  const appStateForSync = {
+    savedPatterns,
+    activeProjects,
+    yarns,
+    themeKey,
+  };
+
+  const applyRemoteData = (remote) => {
+    if (remote.savedPatterns) setSavedPatterns(remote.savedPatterns);
+    if (remote.activeProjects) setActiveProjects(remote.activeProjects);
+    if (remote.yarns) setYarns(remote.yarns);
+    if (remote.themeKey) setThemeKey(remote.themeKey);
+  };
+
+  return (
+    <div className="flex h-screen overflow-hidden">
+      {/* Sidebar Desktop */}
+      <div className="hidden md:flex w-24 bg-white border-r border-theme-accent/20 flex-col items-center py-12 space-y-12 z-30 shadow-sm relative">
+        <div className="w-14 h-14 bg-theme-primary text-white rounded-[1.25rem] flex items-center justify-center shadow-xl shadow-theme-primary/20 font-black text-2xl transition-all cursor-pointer hover:rotate-12">
+          C
+        </div>
+        <nav className="flex flex-col space-y-10 w-full items-center">
+          <button
+            onClick={() => setView('PROJECTS')}
+            className={`p-4 rounded-[1.25rem] transition-all ${
+              view === 'PROJECTS'
+                ? 'bg-theme-bg text-theme-primary shadow-inner'
+                : 'text-gray-200 hover:text-theme-primary'
+            }`}
+          >
+            <Icons.Play />
+          </button>
+          <button
+            onClick={() => setView('LIBRARY')}
+            className={`p-4 rounded-[1.25rem] transition-all ${
+              view === 'LIBRARY' || view === 'EDITOR'
+                ? 'bg-theme-bg text-theme-primary shadow-inner'
+                : 'text-gray-200 hover:text-theme-primary'
+            }`}
+          >
+            <Icons.Library />
+          </button>
+          <button
+            onClick={() => setView('YARNS')}
+            className={`p-4 rounded-[1.25rem] transition-all ${
+              view === 'YARNS'
+                ? 'bg-theme-bg text-theme-primary shadow-inner'
+                : 'text-gray-200 hover:text-theme-primary'
+            }`}
+          >
+            <Icons.Yarn />
+          </button>
+          <button
+            onClick={() => setView('TUTORIAL')}
+            className={`p-4 rounded-[1.25rem] transition-all ${
+              view === 'TUTORIAL'
+                ? 'bg-theme-bg text-theme-primary shadow-inner'
+                : 'text-gray-200 hover:text-theme-primary'
+            }`}
+          >
+            <Icons.Info />
+          </button>
+        </nav>
+
+        <button
+          onClick={() => setSyncOpen(true)}
+          className="mt-auto mb-4 bg-theme-bg text-theme-text rounded-2xl px-4 py-3 text-[10px] font-black uppercase tracking-[0.15em] flex items-center gap-2 shadow-inner"
+        >
+          <Icons.Cloud />
+        </button>
+
+        <div className="flex flex-col gap-5 pb-2">
+          {Object.values(THEMES).map((t) => (
+            <div
+              key={t.id}
+              onClick={() => setThemeKey(t.id)}
+              className="theme-dot transition-all"
+              style={{
+                backgroundColor: t.primary,
+                opacity: themeKey === t.id ? 1 : 0.3,
+                transform: themeKey === t.id ? 'scale(1.2)' : 'scale(1)',
+              }}
+            />
+          ))}
+        </div>
+      </div>
+
+      <div className="flex-1 flex flex-col h-full overflow-hidden relative">
+        {/* Mobile Header */}
+        <div className="md:hidden p-5 bg-white/60 backdrop-blur sticky top-0 z-20 border-b border-theme-accent/20 flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <div className="w-10 h-10 bg-theme-primary rounded-xl flex items-center justify-center text-white font-black text-[10px]">
+              C
+            </div>
+            <span className="font-black text-theme-text tracking-tighter text-xl uppercase">
+              Cozy Knit
+            </span>
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setSyncOpen(true)}
+              className="w-8 h-8 rounded-full bg-theme-bg flex items-center justify-center text-theme-text text-xs"
+            >
+              <Icons.Cloud />
+            </button>
+            <div className="flex gap-1.5">
+              {Object.values(THEMES).map((t) => (
+                <div
+                  key={t.id}
+                  onClick={() => setThemeKey(t.id)}
+                  className="w-6 h-6 rounded-full border-2 border-white shadow-sm"
+                  style={{
+                    backgroundColor: t.primary,
+                    opacity: themeKey === t.id ? 1 : 0.4,
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <main className="flex-1 overflow-y-auto no-scrollbar pb-safe">
+          {view === 'PROJECTS' && (
+            <ProjectView
+              yarns={yarns}
+              savedPatterns={savedPatterns}
+              activeProjects={activeProjects}
+              onUpdateProject={(p) =>
+                setActiveProjects((prev) =>
+                  prev.map((x) => (x.id === p.id ? p : x))
+                )
+              }
+              onDeleteProject={(id) =>
+                setActiveProjects((prev) => prev.filter((x) => x.id !== id))
+              }
+            />
+          )}
+          {view === 'YARNS' && (
+            <YarnView
+              yarns={yarns}
+              onSaveYarn={(y) =>
+                setYarns((prev) =>
+                  prev.find((x) => x.id === y.id)
+                    ? prev.map((x) => (x.id === y.id ? y : x))
+                    : [y, ...prev]
+                )
+              }
+              onDeleteYarn={(id) =>
+                setYarns((prev) => prev.filter((x) => x.id !== id))
+              }
+            />
+          )}
+          {view === 'LIBRARY' && (
+            <LibraryView
+              savedPatterns={savedPatterns}
+              onDeletePattern={(id) =>
+                setSavedPatterns((prev) => prev.filter((x) => x.id !== id))
+              }
+              onNewPattern={(t) => {
+                const p = createNewPattern(t);
+                setCurrentPattern(p);
+                setView('EDITOR');
+              }}
+              onCreateProject={(ptn) => {
+                setActiveProjects((prev) => [
+                  {
+                    id: crypto.randomUUID(),
+                    patternId: ptn.id,
+                    patternName: ptn.name,
+                    yarnId: null,
+                    totalRow: 1,
+                    sectionRow: 1,
+                    lastActive: new Date().toISOString(),
+                  },
+                  ...prev,
+                ]);
+                setView('PROJECTS');
+              }}
+              onEditPattern={(p) => {
+                setCurrentPattern(p);
+                setView('EDITOR');
+              }}
+            />
+          )}
+          {view === 'EDITOR' && currentPattern && (
+            <EditorView
+              pattern={currentPattern}
+              onUpdate={(p) =>
+                setSavedPatterns((prev) =>
+                  prev.find((x) => x.id === p.id)
+                    ? prev.map((x) =>
+                        x.id === p.id
+                          ? { ...p, updatedAt: new Date().toISOString() }
+                          : x
+                      )
+                    : [{ ...p, updatedAt: new Date().toISOString() }, ...prev]
+                )
+              }
+              onBack={() => setView('LIBRARY')}
+            />
+          )}
+          {view === 'TUTORIAL' && <TutorialView />}
+        </main>
+
+        {/* Mobile Nav bar */}
+        {view !== 'EDITOR' && (
+          <div className="md:hidden fixed bottom-0 w-full bg-white/90 backdrop-blur-xl border-t border-theme-accent/30 flex justify-around py-6 pb-safe z-40 shadow-[0_-10px_40px_rgba(0,0,0,0.08)]">
+            <button
+              onClick={() => setView('PROJECTS')}
+              className={`transition ${
+                view === 'PROJECTS'
+                  ? 'text-theme-primary scale-125'
+                  : 'text-gray-300'
+              }`}
+            >
+              <Icons.Play />
+            </button>
+            <button
+              onClick={() => setView('LIBRARY')}
+              className={`transition ${
+                view === 'LIBRARY' || view === 'EDITOR'
+                  ? 'text-theme-primary scale-125'
+                  : 'text-gray-300'
+              }`}
+            >
+              <Icons.Library />
+            </button>
+            <button
+              onClick={() => setView('YARNS')}
+              className={`transition ${
+                view === 'YARNS'
+                  ? 'text-theme-primary scale-125'
+                  : 'text-gray-300'
+              }`}
+            >
+              <Icons.Yarn />
+            </button>
+            <button
+              onClick={() => setView('TUTORIAL')}
+              className={`transition ${
+                view === 'TUTORIAL'
+                  ? 'text-theme-primary scale-125'
+                  : 'text-gray-300'
+              }`}
+            >
+              <Icons.Info />
+            </button>
+          </div>
+        )}
+      </div>
+
+      <GitHubSyncDialog
+        open={syncOpen}
+        onClose={() => setSyncOpen(false)}
+        onApplyRemote={applyRemoteData}
+        currentState={appStateForSync}
+      />
+    </div>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);
