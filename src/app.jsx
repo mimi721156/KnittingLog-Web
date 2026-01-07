@@ -9,9 +9,9 @@ import {
 } from './src/storage.js';
 import { loadFromGitHub, saveToGitHub } from './src/githubContentsApi.js';
 
-const { useState, useEffect, useMemo, useRef } = React;
+const { useState, useEffect, useMemo } = React;
 
-// --- 1. 定義輔助組件與邏輯 ---
+// --- 基礎常數 / 類別定義 ---
 
 const SYMBOLS = {
   KNIT: { id: 'KNIT', label: '下針', symbol: '│', color: 'bg-white' },
@@ -169,6 +169,7 @@ const Icons = {
   ),
 };
 
+// 建立新織圖：這裡加上 category + notes
 const createNewPattern = (type = 'CHART') => ({
   id: crypto.randomUUID(),
   name: '未命名織圖',
@@ -176,6 +177,7 @@ const createNewPattern = (type = 'CHART') => ({
   category: '未分類',
   updatedAt: new Date().toISOString(),
   meta: { castOn: '', needle: '' },
+  notes: '', // ★ 織圖備註
   alerts: [],
   sections: [
     {
@@ -197,6 +199,19 @@ const createNewPattern = (type = 'CHART') => ({
       rowsPerLoop: 1,
     },
   ],
+});
+
+// 建立新專案：這裡帶入 pattern 的 category，並加 notes
+const createProjectFromPattern = (ptn) => ({
+  id: crypto.randomUUID(),
+  patternId: ptn.id,
+  patternName: ptn.name,
+  category: ptn.category || '未分類',
+  yarnId: null,
+  totalRow: 1,
+  sectionRow: 1,
+  notes: '', // ★ 專案備註
+  lastActive: new Date().toISOString(),
 });
 
 // --- GitHub Sync 對話框 ---
@@ -400,7 +415,9 @@ function GitHubSyncDialog({
   );
 }
 
-// --- 子元件: 教學 ---
+
+// --- 教學頁 ---
+
 function TutorialView() {
   return (
     <div className="max-w-4xl mx-auto p-8 md:p-12 animate-fade-in pb-32">
@@ -430,122 +447,8 @@ function TutorialView() {
   );
 }
 
-// --- 子元件: 線材庫 ---
-// function YarnView({ yarns, onSaveYarn, onDeleteYarn }) {
-//   const [editing, setEditing] = useState(null);
+// --- 線材庫（含材質 / 粗細） ---
 
-//   const handleSave = () => {
-//     if (!editing.brand && !editing.name) return;
-//     onSaveYarn(editing);
-//     setEditing(null);
-//   };
-
-//   if (editing) {
-//     return (
-//       <div className="flex flex-col h-full bg-theme-bg animate-fade-in pb-safe">
-//         <div className="p-4 border-b bg-white flex justify-between items-center sticky top-0 z-10 shadow-sm">
-//           <button
-//             onClick={() => setEditing(null)}
-//             className="text-gray-400 font-bold px-2 uppercase text-xs"
-//           >
-//             Cancel
-//           </button>
-//           <span className="font-black text-theme-text text-sm">
-//             編輯線材資料
-//           </span>
-//           <button
-//             onClick={handleSave}
-//             className="text-theme-primary font-black px-2 uppercase text-xs"
-//           >
-//             Save
-//           </button>
-//         </div>
-//         <div className="p-8 space-y-6 overflow-y-auto">
-//           <div className="bg-white p-8 rounded-[2.5rem] shadow-soft border-2 border-theme-secondary space-y-6">
-//             <div>
-//               <label className="text-[10px] font-black opacity-30 uppercase block mb-1 tracking-widest">
-//                 品牌 Brand
-//               </label>
-//               <input
-//                 type="text"
-//                 value={editing.brand || ''}
-//                 onChange={(e) =>
-//                   setEditing({ ...editing, brand: e.target.value })
-//                 }
-//                 className="w-full bg-theme-bg/30 rounded-xl p-4 border-none font-bold focus:ring-2 ring-theme-primary/20"
-//               />
-//             </div>
-//             <div>
-//               <label className="text-[10px] font-black opacity-30 uppercase block mb-1">
-//                 系列 Name
-//               </label>
-//               <input
-//                 type="text"
-//                 value={editing.name || ''}
-//                 onChange={(e) =>
-//                   setEditing({ ...editing, name: e.target.value })
-//                 }
-//                 className="w-full bg-theme-bg/30 rounded-xl p-4 border-none font-bold focus:ring-2 ring-theme-primary/20"
-//               />
-//             </div>
-//           </div>
-//         </div>
-//       </div>
-//     );
-//   }
-
-//   return (
-//     <div className="max-w-6xl mx-auto p-8 md:p-12 animate-fade-in pb-32">
-//       <div className="flex justify-between items-center mb-10">
-//         <h2 className="text-3xl font-black text-theme-text tracking-tighter">
-//           My Yarn Stash
-//         </h2>
-//         <button
-//           onClick={() =>
-//             setEditing({ id: crypto.randomUUID(), brand: '', name: '' })
-//           }
-//           className="bg-theme-primary text-white px-8 py-3 rounded-2xl shadow-lg font-black text-xs tracking-widest uppercase"
-//         >
-//           + NEW
-//         </button>
-//       </div>
-//       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-//         {yarns.map((y) => (
-//           <div
-//             key={y.id}
-//             onClick={() => setEditing({ ...y })}
-//             className="bg-white p-6 rounded-[2.5rem] shadow-cozy border border-white relative active:scale-[0.98] transition cursor-pointer overflow-hidden group"
-//           >
-//             <div className="absolute top-0 right-0 w-24 h-24 bg-theme-bg rounded-bl-full opacity-50 -mr-8 -mt-8 transition-transform group-hover:scale-110"></div>
-//             <div className="relative z-10 flex gap-4">
-//               <div className="w-16 h-16 bg-theme-bg rounded-2xl flex items-center justify-center text-3xl shadow-inner flex-shrink-0">
-//                 🧶
-//               </div>
-//               <div className="min-w-0 flex-1">
-//                 <h3 className="font-black text-theme-text text-lg truncate">
-//                   {y.name || '未命名'}
-//                 </h3>
-//                 <p className="text-[10px] font-black text-theme-primary uppercase tracking-widest">
-//                   {y.brand}
-//                 </p>
-//               </div>
-//               <button
-//                 onClick={(e) => {
-//                   e.stopPropagation();
-//                   onDeleteYarn(y.id);
-//                 }}
-//                 className="text-gray-200 hover:text-red-400 p-1 self-start transition-colors"
-//               >
-//                 <Icons.Trash />
-//               </button>
-//             </div>
-//           </div>
-//         ))}
-//       </div>
-//     </div>
-//   );
-// }
-// --- 子元件: 線材庫（含材質 / 粗細） ---
 function YarnView({ yarns, onSaveYarn, onDeleteYarn }) {
   const [editing, setEditing] = useState(null);
 
@@ -579,7 +482,7 @@ function YarnView({ yarns, onSaveYarn, onDeleteYarn }) {
         <div className="p-8 space-y-6 overflow-y-auto">
           <div className="bg-white p-8 rounded-[2.5rem] shadow-soft border-2 border-theme-secondary space-y-6">
             <div>
-              <label className="text-[10px] banc font-black opacity-30 uppercase block mb-1 tracking-widest">
+              <label className="text-[10px] font-black opacity-30 uppercase block mb-1 tracking-widest">
                 品牌 Brand
               </label>
               <input
@@ -707,360 +610,8 @@ function YarnView({ yarns, onSaveYarn, onDeleteYarn }) {
   );
 }
 
+// --- 專案播放器（含提醒浮層 + 專案備註） ---
 
-
-// --- 子組件: 專案播放器 (含區段提醒邏輯) ---
-// function ProjectView({
-//   activeProjects,
-//   savedPatterns,
-//   yarns,
-//   onUpdateProject,
-//   onDeleteProject,
-// }) {
-//   const [selectedId, setSelectedId] = useState(null);
-//   const [plusN, setPlusN] = useState('');
-
-//   const currentProject = useMemo(
-//     () => activeProjects.find((x) => x.id === selectedId),
-//     [activeProjects, selectedId]
-//   );
-//   const currentPattern = useMemo(
-//     () =>
-//       currentProject
-//         ? savedPatterns.find((x) => x.id === currentProject.patternId)
-//         : null,
-//     [currentProject, savedPatterns]
-//   );
-
-//   const projectStats = useMemo(() => {
-//     if (!currentPattern || currentPattern.type !== 'TEXT')
-//       return { targetTotal: 0, activeSection: null };
-
-//     let cumulativeRows = 0;
-//     let activeSection = null;
-//     const summary = (currentPattern.textSections || []).map((s) => {
-//       const sectionTotal = (s.rowsPerLoop || 1) * (s.repeats || 1);
-//       const startRow = cumulativeRows + 1;
-//       cumulativeRows += sectionTotal;
-
-//       if (
-//         currentProject &&
-//         currentProject.totalRow >= startRow &&
-//         currentProject.totalRow <= cumulativeRows
-//       ) {
-//         activeSection = { ...s, startRow, endRow: cumulativeRows };
-//       }
-
-//       return { ...s, totalRows: sectionTotal, startRow, endRow: cumulativeRows };
-//     });
-
-//     return { targetTotal: cumulativeRows, sectionsSummary: summary, activeSection };
-//   }, [currentPattern, currentProject?.totalRow]);
-
-//   if (!selectedId) {
-//     return (
-//       <div className="max-w-5xl mx-auto p-8 md:p-12 animate-fade-in pb-32">
-//         <h2 className="text-3xl font-black text-theme-text mb-10 tracking-tight">
-//           Active Projects
-//         </h2>
-//         <div className="grid gap-4">
-//           {activeProjects.map((p) => (
-//             <div
-//               key={p.id}
-//               onClick={() => setSelectedId(p.id)}
-//               className="bg-white p-6 rounded-[2.5rem] shadow-cozy border border-white flex justify-between items-center active:scale-[0.98] transition cursor-pointer"
-//             >
-//               <div className="flex items-center gap-5">
-//                 <div className="w-14 h-14 bg-theme-bg rounded-2xl flex items-center justify-center text-theme-primary text-2xl font-black shadow-inner">
-//                   R
-//                 </div>
-//                 <h3 className="font-bold text-theme-text text-xl leading-tight">
-//                   {p.patternName}
-//                 </h3>
-//               </div>
-//               <div className="flex items-center gap-8">
-//                 <div className="text-5xl font-black text-theme-primary tabular-nums tracking-tighter">
-//                   {p.totalRow}
-//                 </div>
-//                 <button
-//                   onClick={(e) => {
-//                     e.stopPropagation();
-//                     onDeleteProject(p.id);
-//                   }}
-//                   className="text-gray-200 hover:text-red-400 px-2 transition-colors"
-//                 >
-//                   <Icons.Trash />
-//                 </button>
-//               </div>
-//             </div>
-//           ))}
-//           {activeProjects.length === 0 && (
-//             <div className="text-center py-24 opacity-30 font-black tracking-widest uppercase">
-//               No Active Projects
-//             </div>
-//           )}
-//         </div>
-//       </div>
-//     );
-//   }
-
-//   if (!currentProject || !currentPattern) return null;
-
-//   const update = (d) =>
-//     onUpdateProject({
-//       ...currentProject,
-//       totalRow: Math.max(1, currentProject.totalRow + d),
-//       sectionRow: Math.max(1, currentProject.sectionRow + d),
-//     });
-
-//   const currentAlerts =
-//     currentPattern.alerts?.filter((a) => {
-//       if (
-//         a.sectionId &&
-//         a.sectionId !== 'ALL' &&
-//         projectStats.activeSection?.id !== a.sectionId
-//       ) {
-//         return false;
-//       }
-//       const val =
-//         a.type === 'SECTION' ? currentProject.sectionRow : currentProject.totalRow;
-//       return a.mode === 'EVERY'
-//         ? val > 0 && val % a.value === 0
-//         : val === a.value;
-//     }) || [];
-
-//   return (
-//     <div className="flex flex-col h-full bg-theme-bg animate-fade-in pb-20 overflow-hidden">
-//       <div className="bg-white/80 backdrop-blur p-4 border-b flex justify-between items-center sticky top-0 z-30 shadow-sm">
-//         <button
-//           onClick={() => setSelectedId(null)}
-//           className="text-gray-400 font-bold px-2 uppercase text-[10px] tracking-widest"
-//         >
-//           ← Back
-//         </button>
-//         <h2 className="font-black text-theme-text truncate text-sm tracking-tight px-4">
-//           {currentProject.patternName}
-//         </h2>
-//         <div className="w-10"></div>
-//       </div>
-
-//       <div className="flex-1 overflow-y-auto p-4 md:p-12 space-y-10 no-scrollbar pb-40">
-//         {currentPattern.type === 'TEXT' && projectStats.targetTotal > 0 && (
-//           <div className="bg-white p-8 rounded-[2.5rem] shadow-cozy border border-white space-y-4">
-//             <div className="flex justify-between items-end">
-//               <div>
-//                 <span className="text-[10px] font-black uppercase opacity-40 tracking-widest block mb-1">
-//                   Currently Knitting 目前階段
-//                 </span>
-//                 <span className="font-black text-theme-text text-xl tracking-tight">
-//                   {projectStats.activeSection?.title || 'Unknown'}
-//                 </span>
-//               </div>
-//               <span className="font-black text-theme-primary tabular-nums text-2xl">
-//                 {currentProject.totalRow}{' '}
-//                 <span className="opacity-20 mx-1">/</span>{' '}
-//                 {projectStats.targetTotal}{' '}
-//                 <span className="text-[10px] opacity-40 uppercase">Rows</span>
-//               </span>
-//             </div>
-//             <div className="w-full h-3 bg-theme-bg rounded-full overflow-hidden shadow-inner">
-//               <div
-//                 className="h-full bg-theme-primary transition-all duration-700"
-//                 style={{
-//                   width: `${Math.min(
-//                     100,
-//                     (currentProject.totalRow / projectStats.targetTotal) * 100
-//                   )}%`,
-//                 }}
-//               ></div>
-//             </div>
-//           </div>
-//         )}
-
-//         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-//           <div className="lg:col-span-5 space-y-8">
-//             <div className="bg-white rounded-[4rem] p-12 flex flex-col items-center shadow-cozy border-2 border-white">
-//               <h3 className="text-theme-primary font-black uppercase tracking-widest text-[10px] mb-4 opacity-50">
-//                 Row Counter
-//               </h3>
-//               <div className="text-9xl md:text-[11rem] font-black text-theme-text tabular-nums leading-none mb-12 tracking-tighter drop-shadow-md">
-//                 {currentProject.totalRow}
-//               </div>
-
-//               <div className="w-full space-y-8">
-//                 <div className="grid grid-cols-2 gap-6 w-full">
-//                   <button
-//                     onClick={() => update(-1)}
-//                     className="py-8 bg-theme-bg rounded-[2.5rem] text-theme-primary shadow-inner font-black text-4xl active:scale-95 transition"
-//                   >
-//                     −
-//                   </button>
-//                   <button
-//                     onClick={() => update(1)}
-//                     className="py-8 bg-theme-primary text-white rounded-[2.5rem] shadow-xl shadow-theme-primary/20 font-black text-5xl active:scale-95 transition"
-//                   >
-//                     +
-//                   </button>
-//                 </div>
-
-//                 <div className="flex items-stretch gap-2 bg-theme-bg/50 p-2.5 rounded-[2rem] shadow-inner w-full">
-//                   <input
-//                     type="number"
-//                     value={plusN}
-//                     onChange={(e) => setPlusN(e.target.value)}
-//                     placeholder="+n"
-//                     className="flex-1 min-w-0 bg-transparent border-none text-center font-black text-2xl focus:ring-0 tabular-nums placeholder:opacity-20"
-//                   />
-//                   <button
-//                     onClick={() => {
-//                       const n = parseInt(plusN);
-//                       if (!isNaN(n)) update(n);
-//                       setPlusN('');
-//                     }}
-//                     className="bg-theme-text text-white px-10 py-5 rounded-[1.5rem] font-black text-xs tracking-widest transition-all active:scale-95 shadow-lg uppercase"
-//                   >
-//                     Go
-//                   </button>
-//                 </div>
-//               </div>
-//             </div>
-//             <div className="bg-white p-8 rounded-[2rem] shadow-cozy border border-white flex justify-between items-center">
-//               <div className="min-w-0 flex-1">
-//                 <h3 className="text-theme-primary font-black uppercase tracking-widest text-[10px] mb-1 opacity-40">
-//                   Section Loop
-//                 </h3>
-//                 <div className="text-6xl font-black text-theme-text tabular-nums tracking-tighter">
-//                   {currentProject.sectionRow}
-//                 </div>
-//               </div>
-//               <button
-//                 onClick={() =>
-//                   onUpdateProject({ ...currentProject, sectionRow: 1 })
-//                 }
-//                 className="text-[10px] font-black text-theme-primary border-2 border-theme-primary/10 px-6 py-3 rounded-full hover:bg-theme-bg transition uppercase tracking-widest flex-shrink-0 ml-4"
-//               >
-//                 Reset
-//               </button>
-//             </div>
-//           </div>
-
-//           <div className="lg:col-span-7 space-y-6">
-//             {currentAlerts.map((a) => (
-//               <div
-//                 key={a.id}
-//                 className="bg-theme-primary p-8 rounded-[3rem] text-whiteproduk shadow-xl animate-fade-in relative overflow-hidden group border border-white/20"
-//               >
-//                 <div className="absolute -right-5 -bottom-5 w-32 h-32 bg-white/10 rounded-full"></div>
-//                 <div className="relative z-10 flex items-start gap-6">
-//                   <div className="w-16 h-16 bg-white/20 rounded-3xl flex items-center justify-center text-4xl animate-bounce">
-//                     🔔
-//                   </div>
-//                   <div className="flex-1">
-//                     <div className="text-[10px] font-black uppercase opacity-60 mb-1 tracking-widest">
-//                       {a.mode === 'EVERY' ? 'Every' : 'At'} {a.value} Rows ·{' '}
-//                       {a.type === 'SECTION' ? 'Section' : 'Global'}
-//                     </div>
-//                     <div className="text-2xl font-black leading-tight tracking-tight">
-//                       {a.message}
-//                     </div>
-//                   </div>
-//                 </div>
-//               </div>
-//             ))}
-
-//             <div className="bg-white p-10 rounded-[3.5rem] shadow-cozy border border-white min-h-[450px]">
-//               <h4 className="font-black text-theme-text border-b border-theme-bg pb-6 mb-10 flex items-center gap-3 tracking-widest uppercase text-xs">
-//                 <Icons.Library /> Instruction Manual
-//               </h4>
-//               {currentPattern.type === 'TEXT' ? (
-//                 <div className="space-y-12">
-//                   {currentPattern.textSections?.map((sec) => {
-//                     const isActive =
-//                       projectStats.activeSection?.id === sec.id;
-//                     return (
-//                       <div
-//                         key={sec.id}
-//                         className={`relative pl-8 border-l-4 transition-all group ${
-//                           isActive
-//                             ? 'border-theme-primary scale-[1.02]'
-//                             : 'border-theme-bg opacity-40 grayscale'
-//                         }`}
-//                       >
-//                         <div className="flex flex-wrap items-center gap-3 mb-4">
-//                           <span
-//                             className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full ${
-//                               isActive
-//                                 ? 'bg-theme-primary text-white shadow-md'
-//                                 : 'bg-theme-bg'
-//                             }`}
-//                           >
-//                             {sec.title}
-//                           </span>
-//                           <span className="text-[9px] font-bold opacity-30 uppercase tracking-tighter">
-//                             {sec.rowsPerLoop} rows × {sec.repeats} times
-//                           </span>
-//                         </div>
-//                         <div
-//                           className={`font-mono text-lg leading-relaxed whitespace-pre-wrap ${
-//                             isActive
-//                               ? 'text-theme-text font-bold'
-//                               : 'text-gray-400'
-//                           }`}
-//                         >
-//                           {sec.content}
-//                         </div>
-//                       </div>
-//                     );
-//                   })}
-//                 </div>
-//               ) : (
-//                 <div className="flex flex-col items-center">
-//                   {currentPattern.sections?.[0] && (
-//                     <div className="inline-block bg-white border-4 border-theme-bg rounded-2xl p-2 shadow-inner overflow-x-auto max-w-full">
-//                       <div
-//                         className="grid gap-[1px] bg-theme-accent/30"
-//                         style={{
-//                           gridTemplateColumns: `repeat(${currentPattern.sections[0].cols}, 24px)`,
-//                         }}
-//                       >
-//                         {currentPattern.sections[0].grid.map((row, r) =>
-//                           row.map((cell, c) => {
-//                             const localIdx =
-//                               (currentProject.sectionRow - 1) %
-//                               currentPattern.sections[0].rows;
-//                             const isHighlight =
-//                               r ===
-//                               currentPattern.sections[0].rows - 1 - localIdx;
-//                             return (
-//                               <div
-//                                 key={`${r}-${c}`}
-//                                 className={`w-6 h-6 flex items-center justify-center text-[10px] font-mono select-none ${
-//                                   SYMBOLS[cell]?.color || 'bg-white'
-//                                 } ${
-//                                   isHighlight
-//                                     ? 'ring-2 ring-theme-primary z-10 scale-110 shadow-lg'
-//                                     : 'opacity-40 grayscale'
-//                                 }`}
-//                               >
-//                                 {SYMBOLS[cell]?.symbol}
-//                               </div>
-//                             );
-//                           })
-//                         )}
-//                       </div>
-//                     </div>
-//                   )}
-//                 </div>
-//               )}
-//             </div>
-//           </div>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// }
-
-// --- 子組件: 專案播放器 (含區段提醒邏輯，提醒浮在 counter 上方) ---
 function ProjectView({
   activeProjects,
   savedPatterns,
@@ -1070,7 +621,7 @@ function ProjectView({
 }) {
   const [selectedId, setSelectedId] = useState(null);
   const [plusN, setPlusN] = useState('');
-  const [showAlertOverlay, setShowAlertOverlay] = useState(false); // 控制提醒浮層顯示
+  const [showAlertOverlay, setShowAlertOverlay] = useState(false);
 
   const currentProject = useMemo(
     () => activeProjects.find((x) => x.id === selectedId),
@@ -1087,7 +638,7 @@ function ProjectView({
 
   const projectStats = useMemo(() => {
     if (!currentPattern || currentPattern.type !== 'TEXT')
-      return { targetTotal: 0, activeSection: null };
+      return { targetTotal: 0, activeSection: null, sectionsSummary: [] };
 
     let cumulativeRows = 0;
     let activeSection = null;
@@ -1102,7 +653,7 @@ function ProjectView({
         currentProject.totalRow >= startRow &&
         currentProject.totalRow <= cumulativeRows
       ) {
-        activeSection = { ...s, startRow, endRow: cumulativeRows };
+        activeSection = { ...s, startRow, endRow: cumulativeRows, totalRows: sectionTotal };
       }
 
       return { ...s, totalRows: sectionTotal, startRow, endRow: cumulativeRows };
@@ -1111,27 +662,7 @@ function ProjectView({
     return { targetTotal: cumulativeRows, sectionsSummary: summary, activeSection };
   }, [currentPattern, currentProject?.totalRow]);
 
-  // 計算目前要跳出的提醒（用 useMemo，並在 hook 區塊裡處理）
-  // const currentAlerts = useMemo(() => {
-  //   if (!currentProject || !currentPattern) return [];
-  //   return (
-  //     currentPattern.alerts?.filter((a) => {
-  //       if (
-  //         a.sectionId &&
-  //         a.sectionId !== 'ALL' &&
-  //         projectStats.activeSection?.id !== a.sectionId
-  //       ) {
-  //         return false;
-  //       }
-  //       const val =
-  //         a.type === 'SECTION' ? currentProject.sectionRow : currentProject.totalRow;
-  //       return a.mode === 'EVERY'
-  //         ? val > 0 && val % a.value === 0
-  //         : val === a.value;
-  //     }) || []
-  //   );
-  // }, [currentProject, currentPattern, projectStats]);
-  // 計算目前要跳出的提醒：區段型從該區段起始排數開始算
+  // 計算提醒：有指定 sectionId 的，從該段起始排數算
   const currentAlerts = useMemo(() => {
     if (!currentProject || !currentPattern) return [];
     const total = currentProject.totalRow;
@@ -1139,28 +670,20 @@ function ProjectView({
     return (currentPattern.alerts || []).filter((a) => {
       let val;
 
-      // 有指定 sectionId（且不是 ALL）：從該區段的起始排數開始計算
       if (a.sectionId && a.sectionId !== 'ALL') {
         const sec = projectStats.sectionsSummary?.find(
           (s) => s.id === a.sectionId
         );
         if (!sec) return false;
 
-        // 在這一段裡的第幾排？（第一排是 1）
         const sectionRowFromStart = total - sec.startRow + 1;
 
-        // 還沒進到這一段，或已經超過這一段，就不用提醒
         if (sectionRowFromStart < 1 || sectionRowFromStart > sec.totalRows) {
           return false;
         }
 
-        // type 為 SECTION：用「這一段內的第幾排」當計算基準
-        // type 為 TOTAL：還是用總排數（但限制在這一段範圍內）
         val = a.type === 'SECTION' ? sectionRowFromStart : total;
       } else {
-        // 沒限定區段（或 ALL）維持原本行為：
-        // SECTION -> 用 sectionRow（會因為 Reset 或循環重算）
-        // TOTAL   -> 用 totalRow
         val = a.type === 'SECTION' ? currentProject.sectionRow : total;
       }
 
@@ -1171,9 +694,6 @@ function ProjectView({
     });
   }, [currentProject, currentPattern, projectStats]);
 
-
-
-  // 只要新出現提醒，就自動打開浮層
   useEffect(() => {
     if (currentAlerts.length > 0) {
       setShowAlertOverlay(true);
@@ -1182,18 +702,17 @@ function ProjectView({
 
   const primaryAlert = currentAlerts[0];
 
-  // 目前排數變化（放在 hooks 之後、return 之前 OK）
   const update = (d) => {
     if (!currentProject) return;
     onUpdateProject({
       ...currentProject,
       totalRow: Math.max(1, currentProject.totalRow + d),
       sectionRow: Math.max(1, currentProject.sectionRow + d),
+      lastActive: new Date().toISOString(),
     });
   };
 
-  // ---- 下面才開始做條件 return（不會再插入新的 hook）----
-
+  // 尚未選專案
   if (!selectedId) {
     return (
       <div className="max-w-5xl mx-auto p-8 md:p-12 animate-fade-in pb-32">
@@ -1207,13 +726,18 @@ function ProjectView({
               onClick={() => setSelectedId(p.id)}
               className="bg-white p-6 rounded-[2.5rem] shadow-cozy border border-white flex justify-between items-center active:scale-[0.98] transition cursor-pointer"
             >
-              <div className="flex items-center gap-5">
+              <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-theme-bg rounded-2xl flex items-center justify-center text-theme-primary text-xl font-black shadow-inner">
                   R
                 </div>
-                <h3 className="font-bold text-theme-text text-lg leading-tight">
-                  {p.patternName}
-                </h3>
+                <div>
+                  <h3 className="font-bold text-theme-text text-lg leading-tight">
+                    {p.patternName}
+                  </h3>
+                  <div className="text-[10px] text-theme-primary opacity-60 uppercase tracking-widest">
+                    {p.category || '未分類'}
+                  </div>
+                </div>
               </div>
               <div className="flex items-center gap-6">
                 <div className="text-4xl font-black text-theme-primary tabular-nums tracking-tighter">
@@ -1256,7 +780,8 @@ function ProjectView({
               <div className="text-[10px] font-black uppercase tracking-[0.18em] opacity-70 mb-1">
                 Row Alert ·{' '}
                 {primaryAlert.type === 'SECTION' ? 'Section' : 'Total'} ·{' '}
-                {primaryAlert.mode === 'EVERY' ? 'Every' : 'At'} {primaryAlert.value}
+                {primaryAlert.mode === 'EVERY' ? 'Every' : 'At'}{' '}
+                {primaryAlert.value}
               </div>
               <div className="text-sm font-bold leading-snug">
                 {primaryAlert.message || '下一段變化來了～'}
@@ -1301,7 +826,9 @@ function ProjectView({
                 {currentProject.totalRow}
                 <span className="opacity-20 mx-1">/</span>
                 {projectStats.targetTotal}
-                <span className="text-[9px] opacity-40 uppercase ml-1">Rows</span>
+                <span className="text-[9px] opacity-40 uppercase ml-1">
+                  Rows
+                </span>
               </span>
             </div>
             <div className="w-full h-2.5 bg-theme-bg rounded-full overflow-hidden shadow-inner">
@@ -1319,7 +846,7 @@ function ProjectView({
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mt-4">
-          {/* 左邊：縮小後的 counter */}
+          {/* 左邊：Counter + Section Loop + 專案備註 */}
           <div className="lg:col-span-5 space-y-6">
             <div className="bg-white rounded-[3rem] p-8 flex flex-col items-center shadow-cozy border-2 border-white">
               <h3 className="text-theme-primary font-black uppercase tracking-widest text-[9px] mb-3 opacity-50">
@@ -1334,7 +861,7 @@ function ProjectView({
                   <button
                     onClick={() => {
                       update(-1);
-                      setShowAlertOverlay(false); // 按 - 也順便收提醒
+                      setShowAlertOverlay(false);
                     }}
                     className="py-5 bg-theme-bg rounded-[2rem] text-theme-primary shadow-inner font-black text-3xl active:scale-95 transition"
                   >
@@ -1343,7 +870,7 @@ function ProjectView({
                   <button
                     onClick={() => {
                       update(1);
-                      setShowAlertOverlay(false); // 按 + 後提醒收起
+                      setShowAlertOverlay(false);
                     }}
                     className="py-6 bg-theme-primary text-white rounded-[2.25rem] shadow-xl shadow-theme-primary/20 font-black text-4xl active:scale-95 transition"
                   >
@@ -1394,9 +921,34 @@ function ProjectView({
                 Reset
               </button>
             </div>
+
+            {/* 專案備註 */}
+            <div className="bg-white p-6 rounded-[2rem] shadow-cozy border border-white space-y-3">
+              <div className="flex items-center justify-between gap-2">
+                <div>
+                  <div className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text/60 mb-1">
+                    Project Notes
+                  </div>
+                  <div className="text-xs text-theme-text/60">
+                    織到一半的狀況、改版紀錄、試穿感想…
+                  </div>
+                </div>
+              </div>
+              <textarea
+                className="w-full mt-2 bg-theme-bg/40 rounded-2xl p-3.5 text-sm leading-relaxed border-none focus:ring-2 ring-theme-primary/20 min-h-[100px] resize-none"
+                placeholder="例：第 35 排發現麻花偏緊，下次改 4.5mm 棒針；袖長預計多織 5cm。"
+                value={currentProject.notes || ''}
+                onChange={(e) =>
+                  onUpdateProject({
+                    ...currentProject,
+                    notes: e.target.value,
+                  })
+                }
+              />
+            </div>
           </div>
 
-          {/* 右邊：說明 / 織圖 */}
+          {/* 右邊：說明 / 織圖預覽 */}
           <div className="lg:col-span-7 space-y-6">
             <div className="bg-white p-8 rounded-[3rem] shadow-cozy border border-white min-h-[380px]">
               <h4 className="font-black text-theme-text border-b border-theme-bg pb-5 mb-8 flex items-center gap-3 tracking-widest uppercase text-[10px]">
@@ -1416,7 +968,7 @@ function ProjectView({
                             : 'border-theme-bg opacity-40 grayscale'
                         }`}
                       >
-                        <div className="flex flex-wrap items-center gap-3 mb-3">
+                        <div className="flex flex-wrap items中心 gap-3 mb-3">
                           <span
                             className={`text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full ${
                               isActive
@@ -1483,6 +1035,18 @@ function ProjectView({
                 </div>
               )}
             </div>
+
+            {/* 若想在右邊展示織圖備註，也可以在這裡加一個只讀的 pattern notes */}
+            {currentPattern.notes && (
+              <div className="bg-theme-bg/40 p-5 rounded-[2rem] border border-theme-bg/60">
+                <div className="text-[9px] font-black uppercase tracking-[0.2em] opacity-50 mb-2">
+                  Pattern Notes
+                </div>
+                <div className="text-sm text-theme-text whitespace-pre-wrap leading-relaxed">
+                  {currentPattern.notes}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -1490,8 +1054,8 @@ function ProjectView({
   );
 }
 
+// --- 織圖編輯器（加分類 + 全域備註） ---
 
-// --- 子組件: 織圖編輯器 ---
 function EditorView({ pattern, onUpdate, onBack }) {
   const [data, setData] = useState({ ...pattern });
   const [activeTab, setActiveTab] = useState('CONTENT');
@@ -1587,8 +1151,8 @@ function EditorView({ pattern, onUpdate, onBack }) {
       </div>
 
       <div className="flex-1 overflow-y-auto no-scrollbar pb-32">
-        <div className="p-10 bg-theme-bg/30 flex justify-between items-end">
-          <div className="flex-1 mr-6">
+        <div className="p-10 bg-theme-bg/30 flex justify-between items-end gap-4 flex-wrap">
+          <div className="flex-1 mr-0 md:mr-6 min-w-[200px]">
             <label className="text-[10px] font-black opacity-30 uppercase tracking-widest block mb-2 pl-1 tracking-[0.2em]">
               Pattern Design
             </label>
@@ -1596,12 +1160,27 @@ function EditorView({ pattern, onUpdate, onBack }) {
               type="text"
               value={data.name}
               onChange={(e) => setData({ ...data, name: e.target.value })}
-              className="w-full text-4xl font-black bg-transparent border-none p-0 focus:ring-0 tracking-tighter"
+              className="w-full text-3xl md:text-4xl font-black bg-transparent border-none p-0 focus:ring-0 tracking-tighter"
               placeholder="設計標題..."
             />
+            {/* 分類：簡單文字欄位 */}
+            <div className="mt-3 flex gap-2 items-center">
+              <span className="text-[10px] font-black opacity-40 uppercase tracking-widest">
+                分類
+              </span>
+              <input
+                type="text"
+                value={data.category || '未分類'}
+                onChange={(e) =>
+                  setData({ ...data, category: e.target.value || '未分類' })
+                }
+                className="flex-1 bg-white/70 rounded-xl border-none px-3 py-1.5 text-[11px] font-bold text-theme-text focus:ring-2 ring-theme-primary/20"
+                placeholder="例：毛衣 / 圍巾 / 童裝"
+              />
+            </div>
           </div>
           {data.type === 'TEXT' && (
-            <div className="text-right pb-1">
+            <div className="text-right pb-1 min-w-[140px]">
               <div className="text-[10px] font-black opacity-30 uppercase">
                 總排數計算
               </div>
@@ -1613,6 +1192,30 @@ function EditorView({ pattern, onUpdate, onBack }) {
         </div>
 
         <div className="p-6 md:p-10 space-y-12">
+          {/* 織圖全域備註：不分圖表 / 文字都顯示 */}
+          {activeTab === 'CONTENT' && (
+            <div className="bg-white rounded-[2.5rem] p-6 md:p-7 shadow-cozy border border-theme-bg/60 space-y-3">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <div className="text-[9px] font-black uppercase tracking-[0.2em] opacity-40 mb-1">
+                    Pattern Notes
+                  </div>
+                  <div className="text-xs text-theme-text/70">
+                    其他尺寸加減針、特殊注意事項、改版記錄…
+                  </div>
+                </div>
+              </div>
+              <textarea
+                className="w-full mt-2 bg-theme-bg/30 rounded-2xl p-4 text-sm leading-relaxed border-none focus:ring-2 ring-theme-primary/20 min-h-[100px] resize-none"
+                placeholder="例：M 號在第 18 排多加 2 針、袖子在麻花段前多編 6 排。"
+                value={data.notes || ''}
+                onChange={(e) =>
+                  setData((prev) => ({ ...prev, notes: e.target.value }))
+                }
+              />
+            </div>
+          )}
+
           {activeTab === 'CONTENT' ? (
             data.type === 'CHART' ? (
               <div className="space-y-12">
@@ -1972,7 +1575,8 @@ function EditorView({ pattern, onUpdate, onBack }) {
   );
 }
 
-// --- 子組件: 織圖圖庫 ---
+// --- 織圖圖庫 ---
+
 function LibraryView({
   savedPatterns,
   onDeletePattern,
@@ -2051,13 +1655,12 @@ function LibraryView({
             <h3 className="font-black text-theme-text text-2xl mb-2 relative z-10 tracking-tighter leading-tight">
               {ptn.name}
             </h3>
-            <div className="text-[10px] font-black text-theme-primary opacity-50 uppercase tracking-widest mb-10 relative z-10">
-              {ptn.category} · {new Date(ptn.updatedAt).toLocaleDateString()}
+            <div className="text-[10px] font-black text-theme-primary opacity-60 uppercase tracking-widest mb-10 relative z-10">
+              {ptn.category || '未分類'} ·{' '}
+              {new Date(ptn.updatedAt).toLocaleDateString()}
             </div>
             <button
-              onClick={() =>
-                onCreateProject(ptn)
-              }
+              onClick={() => onCreateProject(ptn)}
               className="w-full py-6 bg-theme-primary text-white rounded-[2rem] font-black text-[11px] uppercase tracking-[0.3em] shadow-xl hover:shadow-2xl hover:shadow-theme-primary/30 transition-all mt-auto"
             >
               Start Knitting
@@ -2069,7 +1672,8 @@ function LibraryView({
   );
 }
 
-// --- 根組件: App ---
+// --- 根組件 App ---
+
 function App() {
   const [view, setView] = useState('PROJECTS');
   const [savedPatterns, setSavedPatterns] = useState([]);
@@ -2079,7 +1683,6 @@ function App() {
   const [themeKey, setThemeKey] = useState('PURPLE');
   const [syncOpen, setSyncOpen] = useState(false);
 
-  // 載入 localStorage
   useEffect(() => {
     const state = loadAppState();
     setSavedPatterns(state.savedPatterns);
@@ -2088,7 +1691,6 @@ function App() {
     setThemeKey(state.themeKey);
   }, []);
 
-  // 儲存到 localStorage & 套用主題
   useEffect(() => {
     saveAppState({ savedPatterns, activeProjects, yarns, themeKey });
     const t = THEMES[themeKey] || THEMES.PURPLE;
@@ -2116,7 +1718,7 @@ function App() {
 
   return (
     <div className="flex h-screen overflow-hidden">
-      {/* Sidebar Desktop */}
+      {/* Desktop Sidebar */}
       <div className="hidden md:flex w-24 bg-white border-r border-theme-accent/20 flex-col items-center py-12 space-y-12 z-30 shadow-sm relative">
         <div className="w-14 h-14 bg-theme-primary text-white rounded-[1.25rem] flex items-center justify-center shadow-xl shadow-theme-primary/20 font-black text-2xl transition-all cursor-pointer hover:rotate-12">
           C
@@ -2265,15 +1867,7 @@ function App() {
               }}
               onCreateProject={(ptn) => {
                 setActiveProjects((prev) => [
-                  {
-                    id: crypto.randomUUID(),
-                    patternId: ptn.id,
-                    patternName: ptn.name,
-                    yarnId: null,
-                    totalRow: 1,
-                    sectionRow: 1,
-                    lastActive: new Date().toISOString(),
-                  },
+                  createProjectFromPattern(ptn),
                   ...prev,
                 ]);
                 setView('PROJECTS');
@@ -2304,7 +1898,7 @@ function App() {
           {view === 'TUTORIAL' && <TutorialView />}
         </main>
 
-        {/* Mobile Nav bar */}
+        {/* Mobile Bottom Nav */}
         {view !== 'EDITOR' && (
           <div className="md:hidden fixed bottom-0 w-full bg-white/90 backdrop-blur-xl border-t border-theme-accent/30 flex justify-around py-6 pb-safe z-40 shadow-[0_-10px_40px_rgba(0,0,0,0.08)]">
             <button
