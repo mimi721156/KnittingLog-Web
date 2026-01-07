@@ -789,8 +789,7 @@ function ProjectView({
                       </div>
                       {p.startAt && (
                         <div className="text-[9px] text-theme-text/40 uppercase tracking-widest mt-0.5">
-                          開始{' '}
-                          {new Date(p.startAt).toLocaleDateString()}
+                          開始 {new Date(p.startAt).toLocaleDateString()}
                         </div>
                       )}
                     </div>
@@ -1865,33 +1864,7 @@ function CategoryToolbar({
             ))}
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
-            {active !== 'ALL' && (
-              <>
-                <button
-                  onClick={() => onQuickNewPattern('TEXT')}
-                  className="px-3 py-1.5 rounded-full bg-theme-primary text-white text-[10px] font-black uppercase tracking-[0.15em]"
-                >
-                  + Text
-                </button>
-                <button
-                  onClick={() => onQuickNewPattern('CHART')}
-                  className="px-3 py-1.5 rounded-full bg-theme-primary/10 text-theme-primary border border-theme-primary/20 text-[10px] font-black uppercase tracking-[0.15em]"
-                >
-                  + Chart
-                </button>
-                <button
-                  onClick={onQuickNewProject}
-                  disabled={!hasPatternInFilter}
-                  className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.15em] ${
-                    hasPatternInFilter
-                      ? 'bg-theme-text text-white'
-                      : 'bg-theme-bg text-gray-300 cursor-default'
-                  }`}
-                >
-                  + Project
-                </button>
-              </>
-            )}
+            
           </div>
         </div>
         <div className="flex items-center gap-2 mt-1">
