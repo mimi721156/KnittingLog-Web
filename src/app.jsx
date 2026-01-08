@@ -641,9 +641,10 @@ function ProjectView({
   onDeleteProject,
   categoryFilter,
   categories,   // ⬅ 新增這個
+  selectedId, 
+  setSelectedId
 }) {
-  const selectedId = selectedProjectId;
-  const setSelectedId = onSelectProject;
+
   const [plusN, setPlusN] = useState('');
   const [showAlertOverlay, setShowAlertOverlay] = useState(false);
 
@@ -2287,6 +2288,7 @@ function App() {
   const [yarns, setYarns] = useState([]);
   const [currentPattern, setCurrentPattern] = useState(null);
   const [themeKey, setThemeKey] = useState('PURPLE');
+  const [selectedProjectId, setSelectedProjectId] = useState(null);
 
   const [categories, setCategories] = useState([
     '圖巾',
@@ -2523,7 +2525,7 @@ function App() {
         </div>
 
         <main className="flex-1 overflow-y-auto no-scrollbar pb-safe">
-          {(view === 'PROJECTS' && !selectedId) || (view === 'LIBRARY' && !currentPattern)  && (
+          {(view === 'PROJECTS' && !selectedProjectId) || (view === 'LIBRARY' && !currentPattern)  && (
               <CategoryToolbar
                 categories={categories}
                 categoryFilter={categoryFilter}
@@ -2563,7 +2565,8 @@ function App() {
               activeProjects={activeProjects}
               categoryFilter={categoryFilter}
               categories={categories}   // ⬅ 新增這行
-              selectedId={selectedId}
+              selectedId={selectedProjectId}
+              setSelectedId={setSelectedProjectId}
               onUpdateProject={(p) =>
                 setActiveProjects((prev) =>
                   prev.map((x) => (x.id === p.id ? p : x))
