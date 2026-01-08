@@ -824,7 +824,7 @@ function ProjectView({
     return null;
   }, [currentProject, currentPattern, projectStats]);
 
-  const primaryAlert = currentAlerts[0];
+//   const primaryAlert = currentAlerts[0];
 
   const update = (d) => {
     if (!currentProject) return;
@@ -964,7 +964,7 @@ function ProjectView({
 
   return (
     <div className="flex flex-col h-full bg-theme-bg animate-fade-in pb-20 overflow-hidden relative">
-      {showAlertOverlay && primaryAlert && (
+      {/* {showAlertOverlay && primaryAlert && (
         <div className="absolute inset-x-0 top-20 z-40 px-4 md:px-0">
           <div className="max-w-xl mx-auto bg-theme-primary text-white rounded-[2.25rem] shadow-2xl border border-white/30 px-6 py-4 flex items-start gap-3">
             <div className="w-10 h-10 bg-white/15 rounded-2xl flex items-center justify-center text-2xl">
@@ -989,7 +989,52 @@ function ProjectView({
             </button>
           </div>
         </div>
-      )}
+      )} */}
+
+        {showAlertOverlay && currentAlerts.length > 0 && (
+        <div className="absolute inset-x-0 top-20 z-40 px-4 md:px-0">
+            <div className="max-w-xl mx-auto bg-theme-primary text-white rounded-[2.25rem] shadow-2xl border border-white/30 px-6 py-4 flex items-start gap-3">
+            <div className="w-10 h-10 bg-white/15 rounded-2xl flex items-center justify-center text-2xl">
+                🔔
+            </div>
+            <div className="flex-1">
+                {/* 標題：這一排總共有幾則提醒 */}
+                <div className="text-[10px] font-black uppercase tracking-[0.18em] opacity-70 mb-1">
+                Row Alert · {currentAlerts.length} rule
+                {currentAlerts.length > 1 ? 's' : ''} on this row
+                </div>
+
+                {/* 下面把所有提醒疊起來列點顯示 */}
+                <div className="mt-1 space-y-2">
+                {currentAlerts.map((alert, idx) => (
+                    <div
+                    key={alert.id || idx}
+                    className="flex items-start gap-2"
+                    >
+                    <span className="mt-[2px] text-xs">•</span>
+                    <div>
+                        <div className="text-[10px] opacity-80 uppercase tracking-[0.12em] mb-0.5">
+                        {alert.type === 'SECTION' ? 'Section' : 'Total'} ·{' '}
+                        {alert.mode === 'EVERY' ? 'Every' : 'At'}{' '}
+                        {alert.value}
+                        </div>
+                        <div className="text-sm font-bold leading-snug">
+                        {alert.message || '下一段變化來了～'}
+                        </div>
+                    </div>
+                    </div>
+                ))}
+                </div>
+            </div>
+            <button
+                onClick={() => setShowAlertOverlay(false)}
+                className="text-xs font-black uppercase tracking-[0.15em] px-3 py-1 rounded-full bg-white/15 hover:bg-white/25 transition flex-shrink-0"
+            >
+                關閉
+            </button>
+            </div>
+        </div>
+        )}
 
       <div className="bg-white/80 backdrop-blur p-4 border-b flex justify-between items-center sticky top-0 z-30 shadow-sm">
         <button
