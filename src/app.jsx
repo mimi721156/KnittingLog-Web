@@ -2525,7 +2525,7 @@ function App() {
         </div>
 
         <main className="flex-1 overflow-y-auto no-scrollbar pb-safe">
-          {view === 'PROJECTS' || (view === 'LIBRARY' && !currentPattern)  && (
+          {(view === 'PROJECTS' || view === 'LIBRARY') && !currentPattern && !selectedProjectId && (
               <CategoryToolbar
                 categories={categories}
                 categoryFilter={categoryFilter}
