@@ -2014,7 +2014,7 @@ function CategoryToolbar({
   const active = categoryFilter || 'ALL';
 
   return (
-    <div className="px-4 md:px-8 pt-3 pb-3 bg-white border-b border-theme-accent/20 sticky top-0 z-30 shadow-sm">
+    <div className="px-4 md:px-8 pt-3 pb-3 bg-white border-b border-theme-accent/20 shadow-sm">
       <div className="max-w-6xl mx-auto flex flex-col gap-2">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
@@ -2489,7 +2489,7 @@ function App() {
 
       <div className="flex-1 flex flex-col h-full overflow-hidden relative">
         {/* Mobile Header */}
-        <div className="md:hidden p-5 bg-white/60 backdrop-blur sticky top-0 z-20 border-b border-theme-accent/20 flex justify-between items-center">
+        <div className="md:hidden p-5 bg-white/60 backdrop-blur sticky top-0 z-50 border-b border-theme-accent/20 flex justify-between items-center">
           <div className="flex items-center gap-2">
             <div className="w-10 h-10 bg-theme-primary rounded-xl flex items-center justify-center text-white font-black text-[10px]">
               C
