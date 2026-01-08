@@ -755,11 +755,23 @@ function ProjectView({
   });
   }, [currentProject, currentPattern, projectStats]);
 
+  const alertKey = useMemo(() => {
+  if (!currentProject || currentAlerts.length === 0) return null;
+
+  const ids = currentAlerts.map((a) => a.id || '').join('|');
+  const projId = currentProject.id || 'current';
+  const row = currentProject.totalRow || 0;
+
+  // 同一專案、同一排、同一組提醒 → 視為同一個 alert 狀態
+  return `${projId}:${row}:${ids}`;
+  }, [currentProject, currentAlerts]);
+
   useEffect(() => {
-    if (currentAlerts.length > 0) {
-      setShowAlertOverlay(true);
+    // 只要「這一排的提醒組合」換了，就重新顯示提醒
+    if (alertKey) {
+        setShowAlertOverlay(true);
     }
-  }, [currentAlerts.length]);
+    }, [alertKey]);
 
   const sectionLoopInfo = useMemo(() => {
     if (!currentProject || !currentPattern) return null;
