@@ -966,7 +966,7 @@ function ProjectView({
         </div>
       )}
 
-      <div className="bg-white/80 backdrop-blur p-4 border-b flex justify-between items-center sticky top-0 z-30 shadow-sm">
+      <div className="bg-white backdrop-blur p-4 border-b flex justify-between items-center sticky top-[64px] md:top-0 z-30 shadow-sm">
         <button
           onClick={() => setSelectedId(null)}
           className="text-gray-400 font-bold px-2 uppercase text-[10px] tracking-widest"
@@ -2014,7 +2014,7 @@ function CategoryToolbar({
   const active = categoryFilter || 'ALL';
 
   return (
-    <div className="px-4 md:px-8 pt-3 pb-3 bg-white border-b border-theme-accent/20 shadow-sm">
+    <div className="px-4 md:px-8 pt-3 pb-3 bg-white border-b border-theme-accent/20 shadow-sm sticky top-[64px] md:top-0 z-20">
       <div className="max-w-6xl mx-auto flex flex-col gap-2">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
@@ -2522,7 +2522,7 @@ function App() {
         </div>
 
         <main className="flex-1 overflow-y-auto no-scrollbar pb-safe">
-          {(view === 'PROJECTS' || view === 'LIBRARY') && (
+          {(view === 'PROJECTS' || view === 'LIBRARY') && !selectedId && (
             <CategoryToolbar
               categories={categories}
               categoryFilter={categoryFilter}
