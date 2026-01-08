@@ -737,11 +737,22 @@ function ProjectView({
         val = a.type === 'SECTION' ? currentProject.sectionRow : total;
       }
 
-      if (a.mode === 'EVERY') {
-        return val > 0 && val % a.value === 0;
-      }
-      return val === a.value;
-    });
+    if (a.mode === 'EVERY') {
+      const interval = a.value || 1;
+
+      // ✅ 舊資料沒有 startFrom：預設「從第 value 排開始」，維持舊行為
+      const start =
+        typeof a.startFrom === 'number' && a.startFrom > 0
+          ? a.startFrom
+          : interval;
+
+      if (val < start) return false;
+      return (val - start) % interval === 0;
+    }
+
+    // SPECIFIC：維持原本「第幾排提醒一次」
+    return val === a.value;
+  });
   }, [currentProject, currentPattern, projectStats]);
 
   useEffect(() => {
@@ -1017,21 +1028,21 @@ function ProjectView({
               Category
             </span>
             <select
-              className="bg-theme-bg/70 rounded-full px-3 py-1.5 border-none text-[10px]"
-              value={currentProject.category || '未分類'}
-              onChange={(e) =>
-                onUpdateProject({
-                  ...currentProject,
-                  category: e.target.value,
-                })
-              }
-            >
-              {(categories || ['未分類']).map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
+                className="bg-theme-bg/70 rounded-full px-3 py-1.5 border-none text-[10px]"
+                value={currentProject.category || '未分類'}
+                onChange={(e) =>
+                    onUpdateProject({
+                    ...currentProject,
+                    category: e.target.value,
+                    })
+                }
+                >
+                {(categories || ['未分類']).map((c) => (
+                    <option key={c} value={c}>
+                    {c}
+                    </option>
+                ))}
+                </select>
           </div>
           {/* 新增：線材 + 針號 + 起針數 編輯列 */}
           <div className="flex flex-wrap items-center gap-3 text-[10px] text-theme-text/70">
@@ -1041,19 +1052,19 @@ function ProjectView({
                 className="bg-theme-bg/60 rounded-full px-3 py-1 border-none text-[10px]"
                 value={currentProject.yarnId || ''}
                 onChange={(e) =>
-                  onUpdateProject({
+                    onUpdateProject({
                     ...currentProject,
                     yarnId: e.target.value || null,
-                  })
+                    })
                 }
-              >
+                >
                 <option value="">未選擇</option>
                 {yarns.map((y) => (
-                  <option key={y.id} value={y.id}>
+                    <option key={y.id} value={y.id}>
                     {[y.brand, y.name].filter(Boolean).join(' ') || '未命名線材'}
-                  </option>
+                    </option>
                 ))}
-              </select>
+            </select>
             </div>
 
             <div className="flex items-center gap-1">
@@ -1233,10 +1244,10 @@ function ProjectView({
                 placeholder="例：第 35 排發現麻花偏緊，下次改 4.5mm 棒針；袖長預計多織 5cm。"
                 value={currentProject.notes || ''}
                 onChange={(e) =>
-                  onUpdateProject({
+                    onUpdateProject({
                     ...currentProject,
                     notes: e.target.value,
-                  })
+                    })
                 }
               />
             </div>
@@ -1753,6 +1764,7 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                         {
                           id: crypto.randomUUID(),
                           value: 1,
+                          startFrom: 1, 
                           mode: 'SPECIFIC',
                           type: 'TOTAL',
                           sectionId: 'ALL',
@@ -1788,27 +1800,51 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                         <option value="SPECIFIC">第幾排提醒 (Once)</option>
                         <option value="EVERY">每幾排提醒 (Interval)</option>
                       </select>
-                      <div className="flex items-center gap-2">
+
+                        <div className="flex items-center gap-2">
+                        {a.mode === 'EVERY' && (
+                            <>
+                            <span className="text-[10px] font-black opacity-30 uppercase tracking-widest">
+                                從第
+                            </span>
+                            <input
+                                type="number"
+                                value={
+                                typeof a.startFrom === 'number'
+                                    ? a.startFrom
+                                    : a.value || 1 // 舊資料沒有 startFrom 時，預設顯示成「從第 value 排開始」
+                                }
+                                onChange={(e) => {
+                                const v = parseInt(e.target.value) || 1;
+                                const na = (data.alerts || []).map((rule) =>
+                                    rule.id === a.id ? { ...rule, startFrom: v } : rule
+                                );
+                                setData({ ...data, alerts: na });
+                                }}
+                                className="w-20 text-center font-black bg-theme-bg border-none tabular-nums focus:ring-2 ring-theme-primary/20"
+                            />
+                            <span className="text-[10px] font-black opacity-30 uppercase tracking-widest">
+                                排開始，
+                            </span>
+                            </>
+                        )}
+
                         <input
-                          type="number"
-                          value={a.value}
-                          onChange={(e) => {
-                            const na = data.alerts.map((rule) =>
-                              rule.id === a.id
-                                ? {
-                                    ...rule,
-                                    value: parseInt(e.target.value) || 1,
-                                  }
-                                : rule
+                            type="number"
+                            value={a.value}
+                            onChange={(e) => {
+                            const v = parseInt(e.target.value) || 1;
+                            const na = (data.alerts || []).map((rule) =>
+                                rule.id === a.id ? { ...rule, value: v } : rule
                             );
                             setData({ ...data, alerts: na });
-                          }}
-                          className="w-24 text-center font-black text-lg p-3.5 rounded-xl bg-theme-bg border-none tabular-nums focus:ring-2 ring-theme-primary/20"
+                            }}
+                            className="w-24 text-center font-black bg-theme-bg border-none tabular-nums focus:ring-2 ring-theme-primary/20"
                         />
                         <span className="text-[10px] font-black opacity-30 uppercase tracking-widest">
-                          排
+                            {a.mode === 'EVERY' ? '排為間隔' : '排'}
                         </span>
-                      </div>
+                        </div>
 
                       {data.type === 'TEXT' && (
                         <select
