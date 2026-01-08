@@ -2523,7 +2523,7 @@ function App() {
         </div>
 
         <main className="flex-1 overflow-y-auto no-scrollbar pb-safe">
-          {(view === 'LIBRARY' && !currentPattern) || (view === 'PROJECTS' && !selectedProjectId) && (
+          {(view === 'PROJECTS' && !selectedId) || (view === 'LIBRARY' && !currentPattern)  && (
               <CategoryToolbar
                 categories={categories}
                 categoryFilter={categoryFilter}
@@ -2563,6 +2563,7 @@ function App() {
               activeProjects={activeProjects}
               categoryFilter={categoryFilter}
               categories={categories}   // ⬅ 新增這行
+              selectedId={selectedId}
               onUpdateProject={(p) =>
                 setActiveProjects((prev) =>
                   prev.map((x) => (x.id === p.id ? p : x))
