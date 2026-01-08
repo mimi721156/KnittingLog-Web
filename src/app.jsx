@@ -2295,8 +2295,10 @@ function App() {
     '未分類',
   ]);
 
+  const [selectedProjectId, setSelectedProjectId] = useState(null);
   const [categoryFilter, setCategoryFilter] = useState('ALL');
   const [syncOpen, setSyncOpen] = useState(false);
+  const showToolbar = (view === 'LIBRARY' && !currentPattern) || (view === 'PROJECTS' && !selectedProjectId);
 
   useEffect(() => {
     const state = loadAppState();
@@ -2522,37 +2524,37 @@ function App() {
         </div>
 
         <main className="flex-1 overflow-y-auto no-scrollbar pb-safe">
-          {(view === 'PROJECTS' || view === 'LIBRARY') && (
-            <CategoryToolbar
-              categories={categories}
-              categoryFilter={categoryFilter}
-              onChangeFilter={setCategoryFilter}
-              onAddCategory={handleAddCategory}
-              onQuickNewPattern={(type) =>
-                handleNewPattern(
-                  type,
-                  categoryFilter === 'ALL' ? null : categoryFilter
-                )
-              }
-              onQuickNewProject={() => {
-                let basePattern = null;
-                if (categoryFilter === 'ALL') {
-                  basePattern = savedPatterns[0] || null;
-                } else {
-                  basePattern =
-                    savedPatterns.find(
-                      (p) => (p.category || '未分類') === categoryFilter
-                    ) || null;
+          {(view === 'LIBRARY' && !currentPattern) || (view === 'PROJECTS' && !selectedProjectId) && (
+              <CategoryToolbar
+                categories={categories}
+                categoryFilter={categoryFilter}
+                onChangeFilter={setCategoryFilter}
+                onAddCategory={handleAddCategory}
+                onQuickNewPattern={(type) =>
+                  handleNewPattern(
+                    type,
+                    categoryFilter === 'ALL' ? null : categoryFilter
+                  )
                 }
-                if (!basePattern) return;
-                setActiveProjects((prev) => [
-                  createProjectFromPattern(basePattern),
-                  ...prev,
-                ]);
-                setView('PROJECTS');
-              }}
-              hasPatternInFilter={hasPatternInFilter}
-            />
+                onQuickNewProject={() => {
+                  let basePattern = null;
+                  if (categoryFilter === 'ALL') {
+                    basePattern = savedPatterns[0] || null;
+                  } else {
+                    basePattern =
+                      savedPatterns.find(
+                        (p) => (p.category || '未分類') === categoryFilter
+                      ) || null;
+                  }
+                  if (!basePattern) return;
+                  setActiveProjects((prev) => [
+                    createProjectFromPattern(basePattern),
+                    ...prev,
+                  ]);
+                  setView('PROJECTS');
+                }}
+                hasPatternInFilter={hasPatternInFilter}
+              />
           )}
 
           {view === 'PROJECTS' && (
