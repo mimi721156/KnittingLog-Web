@@ -2295,10 +2295,10 @@ function App() {
     '未分類',
   ]);
 
-  const [selectedProjectId, setSelectedProjectId] = useState(null);
   const [categoryFilter, setCategoryFilter] = useState('ALL');
   const [syncOpen, setSyncOpen] = useState(false);
-  const showToolbar = (view === 'LIBRARY' && !currentPattern) || (view === 'PROJECTS' && !selectedProjectId);
+  const selectedId = selectedProjectId;
+  const setSelectedId = onSelectProject;
 
   useEffect(() => {
     const state = loadAppState();
@@ -2569,6 +2569,8 @@ function App() {
                   prev.map((x) => (x.id === p.id ? p : x))
                 )
               }
+              selectedProjectId={selectedProjectId}
+              onSelectProject={setSelectedProjectId}
               onDeleteProject={(id) =>
                 setActiveProjects((prev) => prev.filter((x) => x.id !== id))
               }
