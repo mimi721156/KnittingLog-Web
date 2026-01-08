@@ -2291,7 +2291,7 @@ function App() {
   const [selectedProjectId, setSelectedProjectId] = useState(null);
 
   const [categories, setCategories] = useState([
-    '圖巾',
+    '圍巾',
     '毛帽',
     '毛衣',
     '襪子',
@@ -2525,7 +2525,7 @@ function App() {
         </div>
 
         <main className="flex-1 overflow-y-auto no-scrollbar pb-safe">
-          {(view === 'PROJECTS' && !selectedProjectId) || (view === 'LIBRARY' && !currentPattern)  && (
+          {view === 'PROJECTS' || (view === 'LIBRARY' && !currentPattern)  && (
               <CategoryToolbar
                 categories={categories}
                 categoryFilter={categoryFilter}
