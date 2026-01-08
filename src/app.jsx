@@ -2572,8 +2572,6 @@ function App() {
                   prev.map((x) => (x.id === p.id ? p : x))
                 )
               }
-              selectedProjectId={selectedProjectId}
-              onSelectProject={setSelectedProjectId}
               onDeleteProject={(id) =>
                 setActiveProjects((prev) => prev.filter((x) => x.id !== id))
               }
@@ -2651,7 +2649,10 @@ function App() {
                     : [{ ...p, updatedAt: new Date().toISOString() }, ...prev]
                 )
               }
-              onBack={() => setView('LIBRARY')}
+              onBack={() => {
+                setView('LIBRARY');
+                setCurrentPattern(null); // 確保退回時清空，Toolbar 才會出現
+            }}
             />
           )}
           {view === 'TUTORIAL' && <TutorialView />}
