@@ -642,7 +642,8 @@ function ProjectView({
   categoryFilter,
   categories,   // ⬅ 新增這個
 }) {
-  const [selectedId, setSelectedId] = useState(null);
+  const selectedId = selectedProjectId;
+  const setSelectedId = onSelectProject;
   const [plusN, setPlusN] = useState('');
   const [showAlertOverlay, setShowAlertOverlay] = useState(false);
 
@@ -2297,8 +2298,6 @@ function App() {
 
   const [categoryFilter, setCategoryFilter] = useState('ALL');
   const [syncOpen, setSyncOpen] = useState(false);
-  const selectedId = selectedProjectId;
-  const setSelectedId = onSelectProject;
 
   useEffect(() => {
     const state = loadAppState();
