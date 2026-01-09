@@ -745,6 +745,34 @@ function ProjectView({
     [activeProjects, selectedId]
   );
 
+    // 🔹 目前專案中「正在編織的部位進度」
+  const currentPartProgress = useMemo(() => {
+    if (!currentProject || !Array.isArray(currentProject.partsProgress)) {
+      return null;
+    }
+
+    const parts = currentProject.partsProgress;
+    if (parts.length === 0) return null;
+
+    const activePartId =
+      currentProject.currentPartId || parts[0].partId || null;
+
+    if (!activePartId) return parts[0];
+
+    return parts.find((p) => p.partId === activePartId) || parts[0];
+  }, [currentProject]);
+
+  // 🔹 統一用這兩個變數當「目前這個部位」的排數
+  const currentTotalRow =
+    currentPartProgress?.totalRow ??
+    currentProject?.totalRow ??
+    1;
+
+  const currentSectionRow =
+    currentPartProgress?.sectionRow ??
+    currentProject?.sectionRow ??
+    1;
+
   const currentPattern = useMemo(
     () =>
       currentProject
@@ -766,9 +794,8 @@ function ProjectView({
       cumulativeRows += sectionTotal;
 
       if (
-        currentProject &&
-        currentProject.totalRow >= startRow &&
-        currentProject.totalRow <= cumulativeRows
+        currentTotalRow >= startRow &&
+        currentTotalRow <= cumulativeRows
       ) {
         activeSection = {
           ...s,
@@ -782,7 +809,7 @@ function ProjectView({
     });
 
     return { targetTotal: cumulativeRows, sectionsSummary: summary, activeSection };
-  }, [currentPattern, currentProject?.totalRow]);
+  }, [currentPattern, currentTotalRow]);
 
   const listProjects = useMemo(() => {
     const filtered =
@@ -807,7 +834,7 @@ function ProjectView({
 
   const currentAlerts = useMemo(() => {
     if (!currentProject || !currentPattern) return [];
-    const total = currentProject.totalRow;
+    const total = currentTotalRow;
 
     return (currentPattern.alerts || []).filter((a) => {
       let val;
@@ -826,7 +853,7 @@ function ProjectView({
 
         val = a.type === 'SECTION' ? sectionRowFromStart : total;
       } else {
-        val = a.type === 'SECTION' ? currentProject.sectionRow : total;
+        val = a.type === 'SECTION' ? currentSectionRow : total;
       }
 
     if (a.mode === 'EVERY') {
@@ -845,7 +872,7 @@ function ProjectView({
     // SPECIFIC：維持原本「第幾排提醒一次」
     return val === a.value;
   });
-  }, [currentProject, currentPattern, projectStats]);
+  }, [currentProject?.id, currentPattern, projectStats, currentTotalRow, currentSectionRow]);
 
   const alertKey = useMemo(() => {
   if (!currentProject || currentAlerts.length === 0) return null;
@@ -919,14 +946,33 @@ function ProjectView({
 //   const primaryAlert = currentAlerts[0];
 
   const update = (d) => {
-    if (!currentProject) return;
-    onUpdateProject({
-      ...currentProject,
-      totalRow: Math.max(1, currentProject.totalRow + d),
-      sectionRow: Math.max(1, currentProject.sectionRow + d),
-      lastActive: new Date().toISOString(),
-    });
-  };
+      if (!currentProject) return;
+      if (!currentPartProgress) return;
+
+      const now = new Date().toISOString();
+
+      const newTotal = Math.max(1, currentPartProgress.totalRow + d);
+      const newSection = Math.max(1, currentPartProgress.sectionRow + d);
+
+      const updatedParts = (currentProject.partsProgress || []).map((p) =>
+        p.partId === currentPartProgress.partId
+          ? { ...p, totalRow: newTotal, sectionRow: newSection }
+          : p
+      );
+
+      onUpdateProject({
+        ...currentProject,
+        // 🧵 暫時仍然同步舊欄位，讓其它還沒改完的地方能正常運作
+        totalRow: newTotal,
+        sectionRow: newSection,
+        partsProgress: updatedParts,
+        lastActive: now,
+      });
+
+      // 如果你之前在這裡有 setShowAlertOverlay(false)，記得加回來：
+      // setShowAlertOverlay(false);
+    };
+
 
   const findYarnLabel = (id) => {
     const y = yarns.find((yy) => yy.id === id);
@@ -1289,7 +1335,7 @@ function ProjectView({
                 Row Counter
               </h3>
               <div className="text-7xl md:text-8xl font-black text-theme-text tabular-nums leading-none mb-8 tracking-tighter drop-shadow-md">
-                {currentProject.totalRow}
+                {currentTotalRow}
               </div>
 
               <div className="w-full space-y-6">
