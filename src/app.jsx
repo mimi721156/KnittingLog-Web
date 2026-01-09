@@ -977,6 +977,7 @@ function ProjectView({
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
+                    if (!window.confirm('確定要刪除這個專案嗎？\n此動作無法復原。')) return;
                     onDeleteProject(p.id);
                   }}
                   className="text-gray-200 hover:text-red-400 px-2 transition-colors self-start"
@@ -1470,9 +1471,9 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
   const [activeTab, setActiveTab] = useState('CONTENT');
   const [selectedTool, setSelectedTool] = useState('KNIT');
 
-  useEffect(() => {
-    onUpdate(data);
-  }, [data]);
+  // useEffect(() => {
+  //   onUpdate(data);
+  // }, [data]);
 
   const totalRows = useMemo(() => {
     if (data.type !== 'TEXT') return 0;
@@ -1561,7 +1562,10 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
           </button>
         </div>
         <button
-          onClick={onBack}
+          onClick={() => {
+            onUpdate(data);   // ⬅️ 先把目前編輯內容丟回去
+            onBack();         // ⬅️ 再回 Library
+          }}
           className="text-theme-primary font-black px-2 text-xs uppercase tracking-widest"
         >
           Save
@@ -2092,6 +2096,7 @@ function LibraryView({
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
+                    if (!window.confirm('確定要刪除這個織圖嗎？\n此動作無法復原。')) return;
                     onDeletePattern(ptn.id);
                   }}
                   className="text-gray-200 hover:text-red-400 p-3 transition-colors"
@@ -2744,6 +2749,7 @@ function App() {
                 )
               }
               onCreateProject={(ptn) => {
+                if (!window.confirm('確定要以這個織圖建立新專案嗎？')) return;
                 setActiveProjects((prev) => [
                   createProjectFromPattern(ptn),
                   ...prev,
