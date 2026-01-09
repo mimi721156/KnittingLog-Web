@@ -226,21 +226,73 @@ const createNewPattern = (type = 'CHART', category = '未分類') => ({
 });
 
 // 新增：projectName & startAt
-const createProjectFromPattern = (ptn) => ({
-  id: crypto.randomUUID(),
-  patternId: ptn.id,
-  patternName: ptn.name, // 保留原圖名稱 snapshot
-  projectName: ptn.name, // 使用者可以改
-  category: ptn.category || '未分類',
-  yarnId: ptn.meta?.yarnId ?? null,      // 實際線材（預設用織圖設定）
-  needle: ptn.meta?.needle ?? '',        // 實際針號
-  castOn: ptn.meta?.castOn ?? '',        // 實際起針
-  totalRow: 1,
-  sectionRow: 1,
-  notes: '',
-  startAt: new Date().toISOString(), // 專案開始時間
-  lastActive: new Date().toISOString(),
-});
+const createProjectFromPattern = (ptn) => {
+  const now = new Date().toISOString();
+  const mainPartId = crypto.randomUUID();
+
+  return {
+    id: crypto.randomUUID(),
+    patternId: ptn.id,
+    patternName: ptn.name, // 保留原圖名稱 snapshot
+    projectName: ptn.name, // 使用者可以改
+    category: ptn.category || '未分類',
+    yarnId: ptn.meta?.yarnId ?? null,      // 實際線材（預設用織圖設定）
+    needle: ptn.meta?.needle ?? '',        // 實際針號
+    castOn: ptn.meta?.castOn ?? '',        // 實際起針
+
+    // 先保留舊欄位，讓現有 UI 不用動
+    totalRow: 1,
+    sectionRow: 1,
+
+    notes: '',
+    startAt: new Date().toISOString(), // 專案開始時間
+    lastActive: new Date().toISOString(),
+
+    // 🆕 多部位進度：先幫每個新專案創一個「主體」部位
+    currentPartId: mainPartId,
+    partsProgress: [
+      {
+        partId: mainPartId,
+        name: '主體',
+        totalRow: 1,
+        sectionRow: 1,
+      },
+    ],
+  };
+};
+
+
+// 把舊版專案資料補上多部位進度欄位（暫時只有「主體」一個部位）
+const normalizeProject = (p) => {
+  if (!p) return p;
+
+  // 已經有 partsProgress 的就不用再處理
+  if (Array.isArray(p.partsProgress) && p.partsProgress.length > 0) {
+    return p;
+  }
+
+  // 用舊版 totalRow / sectionRow 當這個部位的初始進度
+  const mainTotalRow =
+    typeof p.totalRow === 'number' && p.totalRow > 0 ? p.totalRow : 1;
+  const mainSectionRow =
+    typeof p.sectionRow === 'number' && p.sectionRow > 0 ? p.sectionRow : 1;
+
+  const mainPartId = crypto.randomUUID();
+
+  return {
+    ...p,
+    currentPartId: mainPartId,
+    partsProgress: [
+      {
+        partId: mainPartId,
+        name: '主體', // 先都叫主體，之後再讓你改名字 / 對應 pattern 部位
+        totalRow: mainTotalRow,
+        sectionRow: mainSectionRow,
+      },
+    ],
+  };
+};
+
 
 // === GitHub Sync Dialog ===
 
@@ -2442,13 +2494,16 @@ function App() {
   useEffect(() => {
     const state = loadAppState();
     setSavedPatterns(state.savedPatterns || []);
-    setActiveProjects(state.activeProjects || []);
+    setActiveProjects(
+      (state.activeProjects || []).map((p) => normalizeProject(p))
+    );
     setYarns(state.yarns || []);
     setThemeKey(state.themeKey || 'PURPLE');
     if (state.categories && Array.isArray(state.categories)) {
       setCategories(state.categories);
     }
   }, []);
+
 
   useEffect(() => {
     saveAppState({
@@ -2477,13 +2532,18 @@ function App() {
 
   const applyRemoteData = (remote) => {
     if (remote.savedPatterns) setSavedPatterns(remote.savedPatterns);
-    if (remote.activeProjects) setActiveProjects(remote.activeProjects);
+    if (remote.activeProjects) {
+      setActiveProjects(
+        remote.activeProjects.map((p) => normalizeProject(p))
+      );
+    }
     if (remote.yarns) setYarns(remote.yarns);
     if (remote.themeKey) setThemeKey(remote.themeKey);
     if (remote.categories && Array.isArray(remote.categories)) {
       setCategories(remote.categories);
     }
   };
+
 
   const handleAddCategory = (name) => {
     if (!name.trim()) return;
