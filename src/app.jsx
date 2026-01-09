@@ -989,10 +989,29 @@ function ProjectView({
         </h2>
         <div className="grid gap-4">
           {listProjects.map(({ project: p, pattern: pat, targetTotal }) => {
-            const ratio =
-              targetTotal && targetTotal > 0
-                ? Math.min(1, p.totalRow / targetTotal)
-                : null;
+            let ratio = null;
+            let plannedRows = null;
+            let doneRows = null;
+
+            if (targetTotal && targetTotal > 0) {
+              if (Array.isArray(p.partsProgress) && p.partsProgress.length > 0) {
+                const perPartMax = targetTotal;
+                plannedRows = perPartMax * p.partsProgress.length;
+                doneRows = p.partsProgress.reduce((sum, part) => {
+                  const val = typeof part.totalRow === 'number' ? part.totalRow : 0;
+                  return sum + Math.min(val, perPartMax);
+                }, 0);
+                ratio =
+                  plannedRows > 0 ? Math.min(1, doneRows / plannedRows) : null;
+              } else {
+                // 舊資料：還沒啟用多部位時的 fallback
+                plannedRows = targetTotal;
+                const val = typeof p.totalRow === 'number' ? p.totalRow : 0;
+                doneRows = Math.min(val, targetTotal);
+                ratio = Math.min(1, doneRows / plannedRows);
+              }
+            }
+
             const title = p.projectName || p.patternName;
             return (
               <div
@@ -1064,9 +1083,11 @@ function ProjectView({
                             {Math.round(ratio * 100)}%
                           </span>
                         </span>
-                        <span>
-                          {p.totalRow} / {targetTotal} rows
-                        </span>
+                        {plannedRows !== null && (
+                          <span>
+                            {doneRows} / {plannedRows} rows
+                          </span>
+                        )}
                       </div>
                     </div>
                   )}
@@ -1305,7 +1326,7 @@ function ProjectView({
                 </span>
               </div>
               <span className="font-black text-theme-primary tabular-nums text-lg">
-                {currentProject.totalRow}
+                {currentTotalRow}
                 <span className="opacity-20 mx-1">/</span>
                 {projectStats.targetTotal}
                 <span className="text-[9px] opacity-40 uppercase ml-1">
@@ -1319,11 +1340,44 @@ function ProjectView({
                 style={{
                   width: `${Math.min(
                     100,
-                    (currentProject.totalRow / projectStats.targetTotal) * 100
+                    (currentTotalRow / projectStats.targetTotal) * 100
                   )}%`,
                 }}
               />
             </div>
+          </div>
+        )}
+
+        {/* 🧵 部位切換 Tabs */}
+        {currentProject.partsProgress && currentProject.partsProgress.length > 0 && (
+          <div className="mt-4 flex flex-wrap gap-2">
+            {currentProject.partsProgress.map((part) => {
+              const isActive =
+                currentPartProgress && part.partId === currentPartProgress.partId;
+
+              return (
+                <button
+                  key={part.partId}
+                  onClick={() =>
+                    onUpdateProject({
+                      ...currentProject,
+                      currentPartId: part.partId,
+                      // 為了讓還沒改完的地方也跟著更新
+                      totalRow: part.totalRow || 1,
+                      sectionRow: part.sectionRow || 1,
+                    })
+                  }
+                  className={
+                    'px-4 py-1.5 rounded-full text-[10px] font-black tracking-[0.18em] uppercase transition ' +
+                    (isActive
+                      ? 'bg-theme-primary text-white shadow'
+                      : 'bg-theme-bg text-theme-text/60 hover:bg-theme-bg/80')
+                  }
+                >
+                  {part.name || '主體'}
+                </button>
+              );
+            })}
           </div>
         )}
 
@@ -1333,6 +1387,11 @@ function ProjectView({
             <div className="bg-white rounded-[3rem] p-8 flex flex-col items-center shadow-cozy border-2 border-white">
               <h3 className="text-theme-primary font-black uppercase tracking-widest text-[9px] mb-3 opacity-50">
                 Row Counter
+                {currentPartProgress?.name && (
+                  <span className="ml-2 text-[9px] text-theme-text/50">
+                    · {currentPartProgress.name}
+                  </span>
+                )}
               </h3>
               <div className="text-7xl md:text-8xl font-black text-theme-text tabular-nums leading-none mb-8 tracking-tighter drop-shadow-md">
                 {currentTotalRow}
