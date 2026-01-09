@@ -244,11 +244,17 @@ const createProjectFromPattern = (ptn) => ({
 
 // === GitHub Sync Dialog ===
 
+const PATH_PRESETS = [
+  'data/knitting.json',
+  'data/xiangdata.json',
+];
+
 function GitHubSyncDialog({ open, onClose, onApplyRemote, currentState }) {
   const [owner, setOwner] = useState('');
   const [repo, setRepo] = useState('');
   const [branch, setBranch] = useState('main');
   const [path, setPath] = useState('data/knitting.json');
+  const [customPath, setCustomPath] = useState('');
   const [token, setToken] = useState('');
   const [status, setStatus] = useState('');
   const [statusType, setStatusType] = useState('info');
@@ -261,7 +267,13 @@ function GitHubSyncDialog({ open, onClose, onApplyRemote, currentState }) {
     setOwner(s.owner || 'mimi721156');
     setRepo(s.repo || 'KnittingLog-Data');
     setBranch(s.branch || 'main');
-    setPath(s.path || 'data/knitting.json');
+    const loadedPath = s.path || 'data/knitting.json';
+    setPath(loadedPath);
+    if (loadedPath && !PATH_PRESETS.includes(loadedPath)) {
+      setCustomPath(loadedPath); // 不是預設選項時，當作自訂路徑
+    } else {
+      setCustomPath('');
+    }
     setToken(t || '');
     setStatus('');
     setStatusType('info');
@@ -378,12 +390,40 @@ function GitHubSyncDialog({ open, onClose, onApplyRemote, currentState }) {
               <label className="text-[10px] font-black uppercase tracking-widest opacity-40 block mb-1">
                 Path
               </label>
-              <input
-                className="w-full rounded-xl bg-slate-50 border-none px-3 py-2 text-sm"
-                value={path}
-                onChange={(e) => setPath(e.target.value)}
-                placeholder="data/knitting.json"
-              />
+              {/* 下拉選單：預設幾個常用檔名＋一個「自訂」 */}
+              <select
+                className="w-full rounded-xl bg-slate-50 border-none px-3 py-2 text-sm mb-2"
+                value={PATH_PRESETS.includes(path) ? path : 'CUSTOM'}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  if (v === 'CUSTOM') {
+                    // 切到自訂模式時，如果之前有自訂值就沿用，沒有就先給空字串
+                    setPath(customPath || '');
+                  } else {
+                    setPath(v);
+                  }
+                }}
+              >
+                {PATH_PRESETS.map((p) => (
+                  <option key={p} value={p}>
+                    {p}
+                  </option>
+                ))}
+                <option value="CUSTOM">自訂路徑（Custom）</option>
+              </select>
+            
+              {/* 當前 path 不在預設清單裡時，視為自訂路徑 → 顯示輸入框 */}
+              {!PATH_PRESETS.includes(path) && (
+                <input
+                  className="w-full rounded-xl bg-slate-50 border-none px-3 py-2 text-sm"
+                  value={path}
+                  onChange={(e) => {
+                    setPath(e.target.value);
+                    setCustomPath(e.target.value);
+                  }}
+                  placeholder="例如：data/friend-001.json"
+                />
+              )}
             </div>
           </div>
 
