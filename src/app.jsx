@@ -190,74 +190,113 @@ const Icons = {
 
 // === 小工具 ===
 
-const createNewPattern = (type = 'CHART', category = '未分類') => ({
-  id: crypto.randomUUID(),
-  name: '未命名織圖',
-  type,
-  category,
-  updatedAt: new Date().toISOString(),
-  meta: { 
-    castOn: '',
-    needle: '',
-    yarnId: null,   // 新增：預設線材
- },
-  notes: '',
-  alerts: [],
-  sections: [
-    {
-      id: crypto.randomUUID(),
-      name: '主體',
-      rows: 8,
-      cols: 10,
-      grid: Array(8)
-        .fill()
-        .map(() => Array(10).fill('KNIT')),
+const createNewPattern = (type = 'CHART', category = '未分類') => {
+  const now = new Date().toISOString();
+
+  const base = {
+    id: crypto.randomUUID(),
+    name: '未命名織圖',
+    type,
+    category,
+    updatedAt: now,
+    meta: {
+      castOn: '',
+      needle: '',
+      yarnId: null, // 預設線材
     },
-  ],
-  textSections: [
-    {
-      id: crypto.randomUUID(),
-      title: '起針段',
-      content: '',
-      repeats: 1,
-      rowsPerLoop: 1,
-    },
-  ],
-});
+    notes: '',
+    alerts: [],
+    sections: [
+      {
+        id: crypto.randomUUID(),
+        name: '主體',
+        rows: 8,
+        cols: 10,
+        grid: Array(8)
+          .fill(null)
+          .map(() => Array(10).fill('KNIT')),
+      },
+    ],
+    textSections: [
+      {
+        id: crypto.randomUUID(),
+        title: '起針段',
+        content: '',
+        repeats: 1,
+        rowsPerLoop: 1,
+      },
+    ],
+  };
+
+  return {
+    ...base,
+    // TEXT 織圖預設有一個部位「主體」，其他型別先給空陣列
+    parts: type === 'TEXT' ? ['主體'] : [],
+  };
+};
+
+
+// 幫舊版織圖補上 parts 欄位（TEXT 織圖預設一個「主體」部位）
+const normalizePattern = (p) => {
+  if (!p) return p;
+
+  // 已經有 parts 就不用改
+  if (Array.isArray(p.parts) && p.parts.length > 0) {
+    return p;
+  }
+
+  if (p.type === 'TEXT') {
+    return {
+      ...p,
+      parts: ['主體'], // 先給一個預設部位
+    };
+  }
+
+  // CHART 或其他型別，先不強迫有部位
+  return {
+    ...p,
+    parts: [],
+  };
+};
+
 
 // 新增：projectName & startAt
 const createProjectFromPattern = (ptn) => {
   const now = new Date().toISOString();
-  const mainPartId = crypto.randomUUID();
+
+  // 從織圖抓出部位列表，沒有就預設一個「主體」
+  const partNames =
+    Array.isArray(ptn.parts) && ptn.parts.length > 0
+      ? ptn.parts
+      : ['主體'];
+
+  const partsProgress = partNames.map((name) => ({
+    partId: crypto.randomUUID(),
+    name,
+    totalRow: 1,
+    sectionRow: 1,
+  }));
+
+  const firstPartId = partsProgress[0]?.partId ?? null;
 
   return {
     id: crypto.randomUUID(),
     patternId: ptn.id,
     patternName: ptn.name, // 保留原圖名稱 snapshot
-    projectName: ptn.name, // 使用者可以改
+    projectName: ptn.name, // 使用者可改
     category: ptn.category || '未分類',
-    yarnId: ptn.meta?.yarnId ?? null,      // 實際線材（預設用織圖設定）
-    needle: ptn.meta?.needle ?? '',        // 實際針號
-    castOn: ptn.meta?.castOn ?? '',        // 實際起針
-
-    // 先保留舊欄位，讓現有 UI 不用動
+    yarnId: ptn.meta?.yarnId ?? null, // 實際線材
+    needle: ptn.meta?.needle ?? '',
+    castOn: ptn.meta?.castOn ?? '',
+    // 舊欄位：暫時保留，讓舊邏輯還能運作
     totalRow: 1,
     sectionRow: 1,
-
     notes: '',
     startAt: new Date().toISOString(), // 專案開始時間
     lastActive: new Date().toISOString(),
-
-    // 🆕 多部位進度：先幫每個新專案創一個「主體」部位
-    currentPartId: mainPartId,
-    partsProgress: [
-      {
-        partId: mainPartId,
-        name: '主體',
-        totalRow: 1,
-        sectionRow: 1,
-      },
-    ],
+    // 🧵 多部位
+    currentPartId: firstPartId,
+    partsProgress,
   };
 };
 
@@ -1772,6 +1811,64 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
             </div>
           )}
         </div>
+        {/* 部位設定 Parts */}
+        <div className="mt-6">
+          <div className="flex items-center justify-between mb-2">
+            <div>
+              <div className="text-[9px] font-black opacity-30 uppercase tracking-[0.2em]">
+                Parts / 部位
+              </div>
+              <div className="text-[11px] text-theme-text/60">
+                例如：前片、後片、左袖、右袖…
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                const currentParts = data.parts && data.parts.length
+                  ? data.parts
+                  : ['主體'];
+                const nextName = `部位 ${currentParts.length + 1}`;
+                setData({
+                  ...data,
+                  parts: [...currentParts, nextName],
+                });
+              }}
+              className="text-[10px] px-3 py-1 rounded-full bg-theme-primary text-white font-black tracking-[0.16em] uppercase"
+            >
+              + Add Part
+            </button>
+          </div>
+          <div className="space-y-2">
+            {(data.parts && data.parts.length ? data.parts : ['主體']).map(
+              (name, idx, arr) => (
+                <div key={idx} className="flex items-center gap-2">
+                  <input
+                    value={name}
+                    onChange={(e) => {
+                      const next = [...arr];
+                      next[idx] = e.target.value;
+                      setData({ ...data, parts: next });
+                    }}
+                    className="flex-1 rounded-2xl bg-theme-bg/40 border-none px-3 py-1.5 text-sm"
+                    placeholder={`部位名稱 ${idx + 1}`}
+                  />
+                  {arr.length > 1 && (
+                    <button
+                      onClick={() => {
+                        const next = [...arr];
+                        next.splice(idx, 1);
+                        setData({ ...data, parts: next });
+                      }}
+                      className="text-xs text-theme-text/40 hover:text-red-400 px-2"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+              )
+            )}
+          </div>
+        </div>
 
         <div className="p-6 md:p-10 space-y-12">
           {activeTab === 'CONTENT' && (
@@ -2596,18 +2693,16 @@ function App() {
   const [categoryFilter, setCategoryFilter] = useState('ALL');
   const [syncOpen, setSyncOpen] = useState(false);
 
-  useEffect(() => {
-    const state = loadAppState();
-    setSavedPatterns(state.savedPatterns || []);
-    setActiveProjects(
-      (state.activeProjects || []).map((p) => normalizeProject(p))
-    );
-    setYarns(state.yarns || []);
-    setThemeKey(state.themeKey || 'PURPLE');
-    if (state.categories && Array.isArray(state.categories)) {
-      setCategories(state.categories);
-    }
-  }, []);
+    useEffect(() => {
+      const state = loadAppState();
+      setSavedPatterns((state.savedPatterns || []).map((p) => normalizePattern(p)));
+      setActiveProjects((state.activeProjects || []).map((p) => normalizeProject(p)));
+      setYarns(state.yarns || []);
+      setThemeKey(state.themeKey || 'PURPLE');
+      if (state.categories && Array.isArray(state.categories)) {
+        setCategories(state.categories);
+      }
+    }, []);
 
 
   useEffect(() => {
@@ -2636,11 +2731,11 @@ function App() {
   };
 
   const applyRemoteData = (remote) => {
-    if (remote.savedPatterns) setSavedPatterns(remote.savedPatterns);
+    if (remote.savedPatterns) {
+      setSavedPatterns(remote.savedPatterns.map((p) => normalizePattern(p)));
+    }
     if (remote.activeProjects) {
-      setActiveProjects(
-        remote.activeProjects.map((p) => normalizeProject(p))
-      );
+      setActiveProjects(remote.activeProjects.map((p) => normalizeProject(p)));
     }
     if (remote.yarns) setYarns(remote.yarns);
     if (remote.themeKey) setThemeKey(remote.themeKey);
@@ -2648,7 +2743,6 @@ function App() {
       setCategories(remote.categories);
     }
   };
-
 
   const handleAddCategory = (name) => {
     if (!name.trim()) return;
