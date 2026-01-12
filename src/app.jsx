@@ -1801,7 +1801,7 @@ function ProjectView({
                       update(1);
                       setShowAlertOverlay(false);
                     }}
-                    className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-theme-primary text-white font-black text-xl flex items-center justify-center active:scale-95 shadow-lg shadow-theme-primary/30"
+                    className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-theme-primary text-white font-black text-2xl flex items-center justify-center active:scale-95 shadow-lg shadow-theme-primary/30"
                   >
                     +
                   </button>
