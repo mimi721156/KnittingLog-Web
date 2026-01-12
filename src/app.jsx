@@ -1746,16 +1746,7 @@ function ProjectView({
 
       {/* 底部常駐：Section Loop + Counter */}
       {currentPartProgress && (
-      <div
-        className="
-          fixed inset-x-0 bottom-16          /* 手機：整條往上抬 ≈ 64px，避開 Safari 工具列 */
-          md:sticky md:bottom-0              /* md 以上：正常貼在內容底部 */
-          border-t bg-white/95 backdrop-blur
-          px-4 py-3 md:px-8 md:py-4
-          shadow-[0_-4px_12px_rgba(0,0,0,0.08)]
-          z-30
-        "
-      >
+      <div className="fixed bottom-0 left-0 right-0 border-t bg-white/95 backdrop-blur px-4 pt-3 pb-[calc(12px+env(safe-area-inset-bottom))] md:px-8 md:py-4 shadow-[0_-4px_12px_rgba(0,0,0,0.04)] z-30">
           <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
             {/* Section Loop */}
             <div className="w-full md:w-auto text-[10px] text-theme-text/60">
