@@ -335,10 +335,6 @@ const normalizePattern = (p) => {
 // 新增：projectName & startAt
 const createProjectFromPattern = (ptn) => {
   const now = new Date().toISOString();
-
-  // 從織圖抓出部位列表，沒有就預設一個「主體」
-const createProjectFromPattern = (ptn) => {
-  const now = new Date().toISOString();
   const normalizedPattern = normalizePattern(ptn);
 
   const patternParts =
@@ -376,14 +372,36 @@ const createProjectFromPattern = (ptn) => {
     totalRow: 1,
     sectionRow: 1,
     notes: '',
-    startAt: new Date().toISOString(), // 專案開始時間
-    lastActive: new Date().toISOString(),
+    startAt: now,
+    lastActive: now,
     currentPartId: firstPartId,
     partsProgress,
   };
 };
 
 
+  const firstPartId = partsProgress[0]?.partId ?? null;
+
+  return {
+    id: crypto.randomUUID(),
+    patternId: ptn.id,
+    patternName: ptn.name, // 保留原圖名稱 snapshot
+    projectName: ptn.name, // 使用者可改
+    category: ptn.category || '未分類',
+    yarnId: ptn.meta?.yarnId ?? null, // 實際線材
+    needle: ptn.meta?.needle ?? '',
+    castOn: ptn.meta?.castOn ?? '',
+    // 舊欄位：暫時保留，讓舊邏輯還能運作
+    totalRow: 1,
+    sectionRow: 1,
+    notes: '',
+    startAt: new Date().toISOString(), // 專案開始時間
+    lastActive: new Date().toISOString(),
+    // 🧵 多部位
+    currentPartId: firstPartId,
+    partsProgress,
+  };
+};
 
 
 // 把舊版專案資料補上多部位進度欄位（暫時只有「主體」一個部位）
