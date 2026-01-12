@@ -1942,22 +1942,40 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
             <div className="flex gap-2 flex-wrap">
               {(data.parts || []).map((part) => {
                 const isActive = currentPart && part.id === currentPart.id;
+                const totalParts = (data.parts || []).length;
+
                 return (
-                  <button
+                  <div
                     key={part.id}
-                    onClick={() => setActivePartId(part.id)}
-                    className={
-                      'px-4 py-1.5 rounded-full text-[10px] font-black tracking-[0.18em] uppercase transition ' +
-                      (isActive
-                        ? 'bg-theme-primary text-white shadow'
-                        : 'bg-theme-bg text-theme-text/60 hover:bg-theme-bg/80')
-                    }
+                    className="flex items-center gap-1"
                   >
-                    {part.name}
-                  </button>
+                    <button
+                      onClick={() => setActivePartId(part.id)}
+                      className={
+                        'px-4 py-1.5 rounded-full text-[10px] font-black tracking-[0.18em] uppercase transition ' +
+                        (isActive
+                          ? 'bg-theme-primary text-white shadow'
+                          : 'bg-theme-bg text-theme-text/60 hover:bg-theme-bg/80')
+                      }
+                    >
+                      {part.name}
+                    </button>
+
+                    {/* 至少要保留 1 個部位，只有在部位數 > 1 時才顯示刪除 */}
+                    {totalParts > 1 && (
+                      <button
+                        onClick={() => handleDeletePart(part.id)}
+                        className="text-[11px] text-red-300 hover:text-red-500 px-1 py-0.5 rounded-full transition"
+                        title="刪除此部位"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
                 );
-              })}
-            </div>
+          })}
+        </div>
+
           </div>
         </div>
 
