@@ -1894,53 +1894,55 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
         </div>
 
         {/* 部位設定 Parts */}
-        <div className="mt-6">
-          <div className="flex items-center justify-between mb-2">
-            <div>
-              <div className="text-[9px] font-black opacity-30 uppercase tracking-[0.2em]">
-                Parts / 部位
+        <div className="p-6 md:p-10 space-y-8">
+          <div className="mt-6">
+            <div className="flex items-center justify-between mb-2">
+              <div>
+                <div className="text-[9px] font-black opacity-30 uppercase tracking-[0.2em]">
+                  Parts / 部位
+                </div>
+                <div className="text-[11px] text-theme-text/60">
+                  例如：前片、後片、左袖、右袖…
+                </div>
               </div>
-              <div className="text-[11px] text-theme-text/60">
-                例如：前片、後片、左袖、右袖…
-              </div>
+              <button
+                onClick={() => {
+                  const parts = data.parts && data.parts.length ? data.parts : [];
+                  const newPart = {
+                    id: crypto.randomUUID(),
+                    name: `部位 ${parts.length + 1}`,
+                    textSections: data.textSections || [],
+                    alerts: data.alerts || [],
+                  };
+                  setData({
+                    ...data,
+                    parts: [...parts, newPart],
+                  });
+                }}
+                className="text-[10px] px-3 py-1 rounded-full bg-theme-primary text-white font-black tracking-[0.16em] uppercase"
+              >
+                + Add Part
+              </button>
             </div>
-            <button
-              onClick={() => {
-                const parts = data.parts && data.parts.length ? data.parts : [];
-                const newPart = {
-                  id: crypto.randomUUID(),
-                  name: `部位 ${parts.length + 1}`,
-                  textSections: data.textSections || [],
-                  alerts: data.alerts || [],
-                };
-                setData({
-                  ...data,
-                  parts: [...parts, newPart],
-                });
-              }}
-              className="text-[10px] px-3 py-1 rounded-full bg-theme-primary text-white font-black tracking-[0.16em] uppercase"
-            >
-              + Add Part
-            </button>
-          </div>
-          <div className="flex gap-2 flex-wrap">
-            {(data.parts || []).map((part) => {
-              const isActive = currentPart && part.id === currentPart.id;
-              return (
-                <button
-                  key={part.id}
-                  onClick={() => setActivePartId(part.id)}
-                  className={
-                    'px-4 py-1.5 rounded-full text-[10px] font-black tracking-[0.18em] uppercase transition ' +
-                    (isActive
-                      ? 'bg-theme-primary text-white shadow'
-                      : 'bg-theme-bg text-theme-text/60 hover:bg-theme-bg/80')
-                  }
-                >
-                  {part.name}
-                </button>
-              );
-            })}
+            <div className="flex gap-2 flex-wrap">
+              {(data.parts || []).map((part) => {
+                const isActive = currentPart && part.id === currentPart.id;
+                return (
+                  <button
+                    key={part.id}
+                    onClick={() => setActivePartId(part.id)}
+                    className={
+                      'px-4 py-1.5 rounded-full text-[10px] font-black tracking-[0.18em] uppercase transition ' +
+                      (isActive
+                        ? 'bg-theme-primary text-white shadow'
+                        : 'bg-theme-bg text-theme-text/60 hover:bg-theme-bg/80')
+                    }
+                  >
+                    {part.name}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
 
