@@ -833,32 +833,30 @@ function ProjectView({
   const [plusN, setPlusN] = useState('');
   const [showAlertOverlay, setShowAlertOverlay] = useState(false);
 
+  // 1. 取得目前選中的專案
   const currentProject = useMemo(
     () => activeProjects.find((x) => x.id === selectedId),
     [activeProjects, selectedId]
   );
 
+  // 2. 取得部位進度
   const currentPartProgress = useMemo(() => {
-    if (!currentProject || !Array.isArray(currentProject.partsProgress)) {
-      return null;
-    }
+    if (!currentProject || !Array.isArray(currentProject.partsProgress)) return null;
     const parts = currentProject.partsProgress;
     if (parts.length === 0) return null;
 
     const activePartId =
       currentProject.currentPartId || parts[0].partId || null;
 
-    if (!activePartId) return parts[0];
-
     return parts.find((p) => p.partId === activePartId) || parts[0];
   }, [currentProject]);
 
   const currentTotalRow =
     currentPartProgress?.totalRow ?? currentProject?.totalRow ?? 1;
-
   const currentSectionRow =
     currentPartProgress?.sectionRow ?? currentProject?.sectionRow ?? 1;
 
+  // 3. 取得目前專案對應的織圖
   const currentPattern = useMemo(
     () =>
       currentProject
@@ -869,43 +867,42 @@ function ProjectView({
 
   const currentPatternPart = useMemo(() => {
     if (!currentPattern || !currentProject) return null;
-    if (!Array.isArray(currentPattern.parts) || currentPattern.parts.length === 0)
-      return null;
 
     const activePartId =
       currentProject.currentPartId ||
       currentProject.partsProgress?.[0]?.partId ||
-      currentPattern.parts[0].id;
+      currentPattern.parts?.[0]?.id;
 
     return (
-      currentPattern.parts.find((p) => p.id === activePartId) ||
-      currentPattern.parts[0]
+      currentPattern.parts?.find((p) => p.id === activePartId) ||
+      currentPattern.parts?.[0] ||
+      null
     );
   }, [currentPattern, currentProject]);
 
+  // 4. 計算專案統計數據
   const projectStats = useMemo(() => {
     if (!currentPattern || currentPattern.type !== 'TEXT')
       return { targetTotal: 0, activeSection: null, sectionsSummary: [] };
 
     const sectionsSource =
-      currentPatternPart?.textSections && currentPatternPart.textSections.length
-        ? currentPatternPart.textSections
-        : currentPattern.textSections || [];
+      currentPatternPart?.textSections ||
+      currentPattern.textSections ||
+      [];
 
-    if (!sectionsSource || !sectionsSource.length) {
+    if (!sectionsSource.length) {
       return { targetTotal: 0, activeSection: null, sectionsSummary: [] };
     }
 
     let cumulativeRows = 0;
     let activeSection = null;
-    const total = currentTotalRow;
 
     const summary = sectionsSource.map((s) => {
       const sectionTotal = (s.rowsPerLoop || 1) * (s.repeats || 1);
       const startRow = cumulativeRows + 1;
       cumulativeRows += sectionTotal;
 
-      if (total >= startRow && total <= cumulativeRows) {
+      if (currentTotalRow >= startRow && currentTotalRow <= cumulativeRows) {
         activeSection = {
           ...s,
           startRow,
@@ -914,511 +911,58 @@ function ProjectView({
         };
       }
 
-      return { ...s, totalRows: sectionTotal, startRow, endRow: cumulativeRows };
+      return {
+        ...s,
+        totalRows: sectionTotal,
+        startRow,
+        endRow: cumulativeRows,
+      };
     });
 
     return { targetTotal: cumulativeRows, sectionsSummary: summary, activeSection };
   }, [currentPattern, currentPatternPart, currentTotalRow]);
 
-  const listProjects = useMemo(() => {
-    const filtered =
-      categoryFilter && categoryFilter !== 'ALL'
-        ? activeProjects.filter(
-            (p) => (p.category || '未分類') === categoryFilter
-          )
-        : activeProjects;
+  // 5. 全局進度比例 (用於底部進度條)
+  const globalProgressRatio =
+    currentPattern && projectStats.targetTotal > 0
+      ? Math.min(1, currentTotalRow / projectStats.targetTotal)
+      : 0;
 
-    return filtered.map((p) => {
-      const pat = savedPatterns.find((x) => x.id === p.patternId);
-
-      // 非 TEXT：不算多部位進度，ROWS 就顯示 totalRow
-      if (!pat || pat.type !== 'TEXT') {
-        return {
-          project: p,
-          pattern: pat,
-          partsMeta: null,
-          plannedRows: null,
-          currentPartName: null,
-          currentPartRow: p.totalRow || 0,
-          currentPartTarget: null,
-        };
-      }
-
-      // 有 parts 就用 parts，沒有就整個 pattern 當作一個部位
-      const rawParts =
-        Array.isArray(pat.parts) && pat.parts.length > 0
-          ? pat.parts
-          : [
-              {
-                id: 'MAIN',
-                name: '主體',
-                textSections: pat.textSections || [],
-              },
-            ];
-
-      // 每個部位自己的目標排數
-      const partsMeta = rawParts.map((part, idx) => {
-        const sections = part.textSections || [];
-        const targetRows = sections.reduce(
-          (sum, s) => sum + (s.repeats || 1) * (s.rowsPerLoop || 1),
-          0
-        );
-        return {
-          partId: part.id || part.partId || `PART_${idx}`,
-          name: part.name || `部位 ${idx + 1}`,
-          targetRows,
-        };
-      });
-
-      const plannedRows = partsMeta.reduce(
-        (sum, m) => sum + (m.targetRows || 0),
-        0
-      ) || null;
-
-      // 找出目前啟用的部位進度
-      let currentPartProgress = null;
-      if (Array.isArray(p.partsProgress) && p.partsProgress.length > 0) {
-        currentPartProgress =
-          (p.currentPartId &&
-            p.partsProgress.find((pp) => pp.partId === p.currentPartId)) ||
-          p.partsProgress[0];
-      }
-
-      const fallbackPartMeta = partsMeta[0] || null;
-
-      const activePartMeta =
-        (currentPartProgress &&
-          partsMeta.find((m) => m.partId === currentPartProgress.partId)) ||
-        fallbackPartMeta;
-
-      const currentPartRow =
-        (currentPartProgress && (currentPartProgress.totalRow || 0)) ||
-        p.totalRow ||
-        0;
-
-      const currentPartName = activePartMeta?.name || null;
-      const currentPartTarget = activePartMeta?.targetRows || null;
-
-      return {
-        project: p,
-        pattern: pat,
-        partsMeta,
-        plannedRows,
-        currentPartName,
-        currentPartRow,
-        currentPartTarget,
-      };
-    });
-  }, [activeProjects, savedPatterns, categoryFilter]);
-
-  const currentAlerts = useMemo(() => {
-    if (!currentProject || !currentPattern) return [];
-
-    const alertsSource =
-      currentPatternPart?.alerts && currentPatternPart.alerts.length
-        ? currentPatternPart.alerts
-        : currentPattern.alerts || [];
-
-    if (!alertsSource.length) return [];
-
-    const total = currentTotalRow;
-
-    return alertsSource.filter((a) => {
-      let val;
-
-      if (a.sectionId && a.sectionId !== 'ALL') {
-        const sec = projectStats.sectionsSummary?.find(
-          (s) => s.id === a.sectionId
-        );
-        if (!sec) return false;
-
-        const sectionRowFromStart = total - sec.startRow + 1;
-        if (sectionRowFromStart < 1 || sectionRowFromStart > sec.totalRows) {
-          return false;
-        }
-
-        val = a.type === 'SECTION' ? sectionRowFromStart : total;
-      } else {
-        val = a.type === 'SECTION' ? currentSectionRow : total;
-      }
-
-      if (a.mode === 'EVERY') {
-        if (!a.startFrom || a.startFrom < 1) {
-          return val > 0 && val % a.value === 0;
-        }
-        if (val < a.startFrom) return false;
-        return (val - a.startFrom) % a.value === 0;
-      }
-
-      return val === a.value;
-    });
-  }, [
-    currentProject?.id,
-    currentPattern,
-    currentPatternPart,
-    projectStats,
-    currentTotalRow,
-    currentSectionRow,
-  ]);
-
-  const alertKey = useMemo(() => {
-    if (!currentProject || currentAlerts.length === 0) return null;
-
-    const ids = currentAlerts.map((a) => a.id || '').join('|');
-    const projId = currentProject.id || 'current';
-    const row = currentTotalRow || 0;
-
-    return `${projId}:${row}:${ids}`;
-  }, [currentProject, currentAlerts, currentTotalRow]);
-
-  useEffect(() => {
-    if (alertKey) {
-      setShowAlertOverlay(true);
-    }
-  }, [alertKey]);
-
-  const sectionLoopInfo = useMemo(() => {
-    if (!currentProject || !currentPattern) return null;
-
-    if (
-      currentPattern.type === 'TEXT' &&
-      projectStats.activeSection &&
-      projectStats.activeSection.rowsPerLoop
-    ) {
-      const sec = projectStats.activeSection;
-      const rowsPerLoop = sec.rowsPerLoop || 1;
-      const offsetFromStart = currentTotalRow - sec.startRow;
-      if (offsetFromStart < 0) return null;
-
-      const loopRow = (offsetFromStart % rowsPerLoop) + 1;
-      const loopIndex = Math.floor(offsetFromStart / rowsPerLoop) + 1;
-
-      return {
-        mode: 'TEXT',
-        title: sec.title,
-        loopRow,
-        loopIndex,
-        rowsPerLoop,
-      };
-    }
-
-    if (
-      currentPattern.type === 'CHART' &&
-      currentPattern.sections &&
-      currentPattern.sections[0]
-    ) {
-      const sec = currentPattern.sections[0];
-      const rowsPerLoop = sec.rows || 1;
-      const sr = currentProject.sectionRow || 1;
-      const offset = (sr - 1) % rowsPerLoop;
-      const loopRow = offset + 1;
-      const loopIndex = Math.floor((sr - 1) / rowsPerLoop) + 1;
-
-      return {
-        mode: 'CHART',
-        title: sec.name || '主體',
-        loopRow,
-        loopIndex,
-        rowsPerLoop,
-      };
-    }
-
-    return null;
-  }, [currentProject, currentPattern, projectStats, currentTotalRow]);
-
+  // 6. 更新排數邏輯
   const update = (d) => {
-    if (!currentProject) return;
-    if (!currentPartProgress) return;
+    if (!currentProject || !currentPartProgress) return;
 
-    const now = new Date().toISOString();
-
-    const newTotal = Math.max(1, currentPartProgress.totalRow + d);
-    const newSection = Math.max(1, currentPartProgress.sectionRow + d);
+    const newTotal = Math.max(1, (currentPartProgress.totalRow || 1) + d);
 
     const updatedParts = (currentProject.partsProgress || []).map((p) =>
       p.partId === currentPartProgress.partId
-        ? { ...p, totalRow: newTotal, sectionRow: newSection }
+        ? { ...p, totalRow: newTotal, sectionRow: newTotal }
         : p
     );
 
     onUpdateProject({
       ...currentProject,
       totalRow: newTotal,
-      sectionRow: newSection,
+      sectionRow: newTotal,
       partsProgress: updatedParts,
-      lastActive: now,
+      lastActive: new Date().toISOString(),
     });
   };
 
   const findYarnLabel = (id) => {
+    if (!id) return '未命名線材';
     const y = yarns.find((yy) => yy.id === id);
-    if (!y) return null;
-    const main = [y.brand, y.name].filter(Boolean).join(' ');
-    return main || '未命名線材';
+    return y ? [y.brand, y.name].filter(Boolean).join(' ') || '未命名線材' : '未命名線材';
   };
 
-  if (!selectedId) {
-    return (
-      <div className="max-w-6xl mx-auto p-8 md:p-12 animate-fade-in pb-32">
-        <h2 className="text-3xl font-black text-theme-text mb-6 tracking-tight">
-          進行中專案
-        </h2>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-          {listProjects.map(
-            ({
-              project: p,
-              pattern: pat,
-              partsMeta,
-              plannedRows,
-              currentPartName,
-              currentPartRow,
-              currentPartTarget,
-            }) => {
-              let ratio = null;
-              let doneRows = 0;
-
-              if (plannedRows && plannedRows > 0) {
-                if (
-                  Array.isArray(partsMeta) &&
-                  Array.isArray(p.partsProgress) &&
-                  p.partsProgress.length > 0
-                ) {
-                  // 用 index 對應部位進度，計算「全部部位加總的完成排數」
-                  doneRows = partsMeta.reduce((sum, meta, idx) => {
-                    const prog = p.partsProgress[idx];
-                    const actual =
-                      prog && typeof prog.totalRow === 'number'
-                        ? prog.totalRow
-                        : 0;
-                    const limit = meta.targetRows || 0;
-                    return sum + Math.min(actual, limit);
-                  }, 0);
-                } else {
-                  const total =
-                    typeof p.totalRow === 'number' ? p.totalRow : 0;
-                  doneRows = Math.min(total, plannedRows);
-                }
-
-                ratio =
-                  plannedRows > 0 ? Math.min(1, doneRows / plannedRows) : null;
-              }
-
-              const overallPercent =
-                ratio !== null ? Math.round(ratio * 100) : null;
-
-              const title = p.projectName || p.patternName;
-
-              // ROWS 區塊顯示「目前部位」的排數
-              const displayDone = currentPartRow ?? 0;
-              const displayTarget = currentPartTarget || null;
-
-              return (
-                <div
-                  key={p.id}
-                  onClick={() => setSelectedId(p.id)}
-                  className="bg-white rounded-[32px] p-5 shadow-sm border border-gray-100 flex flex-col gap-4 hover:shadow-md transition-shadow active:scale-[0.98] cursor-pointer"
-                >
-                  {/* 頂端：ID + 標籤 + 刪除鈕 */}
-                  <div className="flex justify-between items-start gap-3">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-[10px] font-mono font-bold text-theme-primary bg-theme-bg px-2 py-0.5 rounded-md">
-                          {p.id.slice(0, 6).toUpperCase()}
-                        </span>
-                        <div className="flex flex-wrap gap-1">
-                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 font-medium">
-                            {p.category || '未分類'}
-                          </span>
-                          <span
-                            className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${
-                              pat?.type === 'CHART'
-                                ? 'border-purple-200 text-purple-500'
-                                : 'border-blue-200 text-blue-500'
-                            }`}
-                          >
-                            {pat?.type || 'TEXT'}
-                          </span>
-                        </div>
-                      </div>
-                      <h3 className="text-lg font-bold text-gray-900 leading-tight truncate">
-                        {title}
-                      </h3>
-                    </div>
-
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (
-                          !window.confirm(
-                            '確定要刪除這個專案嗎？\n此動作無法復原。'
-                          )
-                        )
-                          return;
-                        onDeleteProject(p.id);
-                      }}
-                      className="text-gray-200 hover:text-red-400 p-1 transition-colors"
-                    >
-                      <Icons.Trash />
-                    </button>
-                  </div>
-
-                  {/* 中段：目前部位 + 基本資訊 */}
-                  <div className="flex gap-4">
-                    {/* 左邊：用一個色塊當封面（之後想接圖片也可以改這裡） */}
-                    <div className="w-24 h-32 md:w-28 md:h-36 flex-shrink-0 rounded-2xl overflow-hidden shadow-inner relative bg-theme-bg">
-                      <div className="absolute inset-0 flex items-center justify-center text-3xl">
-                        🧶
-                      </div>
-                      {p.startAt && (
-                        <div className="absolute bottom-0 inset-x-0 bg-black/35 backdrop-blur-[2px] py-1 text-center">
-                          <span className="text-[10px] text-white font-medium">
-                            開始 {new Date(p.startAt).toLocaleDateString()}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="flex-1 flex flex-col justify-between py-1">
-                      {/* 目前部位 + 目前部位排數 */}
-                      <div className="bg-[#F8F9FA] rounded-2xl p-2.5 space-y-2 border border-gray-50">
-                        <div className="flex items-center gap-2">
-                          <div className="p-1 bg-white rounded-lg shadow-sm text-theme-primary text-xs font-black">
-                            部位
-                          </div>
-                          <div className="min-w-0">
-                            <p className="text-[9px] text-gray-400 font-bold uppercase mb-0.5">
-                              目前部位
-                            </p>
-                            <p className="text-xs font-bold text-gray-700 truncate">
-                              {currentPartName || '主體'}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center justify-between px-1">
-                          <span className="text-[10px] text-gray-500">
-                            目前排數
-                          </span>
-                          <span className="text-[10px] font-mono font-bold text-theme-primary">
-                            {displayDone}
-                            {displayTarget ? ` / ${displayTarget}` : ''} 排
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Yarn / Needle / Cast on */}
-                      <div className="grid grid-cols-1 gap-1 mt-2 px-1 text-[10px] text-gray-500">
-                        {p.yarnId && (
-                          <div className="truncate">
-                            線材：{findYarnLabel(p.yarnId)}
-                          </div>
-                        )}
-                        {p.needle && (
-                          <div className="truncate">針號：{p.needle}</div>
-                        )}
-                        {p.castOn && (
-                          <div className="truncate">起針：{p.castOn}</div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 底部：總進度區（深色區塊 + Progress Bar） */}
-                  {ratio !== null && plannedRows !== null && (
-                    <div className="bg-theme-text rounded-2xl p-4 text-white shadow-md">
-                      <div className="flex justify-between items-end mb-2">
-                        <div className="flex flex-col">
-                          <span className="text-[9px] text-white/50 font-bold uppercase tracking-widest">
-                            Overall Progress
-                          </span>
-                          <div className="flex items-baseline gap-1">
-                            <span className="text-base font-mono font-bold leading-none">
-                              {doneRows}
-                            </span>
-                            <span className="text-[9px] text-white/60">
-                              / {plannedRows} 總排數
-                            </span>
-                          </div>
-                        </div>
-                        {overallPercent !== null && (
-                          <span className="text-xl font-black italic opacity-90">
-                            {overallPercent}%
-                          </span>
-                        )}
-                      </div>
-                      <div className="h-1.5 bg-white/15 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-theme-primary rounded-full shadow-[0_0_10px_rgba(0,0,0,0.2)] transition-all duration-700"
-                          style={{ width: `${ratio * 100}%` }}
-                        />
-                      </div>
-                    </div>
-                  )}
-                </div>
-              );
-            }
-          )}
-
-          {listProjects.length === 0 && (
-            <div className="col-span-full text-center py-24 opacity-30 font-black tracking-widest uppercase text-xs">
-              此分類目前沒有進行中的專案
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  if (!currentProject || !currentPattern) return null;
+  if (!selectedId || !currentProject || !currentPattern) return null;
 
   const projectTitle =
-    currentProject.projectName || currentProject.patternName;
+    currentProject.projectName || currentProject.patternName || '未命名作品';
 
   return (
-    <div className="flex flex-col h-full bg-theme-bg animate-fade-in pb-20 overflow-hidden relative">
-      {showAlertOverlay && currentAlerts.length > 0 && (
-        <div className="absolute inset-x-0 top-20 z-40 px-4 md:px-0">
-          <div className="max-w-xl mx-auto bg-theme-primary text-white rounded-[2.25rem] shadow-2xl border border-white/30 px-6 py-4 flex items-start gap-3">
-            <div className="w-10 h-10 bg-white/15 rounded-2xl flex items-center justify-center text-2xl">
-              🔔
-            </div>
-            <div className="flex-1">
-              <div className="text-[10px] font-black uppercase tracking-[0.18em] opacity-70 mb-1">
-                Row Alert · {currentAlerts.length} rule
-                {currentAlerts.length > 1 ? 's' : ''} on this row
-              </div>
-
-              <div className="mt-1 space-y-2">
-                {currentAlerts.map((alert, idx) => (
-                  <div
-                    key={alert.id || idx}
-                    className="flex items-start gap-2"
-                  >
-                    <span className="mt-[2px] text-xs">•</span>
-                    <div>
-                      <div className="text-[10px] opacity-80 uppercase tracking-[0.12em] mb-0.5">
-                        {alert.type === 'SECTION' ? 'Section' : 'Total'} ·{' '}
-                        {alert.mode === 'EVERY' ? 'Every' : 'At'}{' '}
-                        {alert.value}
-                      </div>
-                      <div className="text-sm font-bold leading-snug">
-                        {alert.message || '下一段變化來了～'}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <button
-              onClick={() => setShowAlertOverlay(false)}
-              className="text-xs font-black uppercase tracking-[0.15em] px-3 py-1 rounded-full bg-white/15 hover:bg-white/25 transition flex-shrink-0"
-            >
-              關閉
-            </button>
-          </div>
-        </div>
-      )}
-
+    <div className="flex flex-col h-screen bg-[#FDFBF9] animate-fade-in overflow-hidden relative">
+      {/* 頂部標題列 */}
       <div className="bg-white/80 backdrop-blur p-4 border-b flex justify-between items-center sticky top-0 z-30 shadow-sm">
         <button
           onClick={() => setSelectedId(null)}
@@ -1426,402 +970,203 @@ function ProjectView({
         >
           ← Back
         </button>
-        <h2 className="font-black text-theme-text truncate text-sm tracking-tight px-4">
+        <h2 className="font-black text-gray-800 truncate text-sm px-4">
           {projectTitle}
         </h2>
         <div className="w-10" />
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 md:p-10 space-y-8 no-scrollbar pb-40">
-        <div className="bg-white p-6 rounded-[2rem] shadow-cozy border border-white flex flex-col gap-2">
+      {/* 主要內容捲動區（留底部空間給浮動 counter） */}
+      <div className="flex-1 overflow-y-auto p-4 md:p-10 space-y-8 no-scrollbar pb-48">
+        {/* 專案基本資訊 */}
+        <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100 flex flex-col gap-4">
           <div className="flex justify-between items-end gap-3">
             <div className="flex-1">
-              <div className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text/50 mb-1">
+              <span className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400 mb-1 block">
                 Project Name
-              </div>
+              </span>
               <input
                 type="text"
-                value={projectTitle}
+                value={currentProject.projectName || ''}
                 onChange={(e) =>
                   onUpdateProject({
                     ...currentProject,
                     projectName: e.target.value,
                   })
                 }
-                className="w-full bg-transparent border-none text-lg md:text-xl font-black tracking-tight p-0 focus:ring-0"
+                className="w-full bg-transparent border-none text-xl font-black p-0 focus:ring-0"
                 placeholder="給這個作品取一個名字…"
               />
             </div>
-            {currentProject.startAt && (
-              <div className="text-right text-[9px] text-theme-text/50 uppercase tracking-[0.18em]">
-                Started
-                <br />
-                <span className="font-black text-theme-text/80">
-                  {new Date(currentProject.startAt).toLocaleDateString()}
-                </span>
-              </div>
-            )}
           </div>
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text/50">
-              Category
-            </span>
-            <select
-              className="bg-theme-bg/70 rounded-full px-3 py-1.5 border-none text-[10px]"
-              value={currentProject.category || '未分類'}
-              onChange={(e) =>
-                onUpdateProject({
-                  ...currentProject,
-                  category: e.target.value,
-                })
-              }
-            >
-              {(categories || ['未分類']).map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="flex flex-wrap items-center gap-3 text-[10px] text-theme-text/70">
-            <div className="flex items-center gap-1">
-              <span className="font-black uppercase tracking-[0.2em]">
-                Yarn
+
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex items-center gap-2">
+              <span className="text-[9px] font-black uppercase text-gray-400">
+                Category
               </span>
               <select
-                className="bg-theme-bg/60 rounded-full px-3 py-1 border-none text-[10px]"
-                value={currentProject.yarnId || ''}
+                className="bg-gray-50 rounded-full px-3 py-1 border-none text-[10px]"
+                value={currentProject.category || '未分類'}
                 onChange={(e) =>
                   onUpdateProject({
                     ...currentProject,
-                    yarnId: e.target.value || null,
+                    category: e.target.value,
                   })
                 }
               >
-                <option value="">未選擇</option>
-                {yarns.map((y) => (
-                  <option key={y.id} value={y.id}>
-                    {[y.brand, y.name].filter(Boolean).join(' ') ||
-                      '未命名線材'}
+                {(categories || ['未分類']).map((c) => (
+                  <option key={c} value={c}>
+                    {c}
                   </option>
                 ))}
               </select>
             </div>
+          </div>
 
-            <div className="flex items-center gap-1">
-              <span className="uppercase tracking-[0.2em] font-black opacity-60">
-                Needle
-              </span>
-              <input
-                className="bg-theme-bg/60 rounded-full px-3 py-1 border-none text-[10px] w-20"
-                placeholder="4.0mm"
-                value={currentProject.needle || ''}
-                onChange={(e) =>
-                  onUpdateProject({
-                    ...currentProject,
-                    needle: e.target.value,
-                  })
-                }
-              />
-            </div>
-
-            <div className="flex items-center gap-1">
-              <span className="uppercase tracking-[0.2em] font-black opacity-60">
-                Cast on
-              </span>
-              <input
-                className="bg-theme-bg/60 rounded-full px-3 py-1 border-none text-[10px] w-20"
-                placeholder="例如 112"
-                value={currentProject.castOn || ''}
-                onChange={(e) =>
-                  onUpdateProject({
-                    ...currentProject,
-                    castOn: e.target.value,
-                  })
-                }
-              />
-            </div>
+          <div className="flex flex-wrap gap-4 text-[10px] text-gray-500">
+            <div>線材：{findYarnLabel(currentProject.yarnId)}</div>
+            <div>針號：{currentProject.needle || '未填寫'}</div>
+            <div>起針：{currentProject.castOn || '未填寫'}</div>
           </div>
         </div>
 
-        {currentPattern.type === 'TEXT' && projectStats.targetTotal > 0 && (
-          <div className="bg-white p-6 rounded-[2rem] shadow-cozy border border-white space-y-3">
-            <div className="flex justify-between items-end">
-              <div>
-                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text/50 mb-1 block">
-                  目前階段 Currently
-                </span>
-                <span className="font-black text-theme-text text-base tracking-tight">
-                  {projectStats.activeSection?.title || 'Unknown'}
-                </span>
-              </div>
-              <span className="font-black text-theme-primary tabular-nums text-lg">
+        {/* 織圖 Instruction 區塊 */}
+        <div className="bg-white p-8 rounded-[3rem] shadow-sm border border-gray-100 min-h-[380px]">
+          <h4 className="font-black text-gray-400 border-b pb-4 mb-6 flex items-center gap-2 tracking-widest uppercase text-[10px]">
+            <Library size={16} /> Instruction
+          </h4>
+          <div className="space-y-10">
+            {(projectStats.sectionsSummary || []).map((sec) => {
+              const isActive = projectStats.activeSection?.id === sec.id;
+              return (
+                <div
+                  key={sec.id}
+                  className={`relative pl-6 border-l-4 transition-all ${
+                    isActive
+                      ? 'border-[#D4A373]'
+                      : 'border-gray-50 opacity-40'
+                  }`}
+                >
+                  <div className="flex items-center gap-3 mb-2">
+                    <span
+                      className={`text-[9px] font-black px-3 py-1 rounded-full ${
+                        isActive ? 'bg-[#D4A373] text-white' : 'bg-gray-100'
+                      }`}
+                    >
+                      {sec.title}
+                    </span>
+                    <span className="text-[8px] font-bold opacity-30 uppercase">
+                      {sec.rowsPerLoop} rows × {sec.repeats} times
+                    </span>
+                  </div>
+                  <div
+                    className={`font-mono text-base leading-relaxed ${
+                      isActive ? 'text-gray-800 font-bold' : 'text-gray-300'
+                    }`}
+                  >
+                    {sec.content}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* 專案備註 */}
+        <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100">
+          <span className="text-[9px] font-black uppercase text-gray-400 mb-2 block tracking-widest">
+            Project Notes
+          </span>
+          <textarea
+            className="w-full bg-gray-50 rounded-2xl p-4 text-sm leading-relaxed border-none min-h-[120px] focus:ring-0"
+            placeholder="紀錄您的靈感與細節..."
+            value={currentProject.notes || ''}
+            onChange={(e) =>
+              onUpdateProject({
+                ...currentProject,
+                notes: e.target.value,
+              })
+            }
+          />
+        </div>
+      </div>
+
+      {/* 底部常駐 Row Counter Dock */}
+      <div className="fixed bottom-0 left-0 right-0 p-4 md:p-6 z-40 pointer-events-none">
+        <div className="max-w-md mx-auto pointer-events-auto">
+          {/* 主要計數器卡片 */}
+          <div className="bg-white/95 backdrop-blur-xl rounded-[2.5rem] shadow-[0_18px_45px_rgba(0,0,0,0.2)] border border-white px-3 py-2 flex items-center justify-between gap-2">
+            {/* − 按鈕 */}
+            <button
+              onClick={() => update(-1)}
+              className="w-12 h-12 rounded-full flex items-center justify-center text-[#D4A373] bg-amber-50 active:scale-90 transition-all text-2xl font-black"
+            >
+              −
+            </button>
+
+            {/* 中央當前排數 */}
+            <div className="flex flex-col items-center px-3 min-w-[90px]">
+              <span className="text-[9px] font-black text-[#D4A373] uppercase tracking-[0.22em] mb-0.5">
+                Current Row
+              </span>
+              <div className="text-3xl font-black text-gray-900 tabular-nums leading-none tracking-tight">
                 {currentTotalRow}
-                <span className="opacity-20 mx-1">/</span>
-                {projectStats.targetTotal}
-                <span className="text-[9px] opacity-40 uppercase ml-1">
-                  Rows
-                </span>
+              </div>
+            </div>
+
+            {/* ＋ 按鈕 */}
+            <button
+              onClick={() => update(1)}
+              className="w-14 h-12 bg-[#D4A373] text-white rounded-full flex items-center justify-center shadow-lg active:scale-95 transition-all text-3xl font-black"
+            >
+              +
+            </button>
+
+            {/* 快速跳轉 +n */}
+            <div className="flex items-center bg-gray-100 rounded-full h-12 pl-3 pr-1">
+              <input
+                type="number"
+                value={plusN}
+                onChange={(e) => setPlusN(e.target.value)}
+                placeholder="+n"
+                className="w-10 bg-transparent border-none text-center font-black text-xs focus:ring-0 p-0"
+              />
+              <button
+                onClick={() => {
+                  const n = parseInt(plusN, 10);
+                  if (!isNaN(n)) update(n);
+                  setPlusN('');
+                }}
+                className="w-9 h-9 bg-white rounded-full flex items-center justify-center text-[10px] font-black text-[#D4A373] shadow-sm uppercase"
+              >
+                Go
+              </button>
+            </div>
+          </div>
+
+          {/* 底部進度條 */}
+          <div className="mt-2 px-6">
+            <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-[#D4A373] transition-all duration-500 rounded-full shadow-[0_0_8px_#D4A373]"
+                style={{ width: `${globalProgressRatio * 100}%` }}
+              />
+            </div>
+            <div className="flex justify-between mt-1 px-1">
+              <span className="text-[8px] font-black text-gray-300 uppercase">
+                Progress
+              </span>
+              <span className="text-[8px] font-black text-[#D4A373] uppercase tabular-nums">
+                {Math.round(globalProgressRatio * 100)}%
               </span>
             </div>
-            <div className="w-full h-2.5 bg-theme-bg rounded-full overflow-hidden shadow-inner">
-              <div
-                className="h-full bg-theme-primary transition-all duration-700"
-                style={{
-                  width: `${Math.min(
-                    100,
-                    (currentTotalRow / projectStats.targetTotal) * 100
-                  )}%`,
-                }}
-              />
-            </div>
-          </div>
-        )}
-
-        {currentProject.partsProgress &&
-          currentProject.partsProgress.length > 0 && (
-            <div className="mt-4 flex flex-wrap gap-2">
-              {currentProject.partsProgress.map((part) => {
-                const isActive =
-                  currentPartProgress &&
-                  part.partId === currentPartProgress.partId;
-
-                return (
-                  <button
-                    key={part.partId}
-                    onClick={() =>
-                      onUpdateProject({
-                        ...currentProject,
-                        currentPartId: part.partId,
-                        totalRow: part.totalRow || 1,
-                        sectionRow: part.sectionRow || 1,
-                      })
-                    }
-                    className={
-                      'px-4 py-1.5 rounded-full text-[10px] font-black tracking-[0.18em] uppercase transition ' +
-                      (isActive
-                        ? 'bg-theme-primary text-white shadow'
-                        : 'bg-theme-bg text-theme-text/60 hover:bg-theme-bg/80')
-                    }
-                  >
-                    {part.name || '主體'}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mt-4">
-          <div className="lg:col-span-5 space-y-6">
-            <div className="bg-white rounded-[3rem] p-8 flex flex-col items-center shadow-cozy border-2 border-white">
-              <h3 className="text-theme-primary font-black uppercase tracking-widest text-[9px] mb-3 opacity-50">
-                Row Counter
-                {currentPartProgress?.name && (
-                  <span className="ml-2 text-[9px] text-theme-text/50">
-                    · {currentPartProgress.name}
-                  </span>
-                )}
-              </h3>
-              <div className="text-7xl md:text-8xl font-black text-theme-text tabular-nums leading-none mb-8 tracking-tighter drop-shadow-md">
-                {currentTotalRow}
-              </div>
-
-              <div className="w-full space-y-6">
-                <div className="grid grid-cols-2 gap-4 w-full">
-                  <button
-                    onClick={() => {
-                      update(-1);
-                      setShowAlertOverlay(false);
-                    }}
-                    className="py-5 bg-theme-bg rounded-[2rem] text-theme-primary shadow-inner font-black text-3xl active:scale-95 transition"
-                  >
-                    −
-                  </button>
-                  <button
-                    onClick={() => {
-                      update(1);
-                      setShowAlertOverlay(false);
-                    }}
-                    className="py-6 bg-theme-primary text-white rounded-[2.25rem] shadow-xl shadow-theme-primary/20 font-black text-4xl active:scale-95 transition"
-                  >
-                    +
-                  </button>
-                </div>
-
-                <div className="flex items-stretch gap-2 bg-theme-bg/60 p-2 rounded-[1.75rem] shadow-inner w-full">
-                  <input
-                    type="number"
-                    value={plusN}
-                    onChange={(e) => setPlusN(e.target.value)}
-                    placeholder="+n"
-                    className="flex-1 min-w-0 bg-transparent border-none text-center font-black text-xl focus:ring-0 tabular-nums placeholder:opacity-20"
-                  />
-                  <button
-                    onClick={() => {
-                      const n = parseInt(plusN);
-                      if (!isNaN(n)) {
-                        update(n);
-                        setShowAlertOverlay(false);
-                      }
-                      setPlusN('');
-                    }}
-                    className="bg-theme-text text-white px-8 py-4 rounded-[1.5rem] font-black text-[10px] tracking-widest transition-all active:scale-95 shadow-lg uppercase"
-                  >
-                    Go
-                  </button>
-                </div>
-              </div>
-              {sectionLoopInfo && (
-                <div className="w-full mt-2 flex justify-between items-center text-[10px] text-theme-text/55">
-                  <span className="font-black uppercase tracking-[0.2em]">
-                    Section Loop
-                  </span>
-                  <span className="tabular-nums text-right">
-                    {sectionLoopInfo.title && (
-                      <span className="mr-1 text-[9px] text-theme-text/40">
-                        {sectionLoopInfo.title} ·
-                      </span>
-                    )}
-                    第{' '}
-                    <span className="font-black text-theme-text/80">
-                      {sectionLoopInfo.loopRow}
-                    </span>{' '}
-                    排（循環共 {sectionLoopInfo.rowsPerLoop} 排，第{' '}
-                    {sectionLoopInfo.loopIndex} 輪）
-                  </span>
-                </div>
-              )}
-            </div>
-
-            <div className="bg-white p-6 rounded-[2rem] shadow-cozy border border-white space-y-3">
-              <div className="flex items-center justify-between gap-2">
-                <div>
-                  <div className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text/60 mb-1">
-                    Project Notes
-                  </div>
-                  <div className="text-xs text-theme-text/60">
-                    織到一半的狀況、試穿感想、改版紀錄…
-                  </div>
-                </div>
-              </div>
-              <textarea
-                className="w-full mt-2 bg-theme-bg/40 rounded-2xl p-3.5 text-sm leading-relaxed border-none focus:ring-2 ring-theme-primary/20 min-h-[100px] resize-none"
-                placeholder="例：第 35 排發現麻花偏緊，下次改 4.5mm 棒針；袖長預計多織 5cm。"
-                value={currentProject.notes || ''}
-                onChange={(e) =>
-                  onUpdateProject({
-                    ...currentProject,
-                    notes: e.target.value,
-                  })
-                }
-              />
-            </div>
-          </div>
-
-          <div className="lg:col-span-7 space-y-6">
-            <div className="bg-white p-8 rounded-[3rem] shadow-cozy border border-white min-h-[380px]">
-              <h4 className="font-black text-theme-text border-b border-theme-bg pb-5 mb-8 flex items-center gap-3 tracking-widest uppercase text-[10px]">
-                <Icons.Library /> Instruction
-              </h4>
-              {currentPattern.type === 'TEXT' ? (
-                <div className="space-y-10">
-                  {(projectStats.sectionsSummary || []).map((sec) => {
-                    const isActive =
-                      projectStats.activeSection?.id === sec.id;
-                    return (
-                      <div
-                        key={sec.id}
-                        className={`relative pl-6 border-l-4 transition-all group ${
-                          isActive
-                            ? 'border-theme-primary scale-[1.02]'
-                            : 'border-theme-bg opacity-40 grayscale'
-                        }`}
-                      >
-                        <div className="flex flex-wrap items-center gap-3 mb-3">
-                          <span
-                            className={`text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full ${
-                              isActive
-                                ? 'bg-theme-primary text-white shadow-md'
-                                : 'bg-theme-bg'
-                            }`}
-                          >
-                            {sec.title}
-                          </span>
-                          <span className="text-[8px] font-bold opacity-30 uppercase tracking-tighter">
-                            {sec.rowsPerLoop} rows × {sec.repeats} times
-                          </span>
-                        </div>
-                        <div
-                          className={`font-mono text-base leading-relaxed whitespace-pre-wrap ${
-                            isActive
-                              ? 'text-theme-text font-bold'
-                              : 'text-gray-400'
-                          }`}
-                        >
-                          {sec.content}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="flex flex-col items-center">
-                  {currentPattern.sections?.[0] && (
-                    <div className="inline-block bg-white border-4 border-theme-bg rounded-2xl p-2 shadow-inner overflow-x-auto max-w-full">
-                      <div
-                        className="grid gap-[1px] bg-theme-accent/30"
-                        style={{
-                          gridTemplateColumns: `repeat(${currentPattern.sections[0].cols}, 24px)`,
-                        }}
-                      >
-                        {currentPattern.sections[0].grid.map((row, r) =>
-                          row.map((cell, c) => {
-                            const localIdx =
-                              (currentProject.sectionRow - 1) %
-                              currentPattern.sections[0].rows;
-                            const isHighlight =
-                              r ===
-                              currentPattern.sections[0].rows - 1 - localIdx;
-                            return (
-                              <div
-                                key={`${r}-${c}`}
-                                className={`w-6 h-6 flex items-center justify-center text-[10px] font-mono select-none ${
-                                  SYMBOLS[cell]?.color || 'bg-white'
-                                } ${
-                                  isHighlight
-                                    ? 'ring-2 ring-theme-primary z-10 scale-110 shadow-lg'
-                                    : 'opacity-40 grayscale'
-                                }`}
-                              >
-                                {SYMBOLS[cell]?.symbol}
-                              </div>
-                            );
-                          })
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {currentPattern.notes && (
-              <div className="bg-theme-bg/40 p-5 rounded-[2rem] border border-theme-bg/60">
-                <div className="text-[9px] font-black uppercase tracking-[0.2em] opacity-50 mb-2">
-                  Pattern Notes
-                </div>
-                <div className="text-sm text-theme-text whitespace-pre-wrap leading-relaxed">
-                  {currentPattern.notes}
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </div>
     </div>
   );
 }
-
 
 // === 織圖編輯器（含 pattern 備註） ===
 
