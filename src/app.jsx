@@ -193,6 +193,16 @@ const Icons = {
 const createNewPattern = (type = 'CHART', category = '未分類') => {
   const now = new Date().toISOString();
 
+  const baseTextSections = [
+    {
+      id: crypto.randomUUID(),
+      title: '起針段',
+      content: '',
+      repeats: 1,
+      rowsPerLoop: 1,
+    },
+  ];
+
   const base = {
     id: crypto.randomUUID(),
     name: '未命名織圖',
@@ -202,7 +212,7 @@ const createNewPattern = (type = 'CHART', category = '未分類') => {
     meta: {
       castOn: '',
       needle: '',
-      yarnId: null, // 預設線材
+      yarnId: null,
     },
     notes: '',
     alerts: [],
@@ -217,47 +227,109 @@ const createNewPattern = (type = 'CHART', category = '未分類') => {
           .map(() => Array(10).fill('KNIT')),
       },
     ],
-    textSections: [
-      {
-        id: crypto.randomUUID(),
-        title: '起針段',
-        content: '',
-        repeats: 1,
-        rowsPerLoop: 1,
-      },
-    ],
+    textSections: baseTextSections,
   };
 
-  return {
-    ...base,
-    // TEXT 織圖預設有一個部位「主體」，其他型別先給空陣列
-    parts: type === 'TEXT' ? ['主體'] : [],
-  };
-};
-
-
-// 幫舊版織圖補上 parts 欄位（TEXT 織圖預設一個「主體」部位）
-const normalizePattern = (p) => {
-  if (!p) return p;
-
-  // 已經有 parts 就不用改
-  if (Array.isArray(p.parts) && p.parts.length > 0) {
-    return p;
-  }
-
-  if (p.type === 'TEXT') {
+  if (type === 'TEXT') {
+    const partId = crypto.randomUUID();
     return {
-      ...p,
-      parts: ['主體'], // 先給一個預設部位
+      ...base,
+      parts: [
+        {
+          id: partId,
+          name: '主體',
+          textSections: baseTextSections,
+          alerts: [],
+        },
+      ],
     };
   }
 
-  // CHART 或其他型別，先不強迫有部位
   return {
-    ...p,
+    ...base,
     parts: [],
   };
 };
+
+
+
+// 幫舊版織圖補上 parts 欄位（TEXT 織圖預設一個「主體」部位）
+// 幫織圖補上 parts 結構：支援舊資料（沒有 parts 或 parts 是字串陣列）
+const normalizePattern = (p) => {
+  if (!p) return p;
+
+  // 已經是新結構：parts 是物件陣列，直接回傳
+  if (
+    Array.isArray(p.parts) &&
+    p.parts.length > 0 &&
+    typeof p.parts[0] === 'object' &&
+    p.parts[0] !== null
+  ) {
+    return p;
+  }
+
+  // TEXT 織圖：要有至少一個部位
+  if (p.type === 'TEXT') {
+    const baseTextSections =
+      Array.isArray(p.textSections) && p.textSections.length
+        ? p.textSections
+        : [
+            {
+              id: crypto.randomUUID(),
+              title: '起針段',
+              content: '',
+              repeats: 1,
+              rowsPerLoop: 1,
+            },
+          ];
+
+    const baseAlerts = Array.isArray(p.alerts) ? p.alerts : [];
+
+    // 情況 A：完全沒有 parts → 做一個「主體」部位
+    if (!Array.isArray(p.parts) || p.parts.length === 0) {
+      const partId = crypto.randomUUID();
+      return {
+        ...p,
+        textSections: baseTextSections,
+        alerts: baseAlerts,
+        parts: [
+          {
+            id: partId,
+            name: '主體',
+            textSections: baseTextSections,
+            alerts: baseAlerts,
+          },
+        ],
+      };
+    }
+
+    // 情況 B：parts 是字串陣列（之前你只存名字）
+    if (
+      Array.isArray(p.parts) &&
+      p.parts.length > 0 &&
+      typeof p.parts[0] === 'string'
+    ) {
+      const parts = p.parts.map((name) => ({
+        id: crypto.randomUUID(),
+        name,
+        // 先全部複製同一份，之後你可以各自改
+        textSections: baseTextSections,
+        alerts: baseAlerts,
+      }));
+
+      return {
+        ...p,
+        textSections: baseTextSections,
+        alerts: baseAlerts,
+        parts,
+      };
+    }
+  }
+
+  // 其他型別（CHART 等）：先維持原樣，有需要再細拆
+  return p;
+};
+
 
 
 // 新增：projectName & startAt
@@ -265,14 +337,27 @@ const createProjectFromPattern = (ptn) => {
   const now = new Date().toISOString();
 
   // 從織圖抓出部位列表，沒有就預設一個「主體」
-  const partNames =
-    Array.isArray(ptn.parts) && ptn.parts.length > 0
-      ? ptn.parts
-      : ['主體'];
+const createProjectFromPattern = (ptn) => {
+  const now = new Date().toISOString();
+  const normalizedPattern = normalizePattern(ptn);
 
-  const partsProgress = partNames.map((name) => ({
-    partId: crypto.randomUUID(),
-    name,
+  const patternParts =
+    Array.isArray(normalizedPattern.parts) &&
+    normalizedPattern.parts.length > 0
+      ? normalizedPattern.parts
+      : [
+          {
+            id: crypto.randomUUID(),
+            name: '主體',
+            textSections:
+              normalizedPattern.textSections || [],
+            alerts: normalizedPattern.alerts || [],
+          },
+        ];
+
+  const partsProgress = patternParts.map((part) => ({
+    partId: part.id,        // ⭐ 跟 pattern 部位同一個 id
+    name: part.name,
     totalRow: 1,
     sectionRow: 1,
   }));
@@ -281,24 +366,24 @@ const createProjectFromPattern = (ptn) => {
 
   return {
     id: crypto.randomUUID(),
-    patternId: ptn.id,
-    patternName: ptn.name, // 保留原圖名稱 snapshot
-    projectName: ptn.name, // 使用者可改
-    category: ptn.category || '未分類',
-    yarnId: ptn.meta?.yarnId ?? null, // 實際線材
-    needle: ptn.meta?.needle ?? '',
-    castOn: ptn.meta?.castOn ?? '',
-    // 舊欄位：暫時保留，讓舊邏輯還能運作
+    patternId: normalizedPattern.id,
+    patternName: normalizedPattern.name,
+    projectName: normalizedPattern.name,
+    category: normalizedPattern.category || '未分類',
+    yarnId: normalizedPattern.meta?.yarnId ?? null,
+    needle: normalizedPattern.meta?.needle ?? '',
+    castOn: normalizedPattern.meta?.castOn ?? '',
     totalRow: 1,
     sectionRow: 1,
     notes: '',
     startAt: new Date().toISOString(), // 專案開始時間
     lastActive: new Date().toISOString(),
-    // 🧵 多部位
     currentPartId: firstPartId,
     partsProgress,
   };
 };
+
+
 
 
 // 把舊版專案資料補上多部位進度欄位（暫時只有「主體」一個部位）
@@ -800,6 +885,23 @@ function ProjectView({
 
     return parts.find((p) => p.partId === activePartId) || parts[0];
   }, [currentProject]);
+
+  const currentPatternPart = useMemo(() => {
+    if (!currentPattern) return null;
+    if (!currentProject) return null;
+    if (!Array.isArray(currentPattern.parts)) return null;
+
+    const activePartId =
+      currentProject.currentPartId || currentProject.partsProgress?.[0]?.partId;
+
+    if (!activePartId) return currentPattern.parts[0];
+
+    return (
+      currentPattern.parts.find((p) => p.id === activePartId) ||
+      currentPattern.parts[0]
+    );
+  }, [currentPattern, currentProject]);
+
 
   // 🔹 統一用這兩個變數當「目前這個部位」的排數
   const currentTotalRow =
