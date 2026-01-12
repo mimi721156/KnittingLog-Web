@@ -1377,7 +1377,7 @@ function ProjectView({
     currentProject.projectName || currentProject.patternName;
 
   return (
-    <div className="flex flex-col h-full bg-theme-bg animate-fade-in pb-20 overflow-hidden relative">
+    <div className="flex flex-col bg-theme-bg animate-fade-in relative">
       {showAlertOverlay && currentAlerts.length > 0 && (
         <div className="absolute inset-x-0 top-20 z-40 px-4 md:px-0">
           <div className="max-w-xl mx-auto bg-theme-primary text-white rounded-[2.25rem] shadow-2xl border border-white/30 px-6 py-4 flex items-start gap-3">
@@ -1436,7 +1436,7 @@ function ProjectView({
       </div>
 
       {/* 中間可捲動內容 */}
-      <div className="flex-1 overflow-y-auto p-4 md:p-10 space-y-8 no-scrollbar pb-40">
+      <div className="p-4 md:p-10 space-y-8 pb-40">
         <div className="bg白 p-6 rounded-[2rem] shadow-cozy border border-white flex flex-col gap-2">
           <div className="flex justify-between items-end gap-3">
             <div className="flex-1">
@@ -1746,7 +1746,7 @@ function ProjectView({
 
       {/* 底部常駐：Section Loop + Counter */}
       {currentPartProgress && (
-        <div className="border-t bg-white/95 backdrop-blur px-4 py-3 md:px-8 md:py-4 shadow-[0_-4px_12px_rgba(0,0,0,0.04)] z-30">
+      <div className="sticky bottom-0 border-t bg-white/95 backdrop-blur px-4 py-3 md:px-8 md:py-4 shadow-[0_-4px_12px_rgba(0,0,0,0.04)] z-30">
           <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
             {/* Section Loop */}
             <div className="w-full md:w-auto text-[10px] text-theme-text/60">
