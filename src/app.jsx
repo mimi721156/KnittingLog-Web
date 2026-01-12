@@ -2647,11 +2647,11 @@ function LibraryView({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-8">
         {savedPatterns.map((ptn) => (
           <div
             key={ptn.id}
-            className="bg-white p-10 rounded-[3rem] shadow-cozy border border-white flex flex-col active:scale-[0.98] transition relative overflow-hidden group"
+            className="bg-white p-5 md:p-8 lg:p-10 rounded-[2rem] md:rounded-[3rem] shadow-cozy border ... group"
           >
             <div className="absolute top-0 right-0 w-32 h-32 bg-theme-bg rounded-bl-full -mr-12 -mt-12 opacity-60 transition-transform group-hover:scale-110"></div>
             <div className="flex justify-between items-start mb-8 relative z-10">
