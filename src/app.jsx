@@ -1178,17 +1178,15 @@ function ProjectView({
               let ratio = null;
               let doneRows = null;
 
-              // 整體進度：所有部位完成排數 / 所有部位目標排數
               if (plannedRows && plannedRows > 0) {
                 if (
                   Array.isArray(partsMeta) &&
                   Array.isArray(p.partsProgress) &&
                   p.partsProgress.length > 0
                 ) {
-                  doneRows = partsMeta.reduce((sum, meta) => {
-                    const prog = p.partsProgress.find(
-                      (pp) => pp.partId === meta.partId
-                    );
+                  // ✅ 改成用 index 對應部位，不再用 partId 去找
+                  doneRows = partsMeta.reduce((sum, meta, idx) => {
+                    const prog = p.partsProgress[idx];
                     const actual =
                       prog && typeof prog.totalRow === 'number'
                         ? prog.totalRow
@@ -1197,7 +1195,6 @@ function ProjectView({
                     return sum + Math.min(actual, limit);
                   }, 0);
                 } else {
-                  // 沒有分部位進度，就用 totalRow 當線性進度
                   const total =
                     typeof p.totalRow === 'number' ? p.totalRow : 0;
                   doneRows = Math.min(total, plannedRows);
@@ -1208,6 +1205,7 @@ function ProjectView({
                     ? Math.min(1, doneRows / plannedRows)
                     : null;
               }
+
 
               const title = p.projectName || p.patternName;
 
