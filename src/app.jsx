@@ -3006,6 +3006,9 @@ function App() {
   const [categoryFilter, setCategoryFilter] = useState('ALL');
   const [syncOpen, setSyncOpen] = useState(false);
 
+  const shouldShowMobileTabBar =
+    view !== 'EDITOR' && !(view === 'PROJECTS' && selectedProjectId);
+
   useEffect(() => {
     const state = loadAppState();
     setSavedPatterns(
@@ -3348,7 +3351,7 @@ function App() {
           {view === 'TUTORIAL' && <TutorialView />}
         </main>
 
-        {view !== 'EDITOR' && (
+        {shouldShowMobileTabBar && (
           <div className="md:hidden fixed bottom-0 w-full bg-white/90 backdrop-blur-xl border-t border-theme-accent/30 flex justify-around py-6 pb-safe z-40 shadow-[0_-10px_40px_rgba(0,0,0,0.08)]">
             <button
               onClick={() => setView('PROJECTS')}
