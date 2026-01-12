@@ -1748,11 +1748,10 @@ function ProjectView({
       {currentPartProgress && (
       <div
         className="
-          fixed inset-x-0 bottom-0          /* 手機：固定在視窗底部 */
-          md:sticky md:bottom-0             /* md 以上：改用 sticky 貼在內容底部 */
+          fixed inset-x-0 bottom-16          /* 手機：整條往上抬 ≈ 64px，避開 Safari 工具列 */
+          md:sticky md:bottom-0              /* md 以上：正常貼在內容底部 */
           border-t bg-white/95 backdrop-blur
           px-4 py-3 md:px-8 md:py-4
-          pb-safe                           /* 避開 Safari 底部網址列 / Home indicator */
           shadow-[0_-4px_12px_rgba(0,0,0,0.08)]
           z-30
         "
