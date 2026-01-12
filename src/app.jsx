@@ -880,22 +880,6 @@ function ProjectView({
     return parts.find((p) => p.partId === activePartId) || parts[0];
   }, [currentProject]);
 
-  const currentPatternPart = useMemo(() => {
-    if (!currentPattern) return null;
-    if (!currentProject) return null;
-    if (!Array.isArray(currentPattern.parts)) return null;
-
-    const activePartId =
-      currentProject.currentPartId || currentProject.partsProgress?.[0]?.partId;
-
-    if (!activePartId) return currentPattern.parts[0];
-
-    return (
-      currentPattern.parts.find((p) => p.id === activePartId) ||
-      currentPattern.parts[0]
-    );
-  }, [currentPattern, currentProject]);
-
 
   // 🔹 統一用這兩個變數當「目前這個部位」的排數
   const currentTotalRow =
@@ -916,21 +900,49 @@ function ProjectView({
     [currentProject, savedPatterns]
   );
 
+  // 目前這個專案對應的「織圖部位」設定（用部位 id 對上 pattern.parts）
+  const currentPatternPart = useMemo(() => {
+    if (!currentPattern || !currentProject) return null;
+    if (!Array.isArray(currentPattern.parts) || currentPattern.parts.length === 0)
+      return null;
+
+    const activePartId =
+      currentProject.currentPartId ||
+      currentProject.partsProgress?.[0]?.partId ||
+      currentPattern.parts[0].id;
+
+    return (
+      currentPattern.parts.find((p) => p.id === activePartId) ||
+      currentPattern.parts[0]
+    );
+  }, [currentPattern, currentProject]);
+
   const projectStats = useMemo(() => {
     if (!currentPattern || currentPattern.type !== 'TEXT')
       return { targetTotal: 0, activeSection: null, sectionsSummary: [] };
 
+    // 🔹 優先用目前部位的 textSections，沒有就退回共用設定
+    const sectionsSource =
+      currentPatternPart?.textSections && currentPatternPart.textSections.length
+        ? currentPatternPart.textSections
+        : currentPattern.textSections || [];
+
+    if (!sectionsSource || !sectionsSource.length) {
+      return { targetTotal: 0, activeSection: null, sectionsSummary: [] };
+    }
+
     let cumulativeRows = 0;
     let activeSection = null;
 
-    const summary = (currentPattern.textSections || []).map((s) => {
+    const summary = sectionsSource.map((s) => {
       const sectionTotal = (s.rowsPerLoop || 1) * (s.repeats || 1);
       const startRow = cumulativeRows + 1;
       cumulativeRows += sectionTotal;
 
       if (
-        currentTotalRow >= startRow &&
-        currentTotalRow <= cumulativeRows
+        currentProject &&
+        currentProject.totalRow >= startRow &&
+        currentProject.totalRow <= cumulativeRows
       ) {
         activeSection = {
           ...s,
@@ -944,7 +956,8 @@ function ProjectView({
     });
 
     return { targetTotal: cumulativeRows, sectionsSummary: summary, activeSection };
-  }, [currentPattern, currentTotalRow]);
+  }, [currentPattern, currentPatternPart, currentProject?.totalRow]);
+
 
   const listProjects = useMemo(() => {
     const filtered =
@@ -969,9 +982,18 @@ function ProjectView({
 
   const currentAlerts = useMemo(() => {
     if (!currentProject || !currentPattern) return [];
-    const total = currentTotalRow;
 
-    return (currentPattern.alerts || []).filter((a) => {
+    // 🔹 優先用目前部位的 alerts，沒有就退回共用設定
+    const alertsSource =
+      currentPatternPart?.alerts && currentPatternPart.alerts.length
+        ? currentPatternPart.alerts
+        : currentPattern.alerts || [];
+
+    if (!alertsSource.length) return [];
+
+    const total = currentProject.totalRow; // 或你之前已經改過的 currentTotalRow
+
+    return alertsSource.filter((a) => {
       let val;
 
       if (a.sectionId && a.sectionId !== 'ALL') {
@@ -988,25 +1010,19 @@ function ProjectView({
 
         val = a.type === 'SECTION' ? sectionRowFromStart : total;
       } else {
-        val = a.type === 'SECTION' ? currentSectionRow : total;
+        val = a.type === 'SECTION' ? currentProject.sectionRow : total;
       }
 
-    if (a.mode === 'EVERY') {
-      const interval = a.value || 1;
+      if (a.mode === 'EVERY') {
+        if (!a.startFrom || a.startFrom < 1) {
+          return val > 0 && val % a.value === 0;
+        }
+        if (val < a.startFrom) return false;
+        return (val - a.startFrom) % a.value === 0;
+      }
 
-      // ✅ 舊資料沒有 startFrom：預設「從第 value 排開始」，維持舊行為
-      const start =
-        typeof a.startFrom === 'number' && a.startFrom > 0
-          ? a.startFrom
-          : interval;
-
-      if (val < start) return false;
-      return (val - start) % interval === 0;
-    }
-
-    // SPECIFIC：維持原本「第幾排提醒一次」
-    return val === a.value;
-  });
+      return val === a.value;
+    });
   }, [currentProject?.id, currentPattern, projectStats, currentTotalRow, currentSectionRow]);
 
   const alertKey = useMemo(() => {
@@ -1763,17 +1779,47 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
   const [activeTab, setActiveTab] = useState('CONTENT');
   const [selectedTool, setSelectedTool] = useState('KNIT');
 
+  // 🔹 編輯織圖時目前選擇的「部位」
+  const [activePartId, setActivePartId] = useState(() => {
+    if (pattern.parts && Array.isArray(pattern.parts) && pattern.parts.length) {
+      return pattern.parts[0].id;
+    }
+    return null;
+  });
+
+  // pattern 被切換 / 部位列表變化時，確保 activePartId 合法
+  useEffect(() => {
+    if (!data.parts || !data.parts.length) return;
+    if (!activePartId || !data.parts.some((p) => p.id === activePartId)) {
+      setActivePartId(data.parts[0].id);
+    }
+  }, [data.parts, activePartId]);
+
+  const currentPart = useMemo(() => {
+    if (!data.parts || !data.parts.length) return null;
+    if (!activePartId) return data.parts[0];
+    return data.parts.find((p) => p.id === activePartId) || data.parts[0];
+  }, [data.parts, activePartId]);
+
+  useEffect(() => {
+    onUpdate(data);
+  }, [data]);
   // useEffect(() => {
   //   onUpdate(data);
   // }, [data]);
 
   const totalRows = useMemo(() => {
     if (data.type !== 'TEXT') return 0;
-    return (data.textSections || []).reduce(
+    const sections =
+      currentPart?.textSections && currentPart.textSections.length
+        ? currentPart.textSections
+        : data.textSections || [];
+    return sections.reduce(
       (sum, s) => sum + (s.rowsPerLoop || 1) * (s.repeats || 1),
       0
     );
-  }, [data.textSections]);
+  }, [data.type, currentPart, data.textSections]);
+
 
   const categoryOptions = useMemo(() => {
     const base =
@@ -1920,13 +1966,16 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
             </div>
             <button
               onClick={() => {
-                const currentParts = data.parts && data.parts.length
-                  ? data.parts
-                  : ['主體'];
-                const nextName = `部位 ${currentParts.length + 1}`;
+                const parts = data.parts && data.parts.length ? data.parts : [];
+                const newPart = {
+                  id: crypto.randomUUID(),
+                  name: `部位 ${parts.length + 1}`,
+                  textSections: data.textSections || [],
+                  alerts: data.alerts || [],
+                };
                 setData({
                   ...data,
-                  parts: [...currentParts, nextName],
+                  parts: [...parts, newPart],
                 });
               }}
               className="text-[10px] px-3 py-1 rounded-full bg-theme-primary text-white font-black tracking-[0.16em] uppercase"
@@ -1934,37 +1983,27 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
               + Add Part
             </button>
           </div>
-          <div className="space-y-2">
-            {(data.parts && data.parts.length ? data.parts : ['主體']).map(
-              (name, idx, arr) => (
-                <div key={idx} className="flex items-center gap-2">
-                  <input
-                    value={name}
-                    onChange={(e) => {
-                      const next = [...arr];
-                      next[idx] = e.target.value;
-                      setData({ ...data, parts: next });
-                    }}
-                    className="flex-1 rounded-2xl bg-theme-bg/40 border-none px-3 py-1.5 text-sm"
-                    placeholder={`部位名稱 ${idx + 1}`}
-                  />
-                  {arr.length > 1 && (
-                    <button
-                      onClick={() => {
-                        const next = [...arr];
-                        next.splice(idx, 1);
-                        setData({ ...data, parts: next });
-                      }}
-                      className="text-xs text-theme-text/40 hover:text-red-400 px-2"
-                    >
-                      ✕
-                    </button>
-                  )}
-                </div>
-              )
-            )}
+          <div className="flex gap-2 flex-wrap">
+            {(data.parts || []).map((part) => {
+              const isActive = currentPart && part.id === currentPart.id;
+              return (
+                <button
+                  key={part.id}
+                  onClick={() => setActivePartId(part.id)}
+                  className={
+                    'px-4 py-1.5 rounded-full text-[10px] font-black tracking-[0.18em] uppercase transition ' +
+                    (isActive
+                      ? 'bg-theme-primary text-white shadow'
+                      : 'bg-theme-bg text-theme-text/60 hover:bg-theme-bg/80')
+                  }
+                >
+                  {part.name}
+                </button>
+              );
+            })}
           </div>
         </div>
+
 
         <div className="p-6 md:p-10 space-y-12">
           {activeTab === 'CONTENT' && (
@@ -2084,21 +2123,27 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                     文字段落 Sections
                   </h3>
                   <button
-                    onClick={() =>
-                      setData({
-                        ...data,
-                        textSections: [
-                          ...(data.textSections || []),
-                          {
-                            id: crypto.randomUUID(),
-                            title: '新段落',
-                            content: '',
-                            repeats: 1,
-                            rowsPerLoop: 1,
-                          },
-                        ],
-                      })
-                    }
+                    onClick={() => {
+                      if (!currentPart) return;
+                      const base = currentPart.textSections || data.textSections || [];
+                      const nextSections = [
+                        ...base,
+                        {
+                          id: crypto.randomUUID(),
+                          title: '新段落',
+                          content: '',
+                          repeats: 1,
+                          rowsPerLoop: 1,
+                        },
+                      ];
+                      setData((prev) => ({
+                        ...prev,
+                        parts: (prev.parts || []).map((p) =>
+                          p.id === currentPart.id ? { ...p, textSections: nextSections } : p
+                        ),
+                      }));
+                    }}
+
                     className="bg-theme-primary text-white p-2.5 rounded-full shadow-lg transition-transform hover:scale-110 shadow-theme-primary/20"
                   >
                     <Icons.Plus />
@@ -2114,12 +2159,20 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                         <input
                           value={sec.title}
                           onChange={(e) => {
-                            const ns = data.textSections.map((s) =>
-                              s.id === sec.id
-                                ? { ...s, title: e.target.value }
-                                : s
-                            );
-                            setData({ ...data, textSections: ns });
+                            if (!currentPart) return;
+                              const base = currentPart.textSections || [];
+                              const ns = base.map((s) =>
+                                s.id === sec.id ? { ...s, title: e.target.value } : s
+                              );
+                              setData((prev) => ({
+                                ...prev,
+                                parts: (prev.parts || []).map((p) =>
+                                  p.id === currentPart.id
+                                    ? { ...p, textSections: base.filter((s) => s.id !== sec.id) }
+                                    : p
+                                ),
+                              }));
+
                           }}
                           className="bg-transparent font-black text-base uppercase focus:ring-0 border-none w-1/2 p-0 tracking-widest"
                           placeholder="段落標題"
@@ -2207,23 +2260,29 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                   Smart Notifications
                 </h3>
                 <button
-                  onClick={() =>
-                    setData({
-                      ...data,
-                      alerts: [
-                        ...(data.alerts || []),
-                        {
-                          id: crypto.randomUUID(),
-                          value: 1,
-                          startFrom: 1, 
-                          mode: 'SPECIFIC',
-                          type: 'TOTAL',
-                          sectionId: 'ALL',
-                          message: '',
-                        },
-                      ],
-                    })
-                  }
+                  onClick={() => {
+                    if (!currentPart) return;
+                    const base = currentPart.alerts || data.alerts || [];
+                    const nextAlerts = [
+                      ...base,
+                      {
+                        id: crypto.randomUUID(),
+                        value: 1,
+                        mode: 'SPECIFIC',
+                        type: 'TOTAL',
+                        sectionId: 'ALL',
+                        startFrom: 1,
+                        message: '',
+                      },
+                    ];
+                    setData((prev) => ({
+                      ...prev,
+                      parts: (prev.parts || []).map((p) =>
+                        p.id === currentPart.id ? { ...p, alerts: nextAlerts } : p
+                      ),
+                    }));
+                  }}
+
                   className="bg-theme-primary text-white px-8 py-3 rounded-2xl font-black text-[10px] uppercase shadow-lg shadow-theme-primary/20 tracking-[0.1em] transition-all hover:scale-105"
                 >
                   + Add New Rule
@@ -2239,12 +2298,18 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                       <select
                         value={a.mode}
                         onChange={(e) => {
-                          const na = data.alerts.map((rule) =>
-                            rule.id === a.id
-                              ? { ...rule, mode: e.target.value }
-                              : rule
-                          );
-                          setData({ ...data, alerts: na });
+                          if (!currentPart) return;
+                            const base = currentPart.alerts || [];
+                            const na = base.map((rule) =>
+                              rule.id === a.id ? { ...rule, value: newValue } : rule
+                            );
+                            setData((prev) => ({
+                              ...prev,
+                              parts: (prev.parts || []).map((p) =>
+                                p.id === currentPart.id ? { ...p, alerts: na } : p
+                              ),
+                            }));
+ 
                         }}
                         className="text-[10px] font-black bg-theme-bg p-3.5 rounded-xl border-none uppercase tracking-widest"
                       >
@@ -2353,12 +2418,16 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                     <input
                       value={a.message}
                       onChange={(e) => {
-                        const na = data.alerts.map((rule) =>
-                          rule.id === a.id
-                            ? { ...rule, message: e.target.value }
-                            : rule
-                        );
-                        setData({ ...data, alerts: na });
+                        if (!currentPart) return;
+                          const base = currentPart.alerts || [];
+                          const na = base.filter((rule) => rule.id !== a.id);
+                          setData((prev) => ({
+                            ...prev,
+                            parts: (prev.parts || []).map((p) =>
+                              p.id === currentPart.id ? { ...p, alerts: na } : p
+                            ),
+                          }));
+
                       }}
                       className="w-full text-lg font-bold bg-theme-bg/30 p-6 rounded-[2rem] border-none focus:ring-2 ring-theme-primary/20 text-theme-text"
                       placeholder="提醒內容 (例如: 該扭麻花了!、該加一針了...)"
