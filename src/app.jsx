@@ -1756,10 +1756,7 @@ function ProjectView({
                 </div>
                 {/* Section Loop */}
                 <div className="w-full md:w-auto text-theme-text/70">
-                  {/* 標題 */}
-                  <div className="text-[10px] font-black uppercase tracking-[0.25em] text-theme-text/50 mb-1">
-                    Section Loop
-                  </div>
+                  
                 
                   {sectionLoopInfo ? (
                     <div className="border-l border-theme-text/10 pl-3">
