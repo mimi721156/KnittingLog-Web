@@ -819,7 +819,6 @@ function YarnView({ yarns, onSaveYarn, onDeleteYarn }) {
 }
 
 // === 專案頁（含進度條、可改專案名稱、顯示開始時間） ===
-
 function ProjectView({
   activeProjects,
   savedPatterns,
@@ -1341,7 +1340,8 @@ function ProjectView({
             </span>
             <select
               className="bg-theme-bg/70 rounded-full px-3 py-1.5 border-none text-[10px]"
-              value({currentProject.category || '未分類'}
+              // 👉 修正點：加上了 = 號
+              value={currentProject.category || '未分類'} 
               onChange={(e) =>
                 onUpdateProject({
                   ...currentProject,
@@ -1777,6 +1777,7 @@ function ProjectView({
     </div>
   );
 }
+
 
 // === 織圖編輯器（含 pattern 備註） ===
 
