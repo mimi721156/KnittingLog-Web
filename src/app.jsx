@@ -1746,85 +1746,87 @@ function ProjectView({
 
       {/* 底部常駐：Section Loop + Counter */}
       {currentPartProgress && (
-      <div className="sticky bottom-0 border-t bg-white/95 backdrop-blur px-4 py-3 md:px-8 md:py-4 shadow-[0_-4px_12px_rgba(0,0,0,0.04)] z-30">
-          <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-            {/* Section Loop */}
-            <div className="w-full md:w-auto text-[10px] text-theme-text/60">
-              <div className="font-black uppercase tracking-[0.2em] mb-1">
-                Section Loop
-              </div>
-              {sectionLoopInfo ? (
-                <div className="tabular-nums text-xs text-theme-text/80">
-                  {sectionLoopInfo.title && (
-                    <span className="mr-1 text-[9px] text-theme-text/40">
-                      {sectionLoopInfo.title} ·
-                    </span>
-                  )}
-                  第{' '}
-                  <span className="font-black text-theme-text/90">
-                    {sectionLoopInfo.loopRow}
-                  </span>{' '}
-                  排（循環共 {sectionLoopInfo.rowsPerLoop} 排，第{' '}
-                  {sectionLoopInfo.loopIndex} 輪）
+        <div className="sticky bottom-[env(safe-area-inset-bottom)] z-30">
+          <div className="border-t bg-white/95 backdrop-blur px-4 py-3 md:px-8 md:py-4 shadow-[0_-4px_12px_rgba(0,0,0,0.04)]">
+            <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+              {/* Section Loop */}
+              <div className="w-full md:w-auto text-[10px] text-theme-text/60">
+                <div className="font-black uppercase tracking-[0.2em] mb-1">
+                  Section Loop
                 </div>
-              ) : (
-                <div className="text-[10px] opacity-50">
-                  尚未有 Section Loop 資訊
-                </div>
-              )}
-            </div>
-
-            {/* Counter */}
-            <div className="w-full md:w-auto flex items-center justify-end gap-3">
-              <div className="flex flex-col items-end mr-1">
-                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text/40 mb-0.5">
-                  Row Counter
-                </span>
-                <div className="text-3xl md:text-4xl font-black text-theme-text tabular-nums leading-none">
-                  {currentTotalRow}
-                </div>
+                {sectionLoopInfo ? (
+                  <div className="tabular-nums text-xs text-theme-text/80">
+                    {sectionLoopInfo.title && (
+                      <span className="mr-1 text-[9px] text-theme-text/40">
+                        {sectionLoopInfo.title} ·
+                      </span>
+                    )}
+                    第{' '}
+                    <span className="font-black text-theme-text/90">
+                      {sectionLoopInfo.loopRow}
+                    </span>{' '}
+                    排（循環共 {sectionLoopInfo.rowsPerLoop} 排，第{' '}
+                    {sectionLoopInfo.loopIndex} 輪）
+                  </div>
+                ) : (
+                  <div className="text-[10px] opacity-50">
+                    尚未有 Section Loop 資訊
+                  </div>
+                )}
               </div>
 
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => {
-                    update(-1);
-                    setShowAlertOverlay(false);
-                  }}
-                  className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-theme-bg text-theme-primary font-black text-xl flex items-center justify-center active:scale-95 shadow-inner"
-                >
-                  −
-                </button>
-                <button
-                  onClick={() => {
-                    update(1);
-                    setShowAlertOverlay(false);
-                  }}
-                  className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-theme-primary text-white font-black text-xl flex items-center justify-center active:scale-95 shadow-lg shadow-theme-primary/30"
-                >
-                  +
-                </button>
-                <div className="flex items-stretch gap-1 bg-theme-bg/70 rounded-full px-2 py-1">
-                  <input
-                    type="number"
-                    value={plusN}
-                    onChange={(e) => setPlusN(e.target.value)}
-                    placeholder="+n"
-                    className="w-16 bg-transparent border-none text-center font-black text-xs md:text-sm focus:ring-0 tabular-nums placeholder:opacity-30"
-                  />
+              {/* Counter */}
+              <div className="w-full md:w-auto flex items-center justify-end gap-3">
+                <div className="flex flex-col items-end mr-1">
+                  <span className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text/40 mb-0.5">
+                    Row Counter
+                  </span>
+                  <div className="text-3xl md:text-4xl font-black text-theme-text tabular-nums leading-none">
+                    {currentTotalRow}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
                   <button
                     onClick={() => {
-                      const n = parseInt(plusN);
-                      if (!isNaN(n)) {
-                        update(n);
-                        setShowAlertOverlay(false);
-                      }
-                      setPlusN('');
+                      update(-1);
+                      setShowAlertOverlay(false);
                     }}
-                    className="bg-theme-text text-white px-3 md:px-4 py-1 rounded-full font-black text-[9px] md:text-[10px] tracking-[0.18em] uppercase active:scale-95"
+                    className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-theme-bg text-theme-primary font-black text-xl flex items-center justify-center active:scale-95 shadow-inner"
                   >
-                    Go
+                    −
                   </button>
+                  <button
+                    onClick={() => {
+                      update(1);
+                      setShowAlertOverlay(false);
+                    }}
+                    className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-theme-primary text-white font-black text-xl flex items-center justify-center active:scale-95 shadow-lg shadow-theme-primary/30"
+                  >
+                    +
+                  </button>
+                  <div className="flex items-stretch gap-1 bg-theme-bg/70 rounded-full px-2 py-1">
+                    <input
+                      type="number"
+                      value={plusN}
+                      onChange={(e) => setPlusN(e.target.value)}
+                      placeholder="+n"
+                      className="w-16 bg-transparent border-none text-center font-black text-xs md:text-sm focus:ring-0 tabular-nums placeholder:opacity-30"
+                    />
+                    <button
+                      onClick={() => {
+                        const n = parseInt(plusN);
+                        if (!isNaN(n)) {
+                          update(n);
+                          setShowAlertOverlay(false);
+                        }
+                        setPlusN('');
+                      }}
+                      className="bg-theme-text text-white px-3 md:px-4 py-1 rounded-full font-black text-[9px] md:text-[10px] tracking-[0.18em] uppercase active:scale-95"
+                    >
+                      Go
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
