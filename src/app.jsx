@@ -932,37 +932,82 @@ function ProjectView({
     return filtered.map((p) => {
       const pat = savedPatterns.find((x) => x.id === p.patternId);
 
-      // 不是 TEXT 型別：不顯示進度條
+      // 非 TEXT：不算多部位進度，ROWS 就顯示 totalRow
       if (!pat || pat.type !== 'TEXT') {
         return {
           project: p,
           pattern: pat,
-          perPartTotals: null,
+          partsMeta: null,
           plannedRows: null,
+          currentPartName: null,
+          currentPartRow: p.totalRow || 0,
+          currentPartTarget: null,
         };
       }
 
-      // 有分部位就用部位；沒有就用舊的 textSections 當一個部位 fallback
-      const partsSource =
+      // 有 parts 就用 parts，沒有就整個 pattern 當作一個部位
+      const rawParts =
         Array.isArray(pat.parts) && pat.parts.length > 0
           ? pat.parts
-          : [{ textSections: pat.textSections || [] }];
+          : [
+              {
+                id: 'MAIN',
+                name: '主體',
+                textSections: pat.textSections || [],
+              },
+            ];
 
-      const perPartTotals = partsSource.map((part) => {
+      // 每個部位自己的目標排數
+      const partsMeta = rawParts.map((part, idx) => {
         const sections = part.textSections || [];
-        return sections.reduce(
+        const targetRows = sections.reduce(
           (sum, s) => sum + (s.repeats || 1) * (s.rowsPerLoop || 1),
           0
         );
+        return {
+          partId: part.id || part.partId || `PART_${idx}`,
+          name: part.name || `部位 ${idx + 1}`,
+          targetRows,
+        };
       });
 
-      const plannedRows = perPartTotals.reduce((a, b) => a + b, 0);
+      const plannedRows = partsMeta.reduce(
+        (sum, m) => sum + (m.targetRows || 0),
+        0
+      ) || null;
+
+      // 找出目前啟用的部位進度
+      let currentPartProgress = null;
+      if (Array.isArray(p.partsProgress) && p.partsProgress.length > 0) {
+        currentPartProgress =
+          (p.currentPartId &&
+            p.partsProgress.find((pp) => pp.partId === p.currentPartId)) ||
+          p.partsProgress[0];
+      }
+
+      const fallbackPartMeta = partsMeta[0] || null;
+
+      const activePartMeta =
+        (currentPartProgress &&
+          partsMeta.find((m) => m.partId === currentPartProgress.partId)) ||
+        fallbackPartMeta;
+
+      const currentPartRow =
+        (currentPartProgress && (currentPartProgress.totalRow || 0)) ||
+        p.totalRow ||
+        0;
+
+      const currentPartName = activePartMeta?.name || null;
+      const currentPartTarget = activePartMeta?.targetRows || null;
 
       return {
         project: p,
         pattern: pat,
-        perPartTotals,
+        partsMeta,
         plannedRows,
+        currentPartName,
+        currentPartRow,
+        currentPartTarget,
       };
     });
   }, [activeProjects, savedPatterns, categoryFilter]);
@@ -1121,24 +1166,42 @@ function ProjectView({
         </h2>
         <div className="grid gap-4">
           {listProjects.map(
-            ({ project: p, pattern: pat, perPartTotals, plannedRows }) => {
+            ({
+              project: p,
+              pattern: pat,
+              partsMeta,
+              plannedRows,
+              currentPartName,
+              currentPartRow,
+              currentPartTarget,
+            }) => {
               let ratio = null;
               let doneRows = null;
 
-              if (
-                plannedRows &&
-                plannedRows > 0 &&
-                Array.isArray(perPartTotals) &&
-                perPartTotals.length > 0 &&
-                Array.isArray(p.partsProgress) &&
-                p.partsProgress.length > 0
-              ) {
-                doneRows = p.partsProgress.reduce((sum, part, idx) => {
-                  const limit = perPartTotals[idx] || 0;
-                  const actual =
-                    typeof part.totalRow === 'number' ? part.totalRow : 0;
-                  return sum + Math.min(actual, limit);
-                }, 0);
+              // 整體進度：所有部位完成排數 / 所有部位目標排數
+              if (plannedRows && plannedRows > 0) {
+                if (
+                  Array.isArray(partsMeta) &&
+                  Array.isArray(p.partsProgress) &&
+                  p.partsProgress.length > 0
+                ) {
+                  doneRows = partsMeta.reduce((sum, meta) => {
+                    const prog = p.partsProgress.find(
+                      (pp) => pp.partId === meta.partId
+                    );
+                    const actual =
+                      prog && typeof prog.totalRow === 'number'
+                        ? prog.totalRow
+                        : 0;
+                    const limit = meta.targetRows || 0;
+                    return sum + Math.min(actual, limit);
+                  }, 0);
+                } else {
+                  // 沒有分部位進度，就用 totalRow 當線性進度
+                  const total =
+                    typeof p.totalRow === 'number' ? p.totalRow : 0;
+                  doneRows = Math.min(total, plannedRows);
+                }
 
                 ratio =
                   plannedRows > 0
@@ -1147,8 +1210,10 @@ function ProjectView({
               }
 
               const title = p.projectName || p.patternName;
-              const displayDone = doneRows ?? p.totalRow ?? 0;
-              const displayTarget = plannedRows || null;
+
+              // ROWS 顯示：目前部位的 row 數
+              const displayDone = currentPartRow ?? 0;
+              const displayTarget = currentPartTarget || null;
 
               return (
                 <div
@@ -1170,6 +1235,14 @@ function ProjectView({
                           {p.category || '未分類'}
                           {pat?.type === 'TEXT' ? ' · TEXT' : ' · CHART'}
                         </div>
+
+                        {/* 多部位時顯示目前部位名稱 */}
+                        {partsMeta && partsMeta.length > 1 && currentPartName && (
+                          <div className="text-[9px] text-theme-primary/70 mt-0.5">
+                            目前部位：{currentPartName}
+                          </div>
+                        )}
+
                         {p.startAt && (
                           <div className="text-[9px] text-theme-text/40 uppercase tracking-widest mt-0.5">
                             開始 {new Date(p.startAt).toLocaleDateString()}
