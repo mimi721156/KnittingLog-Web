@@ -1747,6 +1747,21 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
       ),
     }));
   };
+  
+  const handleDeletePart = (partId) => {
+  setData((prev) => {
+    const currentParts = prev.parts || [];
+    // 不允許刪到 0 個部位
+    if (currentParts.length <= 1) return prev;
+
+    const newParts = currentParts.filter((p) => p.id !== partId);
+    return {
+      ...prev,
+      parts: newParts,
+    };
+  });
+  };
+
 
   useEffect(() => {
     onUpdate(data);
