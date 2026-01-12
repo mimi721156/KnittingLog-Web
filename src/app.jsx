@@ -819,6 +819,7 @@ function YarnView({ yarns, onSaveYarn, onDeleteYarn }) {
 }
 
 // === 專案頁（含進度條、可改專案名稱、顯示開始時間） ===
+
 function ProjectView({
   activeProjects,
   savedPatterns,
@@ -920,7 +921,7 @@ function ProjectView({
     return { targetTotal: cumulativeRows, sectionsSummary: summary, activeSection };
   }, [currentPattern, currentPatternPart, currentTotalRow]);
 
-  // 全局進度比例（給底部進度條用，沒有就顯示 0%）
+  // 👉 新增：全局進度比例，給底部浮動進度條用
   const globalProgressRatio =
     currentPattern &&
     currentPattern.type === 'TEXT' &&
@@ -939,10 +940,12 @@ function ProjectView({
     return filtered.map((p) => {
       const pat = savedPatterns.find((x) => x.id === p.patternId);
 
+      // 不是 TEXT 型別：不顯示進度條
       if (!pat || pat.type !== 'TEXT') {
         return { project: p, pattern: pat, perPartRowTotal: null };
       }
 
+      // 每個部位自己的 row total
       const perPartRowTotal = (pat.parts || []).map((part) => {
         const sections = part.textSections || [];
         return sections.reduce(
@@ -1338,7 +1341,7 @@ function ProjectView({
             </span>
             <select
               className="bg-theme-bg/70 rounded-full px-3 py-1.5 border-none text-[10px]"
-              value={currentProject.category || '未分類'}
+              value({currentProject.category || '未分類'}
               onChange={(e) =>
                 onUpdateProject({
                   ...currentProject,
@@ -1482,8 +1485,87 @@ function ProjectView({
           )}
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mt-4">
-          {/* 左側只保留 Notes */}
           <div className="lg:col-span-5 space-y-6">
+            <div className="bg-white rounded-[3rem] p-8 flex flex-col items-center shadow-cozy border-2 border-white">
+              <h3 className="text-theme-primary font-black uppercase tracking-widest text-[9px] mb-3 opacity-50">
+                Row Counter
+                {currentPartProgress?.name && (
+                  <span className="ml-2 text-[9px] text-theme-text/50">
+                    · {currentPartProgress.name}
+                  </span>
+                )}
+              </h3>
+              <div className="text-7xl md:text-8xl font-black text-theme-text tabular-nums leading-none mb-8 tracking-tighter drop-shadow-md">
+                {currentTotalRow}
+              </div>
+
+              <div className="w-full space-y-6">
+                <div className="grid grid-cols-2 gap-4 w-full">
+                  <button
+                    onClick={() => {
+                      update(-1);
+                      setShowAlertOverlay(false);
+                    }}
+                    className="py-5 bg-theme-bg rounded-[2rem] text-theme-primary shadow-inner font-black text-3xl active:scale-95 transition"
+                  >
+                    −
+                  </button>
+                  <button
+                    onClick={() => {
+                      update(1);
+                      setShowAlertOverlay(false);
+                    }}
+                    className="py-6 bg-theme-primary text-white rounded-[2.25rem] shadow-xl shadow-theme-primary/20 font-black text-4xl active:scale-95 transition"
+                  >
+                    +
+                  </button>
+                </div>
+
+                <div className="flex items-stretch gap-2 bg-theme-bg/60 p-2 rounded-[1.75rem] shadow-inner w-full">
+                  <input
+                    type="number"
+                    value={plusN}
+                    onChange={(e) => setPlusN(e.target.value)}
+                    placeholder="+n"
+                    className="flex-1 min-w-0 bg-transparent border-none text-center font-black text-xl focus:ring-0 tabular-nums placeholder:opacity-20"
+                  />
+                  <button
+                    onClick={() => {
+                      const n = parseInt(plusN);
+                      if (!isNaN(n)) {
+                        update(n);
+                        setShowAlertOverlay(false);
+                      }
+                      setPlusN('');
+                    }}
+                    className="bg-theme-text text-white px-8 py-4 rounded-[1.5rem] font-black text-[10px] tracking-widest transition-all active:scale-95 shadow-lg uppercase"
+                  >
+                    Go
+                  </button>
+                </div>
+              </div>
+              {sectionLoopInfo && (
+                <div className="w-full mt-2 flex justify-between items-center text-[10px] text-theme-text/55">
+                  <span className="font-black uppercase tracking-[0.2em]">
+                    Section Loop
+                  </span>
+                  <span className="tabular-nums text-right">
+                    {sectionLoopInfo.title && (
+                      <span className="mr-1 text-[9px] text-theme-text/40">
+                        {sectionLoopInfo.title} ·
+                      </span>
+                    )}
+                    第{' '}
+                    <span className="font-black text-theme-text/80">
+                      {sectionLoopInfo.loopRow}
+                    </span>{' '}
+                    排（循環共 {sectionLoopInfo.rowsPerLoop} 排，第{' '}
+                    {sectionLoopInfo.loopIndex} 輪）
+                  </span>
+                </div>
+              )}
+            </div>
+
             <div className="bg-white p-6 rounded-[2rem] shadow-cozy border border-white space-y-3">
               <div className="flex items-center justify-between gap-2">
                 <div>
@@ -1509,7 +1591,6 @@ function ProjectView({
             </div>
           </div>
 
-          {/* 右側 Instruction + Section Loop + Pattern Notes */}
           <div className="lg:col-span-7 space-y-6">
             <div className="bg-white p-8 rounded-[3rem] shadow-cozy border border-white min-h-[380px]">
               <h4 className="font-black text-theme-text border-b border-theme-bg pb-5 mb-8 flex items-center gap-3 tracking-widest uppercase text-[10px]">
@@ -1544,7 +1625,7 @@ function ProjectView({
                           </span>
                         </div>
                         <div
-                          className={`t font-mono text-base leading-relaxed whitespace-pre-wrap ${
+                          className={`font-mono text-base leading-relaxed whitespace-pre-wrap ${
                             isActive
                               ? 'text-theme-text font-bold'
                               : 'text-gray-400'
@@ -1597,28 +1678,6 @@ function ProjectView({
               )}
             </div>
 
-            {/* Section Loop 小提示搬到這裡 */}
-            {sectionLoopInfo && (
-              <div className="flex justify-between items-center text-[10px] text-theme-text/55 bg-white/70 rounded-2xl px-4 py-3 border border-theme-bg/40">
-                <span className="font-black uppercase tracking-[0.2em]">
-                  Section Loop
-                </span>
-                <span className="tabular-nums text-right">
-                  {sectionLoopInfo.title && (
-                    <span className="mr-1 text-[9px] text-theme-text/40">
-                      {sectionLoopInfo.title} ·
-                    </span>
-                  )}
-                  第{' '}
-                  <span className="font-black text-theme-text/80">
-                    {sectionLoopInfo.loopRow}
-                  </span>{' '}
-                  排（循環共 {sectionLoopInfo.rowsPerLoop} 排，第{' '}
-                  {sectionLoopInfo.loopIndex} 輪）
-                </span>
-              </div>
-            )}
-
             {currentPattern.notes && (
               <div className="bg-theme-bg/40 p-5 rounded-[2rem] border border-theme-bg/60">
                 <div className="text-[9px] font-black uppercase tracking-[0.2em] opacity-50 mb-2">
@@ -1633,8 +1692,8 @@ function ProjectView({
         </div>
       </div>
 
-      {/* 底部常駐 Row Counter Dock */}
-      {currentProject && (
+      {/* 👉 底部常駐 Row Counter Dock（依照你的範例改成 KnittingLog 風格） */}
+      {globalProgressRatio !== null && (
         <div className="fixed bottom-0 left-0 right-0 p-4 md:p-6 z-40 pointer-events-none">
           <div className="max-w-md mx-auto pointer-events-auto">
             <div className="bg-white/95 backdrop-blur-xl rounded-[2.5rem] shadow-[0_18px_45px_rgba(15,23,42,0.28)] border border-white px-3 py-2 flex items-center justify-between gap-2">
@@ -1695,14 +1754,12 @@ function ProjectView({
               </div>
             </div>
 
-            {/* 底下小進度條（沒有總排數時就顯示 0% / 灰條） */}
+            {/* 底下小進度條 */}
             <div className="mt-2 px-6">
               <div className="h-1.5 bg-theme-bg rounded-full overflow-hidden">
                 <div
                   className="h-full bg-theme-primary transition-all duration-500 rounded-full"
-                  style={{
-                    width: `${(globalProgressRatio ?? 0) * 100}%`,
-                  }}
+                  style={{ width: `${globalProgressRatio * 100}%` }}
                 />
               </div>
               <div className="flex justify-between mt-1 px-1">
@@ -1710,9 +1767,7 @@ function ProjectView({
                   Progress
                 </span>
                 <span className="text-[8px] font-black text-theme-primary uppercase tracking-[0.18em] tabular-nums">
-                  {globalProgressRatio !== null
-                    ? `${Math.round(globalProgressRatio * 100)}%`
-                    : '--'}
+                  {Math.round(globalProgressRatio * 100)}%
                 </span>
               </div>
             </div>
@@ -1722,7 +1777,6 @@ function ProjectView({
     </div>
   );
 }
-
 
 // === 織圖編輯器（含 pattern 備註） ===
 
