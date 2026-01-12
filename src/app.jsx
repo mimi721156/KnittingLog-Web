@@ -830,7 +830,6 @@ function ProjectView({
   categories,
   selectedId,
   setSelectedId,
-  setBottomBar,   // ★ 新增
 }) {
   const [plusN, setPlusN] = useState('');
   const [showAlertOverlay, setShowAlertOverlay] = useState(false);
@@ -1078,114 +1077,6 @@ function ProjectView({
       setShowAlertOverlay(true);
     }
   }, [alertKey]);
-
-  useEffect(() => {
-    // 如果沒有選中的部位，就清空底部 bar
-    if (!currentPartProgress) {
-      setBottomBar(null);
-      return;
-    }
-  
-    // 把整條底部 bar 交給 App 來 render
-    setBottomBar(
-      <div className="fixed bottom-0 left-0 right-0 border-t bg-white/95 backdrop-blur px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] md:px-8 md:py-4 shadow-[0_-4px_12px_rgba(0,0,0,0.04)] z-30">
-        <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-          {/* Section Loop */}
-          <div className="w-full md:w-auto text-[10px] text-theme-text/60">
-            <div className="font-black uppercase tracking-[0.2em] mb-1">
-              Section Loop
-            </div>
-            {sectionLoopInfo ? (
-              <div className="tabular-nums text-xs text-theme-text/80">
-                {sectionLoopInfo.title && (
-                  <span className="mr-1 text-[9px] text-theme-text/40">
-                    {sectionLoopInfo.title} ·
-                  </span>
-                )}
-                第{' '}
-                <span className="font-black text-theme-text/90">
-                  {sectionLoopInfo.loopRow}
-                </span>{' '}
-                排（循環共 {sectionLoopInfo.rowsPerLoop} 排，第{' '}
-                {sectionLoopInfo.loopIndex} 輪）
-              </div>
-            ) : (
-              <div className="text-[10px] opacity-50">
-                尚未有 Section Loop 資訊
-              </div>
-            )}
-          </div>
-  
-          {/* Counter */}
-          <div className="w-full md:w-auto flex items-center justify-end gap-3">
-            <div className="flex flex-col items-end mr-1">
-              <span className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text/40 mb-0.5">
-                Row Counter
-              </span>
-              <div className="text-3xl md:text-4xl font-black text-theme-text tabular-nums leading-none">
-                {currentTotalRow}
-              </div>
-            </div>
-  
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => {
-                  update(-1);
-                  setShowAlertOverlay(false);
-                }}
-                className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-theme-bg text-theme-primary font-black text-xl flex items-center justify-center active:scale-95 shadow-inner"
-              >
-                −
-              </button>
-              <button
-                onClick={() => {
-                  update(1);
-                  setShowAlertOverlay(false);
-                }}
-                className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-theme-primary text白 font-black text-xl flex items-center justify-center active:scale-95 shadow-lg shadow-theme-primary/30"
-              >
-                +
-              </button>
-              <div className="flex items-stretch gap-1 bg-theme-bg/70 rounded-full px-2 py-1">
-                <input
-                  type="number"
-                  value={plusN}
-                  onChange={(e) => setPlusN(e.target.value)}
-                  placeholder="+n"
-                  className="w-16 bg-transparent border-none text-center font-black text-xs md:text-sm focus:ring-0 tabular-nums placeholder:opacity-30"
-                />
-                <button
-                  onClick={() => {
-                    const n = parseInt(plusN);
-                    if (!isNaN(n)) {
-                      update(n);
-                      setShowAlertOverlay(false);
-                    }
-                    setPlusN('');
-                  }}
-                  className="bg-theme-text text-white px-3 md:px-4 py-1 rounded-full font-black text-[9px] md:text-[10px] tracking-[0.18em] uppercase active:scale-95"
-                >
-                  Go
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  
-    // 離開這個畫面時，把底部 bar 清乾淨
-    return () => setBottomBar(null);
-  }, [
-    currentPartProgress,
-    sectionLoopInfo,
-    currentTotalRow,
-    plusN,
-    update,
-    setShowAlertOverlay,
-    setBottomBar,
-  ]);
-
 
   const sectionLoopInfo = useMemo(() => {
     if (!currentProject || !currentPattern) return null;
@@ -1853,7 +1744,93 @@ function ProjectView({
         </div>
       </div>
 
-      
+      {/* 底部常駐：Section Loop + Counter */}
+      {currentPartProgress && (
+      <div className="sticky bottom-0 border-t bg-white/95 backdrop-blur px-4 py-3 md:px-8 md:py-4 shadow-[0_-4px_12px_rgba(0,0,0,0.04)] z-30">
+          <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+            {/* Section Loop */}
+            <div className="w-full md:w-auto text-[10px] text-theme-text/60">
+              <div className="font-black uppercase tracking-[0.2em] mb-1">
+                Section Loop
+              </div>
+              {sectionLoopInfo ? (
+                <div className="tabular-nums text-xs text-theme-text/80">
+                  {sectionLoopInfo.title && (
+                    <span className="mr-1 text-[9px] text-theme-text/40">
+                      {sectionLoopInfo.title} ·
+                    </span>
+                  )}
+                  第{' '}
+                  <span className="font-black text-theme-text/90">
+                    {sectionLoopInfo.loopRow}
+                  </span>{' '}
+                  排（循環共 {sectionLoopInfo.rowsPerLoop} 排，第{' '}
+                  {sectionLoopInfo.loopIndex} 輪）
+                </div>
+              ) : (
+                <div className="text-[10px] opacity-50">
+                  尚未有 Section Loop 資訊
+                </div>
+              )}
+            </div>
+
+            {/* Counter */}
+            <div className="w-full md:w-auto flex items-center justify-end gap-3">
+              <div className="flex flex-col items-end mr-1">
+                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text/40 mb-0.5">
+                  Row Counter
+                </span>
+                <div className="text-3xl md:text-4xl font-black text-theme-text tabular-nums leading-none">
+                  {currentTotalRow}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    update(-1);
+                    setShowAlertOverlay(false);
+                  }}
+                  className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-theme-bg text-theme-primary font-black text-xl flex items-center justify-center active:scale-95 shadow-inner"
+                >
+                  −
+                </button>
+                <button
+                  onClick={() => {
+                    update(1);
+                    setShowAlertOverlay(false);
+                  }}
+                  className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-theme-primary text-white font-black text-xl flex items-center justify-center active:scale-95 shadow-lg shadow-theme-primary/30"
+                >
+                  +
+                </button>
+                <div className="flex items-stretch gap-1 bg-theme-bg/70 rounded-full px-2 py-1">
+                  <input
+                    type="number"
+                    value={plusN}
+                    onChange={(e) => setPlusN(e.target.value)}
+                    placeholder="+n"
+                    className="w-16 bg-transparent border-none text-center font-black text-xs md:text-sm focus:ring-0 tabular-nums placeholder:opacity-30"
+                  />
+                  <button
+                    onClick={() => {
+                      const n = parseInt(plusN);
+                      if (!isNaN(n)) {
+                        update(n);
+                        setShowAlertOverlay(false);
+                      }
+                      setPlusN('');
+                    }}
+                    className="bg-theme-text text-white px-3 md:px-4 py-1 rounded-full font-black text-[9px] md:text-[10px] tracking-[0.18em] uppercase active:scale-95"
+                  >
+                    Go
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -3018,9 +2995,6 @@ function App() {
   const [themeKey, setThemeKey] = useState('PURPLE');
   const [selectedProjectId, setSelectedProjectId] = useState(null);
 
-  // ➜ 新增這個，用來存 ProjectView 丟上來的底部 bar
-  const [projectBottomBar, setProjectBottomBar] = useState(null);
-  
   const [categories, setCategories] = useState([
     '圍巾',
     '毛帽',
@@ -3290,8 +3264,6 @@ function App() {
               onDeleteProject={(id) =>
                 setActiveProjects((prev) => prev.filter((x) => x.id !== id))
               }
-              // ★ 新增這一行
-              setBottomBar={setProjectBottomBar}
             />
           )}
           {view === 'YARNS' && (
@@ -3378,9 +3350,7 @@ function App() {
           )}
           {view === 'TUTORIAL' && <TutorialView />}
         </main>
-        {/* 單一專案時顯示 ProjectView 傳上來的底部 Counter bar */}
-        {view === 'PROJECTS' && selectedProjectId && projectBottomBar}
-        
+
         {shouldShowMobileTabBar && (
           <div className="md:hidden fixed bottom-0 w-full bg-white/90 backdrop-blur-xl border-t border-theme-accent/30 flex justify-around py-6 pb-safe z-40 shadow-[0_-10px_40px_rgba(0,0,0,0.08)]">
             <button
