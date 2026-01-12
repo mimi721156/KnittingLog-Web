@@ -1282,7 +1282,7 @@ function ProjectView({
                       <div className="mt-2">
                         <div className="w-full h-2.5 bg-theme-bg rounded-full overflow-hidden shadow-inner">
                           <div
-                            className="h-full bg-theme-primary/80 transition-all duration-500"
+                            className="h-full bg-theme-primary transition-all duration-500"
                             style={{ width: `${ratio * 100}%` }}
                           />
                         </div>
