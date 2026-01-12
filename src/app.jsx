@@ -1748,20 +1748,36 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
     }));
   };
   
-  const handleDeletePart = (partId) => {
-  setData((prev) => {
-    const currentParts = prev.parts || [];
-    // 不允許刪到 0 個部位
-    if (currentParts.length <= 1) return prev;
+    const handleDeletePart = (partId) => {
+      // 先防呆：如果只剩一個部位，就不給刪
+      if (!data.parts || data.parts.length <= 1) return;
 
-    const newParts = currentParts.filter((p) => p.id !== partId);
-    return {
-      ...prev,
-      parts: newParts,
+      if (
+        !window.confirm(
+          '確定要刪除此部位嗎？\n此部位的文字段落與提醒規則也會一併刪除。'
+        )
+      ) {
+        return;
+      }
+
+      setData((prev) => {
+        const currentParts = prev.parts || [];
+        if (currentParts.length <= 1) return prev;
+
+        const newParts = currentParts.filter((p) => p.id !== partId);
+
+        let nextActiveId = prev.activePartId;
+        // 如果刪掉的是現在選的那個部位，就把 active 改成剩下陣列的第一個
+        if (!newParts.some((p) => p.id === nextActiveId)) {
+          nextActiveId = newParts[0]?.id ?? null;
+        }
+
+        return {
+          ...prev,
+          parts: newParts,
+        };
+      });
     };
-  });
-  };
-
 
   useEffect(() => {
     onUpdate(data);
@@ -1923,16 +1939,23 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
               <button
                 onClick={() => {
                   const parts = data.parts && data.parts.length ? data.parts : [];
+                  const defaultName = `部位 ${parts.length + 1}`;
+
+                  const input = window.prompt('請輸入新的部位名稱：', defaultName);
+                  const name = (input ?? '').trim() || defaultName;
+
                   const newPart = {
                     id: crypto.randomUUID(),
-                    name: `部位 ${parts.length + 1}`,
+                    name,
                     textSections: data.textSections || [],
                     alerts: data.alerts || [],
                   };
-                  setData({
-                    ...data,
-                    parts: [...parts, newPart],
-                  });
+
+                  setData((prev) => ({
+                    ...prev,
+                    parts: [...(prev.parts || []), newPart],
+                  }));
+                  setActivePartId(newPart.id); // 新增後直接切到新部位
                 }}
                 className="text-[10px] px-3 py-1 rounded-full bg-theme-primary text-white font-black tracking-[0.16em] uppercase"
               >
@@ -1973,9 +1996,30 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                     )}
                   </div>
                 );
-          })}
-        </div>
-
+            })}
+          </div>
+          {/* 目前部位名稱可即時修改 */}
+          {currentPart && (
+            <div className="mt-3 flex items-center gap-2">
+              <span className="text-[9px] font-black opacity-40 uppercase tracking-[0.2em]">
+                部位名稱
+              </span>
+              <input
+                className="flex-1 bg-theme-bg/40 rounded-full px-3 py-1.5 text-[11px] border-none focus:ring-2 ring-theme-primary/20"
+                value={currentPart.name || ''}
+                onChange={(e) => {
+                  const newName = e.target.value;
+                  setData((prev) => ({
+                    ...prev,
+                    parts: (prev.parts || []).map((p) =>
+                      p.id === currentPart.id ? { ...p, name: newName } : p
+                    ),
+                  }));
+                }}
+                placeholder="例如：前片／後片／左袖…"
+              />
+            </div>
+          )}
           </div>
         </div>
 
