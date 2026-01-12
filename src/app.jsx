@@ -1754,25 +1754,44 @@ function ProjectView({
                 <div className="font-black uppercase tracking-[0.2em] mb-1">
                   Section Loop
                 </div>
-                {sectionLoopInfo ? (
-                  <div className="tabular-nums text-xs text-theme-text/80">
-                    {sectionLoopInfo.title && (
-                      <span className="mr-1 text-[9px] text-theme-text/40">
-                        {sectionLoopInfo.title} ·
-                      </span>
-                    )}
-                    第{' '}
-                    <span className="font-black text-theme-text/90">
-                      {sectionLoopInfo.loopRow}
-                    </span>{' '}
-                    排（循環共 {sectionLoopInfo.rowsPerLoop} 排，第{' '}
-                    {sectionLoopInfo.loopIndex} 輪）
+                {/* Section Loop */}
+                <div className="w-full md:w-auto text-theme-text/70">
+                  {/* 標題 */}
+                  <div className="text-[10px] font-black uppercase tracking-[0.25em] text-theme-text/50 mb-1">
+                    Section Loop
                   </div>
-                ) : (
-                  <div className="text-[10px] opacity-50">
-                    尚未有 Section Loop 資訊
-                  </div>
-                )}
+                
+                  {sectionLoopInfo ? (
+                    <div className="border-l border-theme-text/10 pl-3">
+                      {/* 花樣名稱：經典麻花段 */}
+                      {sectionLoopInfo.title && (
+                        <div className="text-sm md:text-base font-medium text-theme-text mb-0.5">
+                          {sectionLoopInfo.title}
+                        </div>
+                      )}
+                
+                      {/* 第 2 / 8 排 | 第 6 輪 */}
+                      <div className="text-[11px] md:text-xs text-theme-text/60 tabular-nums">
+                        第{' '}
+                        <span className="font-semibold text-theme-text/90">
+                          {sectionLoopInfo.loopRow}
+                        </span>{' '}
+                        / {sectionLoopInfo.rowsPerLoop} 排
+                        <span className="mx-1 text-theme-text/30">|</span>
+                        第{' '}
+                        <span className="font-semibold text-theme-text/90">
+                          {sectionLoopInfo.loopIndex}
+                        </span>{' '}
+                        輪
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-[10px] opacity-50">
+                      尚未有 Section Loop 資訊
+                    </div>
+                  )}
+                </div>
+
               </div>
 
               {/* Counter */}
