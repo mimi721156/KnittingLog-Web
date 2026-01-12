@@ -931,14 +931,21 @@ function ProjectView({
 
     return filtered.map((p) => {
       const pat = savedPatterns.find((x) => x.id === p.patternId);
-      let targetTotal = null;
-      if (pat && pat.type === 'TEXT' && Array.isArray(pat.textSections)) {
-        targetTotal = pat.textSections.reduce(
-          (sum, s) => sum + (s.rowsPerLoop || 1) * (s.repeats || 1),
+
+      // 不是 TEXT 型別：不顯示進度條
+      if (!pat || pat.type !== "TEXT") {
+        return { project: p, pattern: pat, perPartRowTotal: null };
+      }
+
+      // 每個部位自己的 row total
+      const perPartRowTotal = pat.parts.map((part) => {
+        const sections = part.textSections || [];
+        return sections.reduce(
+          (sum, s) => sum + (s.repeats || 1) * (s.rowsPerLoop || 1),
           0
         );
-      }
-      return { project: p, pattern: pat, targetTotal };
+      });
+      return { project: p, pattern: pat, perPartRowTotal };
     });
   }, [activeProjects, savedPatterns, categoryFilter]);
 
@@ -1100,22 +1107,17 @@ function ProjectView({
             let plannedRows = null;
             let doneRows = null;
 
-            if (targetTotal && targetTotal > 0) {
-              if (Array.isArray(p.partsProgress) && p.partsProgress.length > 0) {
-                const perPartMax = targetTotal;
-                plannedRows = perPartMax * p.partsProgress.length;
-                doneRows = p.partsProgress.reduce((sum, part) => {
-                  const val = typeof part.totalRow === 'number' ? part.totalRow : 0;
-                  return sum + Math.min(val, perPartMax);
-                }, 0);
-                ratio =
-                  plannedRows > 0 ? Math.min(1, doneRows / plannedRows) : null;
-              } else {
-                plannedRows = targetTotal;
-                const val = typeof p.totalRow === 'number' ? p.totalRow : 0;
-                doneRows = Math.min(val, targetTotal);
-                ratio = Math.min(1, doneRows / plannedRows);
-              }
+            const perPartTotals = perPartRowTotal; // 來自 listProjects
+            if (perPartTotals && perPartTotals.length > 0) {
+              plannedRows = perPartTotals.reduce((a, b) => a + b, 0);
+
+              doneRows = p.partsProgress.reduce((sum, part, idx) => {
+                const limit = perPartTotals[idx] || 0;
+                const actual = typeof part.totalRow === "number" ? part.totalRow : 0;
+                return sum + Math.min(actual, limit);
+              }, 0);
+
+              ratio = plannedRows > 0 ? Math.min(1, doneRows / plannedRows) : null;
             }
 
             const title = p.projectName || p.patternName;
