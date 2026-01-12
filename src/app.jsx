@@ -921,14 +921,6 @@ function ProjectView({
     return { targetTotal: cumulativeRows, sectionsSummary: summary, activeSection };
   }, [currentPattern, currentPatternPart, currentTotalRow]);
 
-  // 👉 新增：全局進度比例，給底部浮動進度條用
-  const globalProgressRatio =
-    currentPattern &&
-    currentPattern.type === 'TEXT' &&
-    projectStats.targetTotal > 0
-      ? Math.min(1, currentTotalRow / projectStats.targetTotal)
-      : null;
-
   const listProjects = useMemo(() => {
     const filtered =
       categoryFilter && categoryFilter !== 'ALL'
@@ -940,20 +932,83 @@ function ProjectView({
     return filtered.map((p) => {
       const pat = savedPatterns.find((x) => x.id === p.patternId);
 
-      // 不是 TEXT 型別：不顯示進度條
+      // 非 TEXT：不算多部位進度，ROWS 就顯示 totalRow
       if (!pat || pat.type !== 'TEXT') {
-        return { project: p, pattern: pat, perPartRowTotal: null };
+        return {
+          project: p,
+          pattern: pat,
+          partsMeta: null,
+          plannedRows: null,
+          currentPartName: null,
+          currentPartRow: p.totalRow || 0,
+          currentPartTarget: null,
+        };
       }
 
-      // 每個部位自己的 row total
-      const perPartRowTotal = (pat.parts || []).map((part) => {
+      // 有 parts 就用 parts，沒有就整個 pattern 當作一個部位
+      const rawParts =
+        Array.isArray(pat.parts) && pat.parts.length > 0
+          ? pat.parts
+          : [
+              {
+                id: 'MAIN',
+                name: '主體',
+                textSections: pat.textSections || [],
+              },
+            ];
+
+      // 每個部位自己的目標排數
+      const partsMeta = rawParts.map((part, idx) => {
         const sections = part.textSections || [];
-        return sections.reduce(
+        const targetRows = sections.reduce(
           (sum, s) => sum + (s.repeats || 1) * (s.rowsPerLoop || 1),
           0
         );
+        return {
+          partId: part.id || part.partId || `PART_${idx}`,
+          name: part.name || `部位 ${idx + 1}`,
+          targetRows,
+        };
       });
-      return { project: p, pattern: pat, perPartRowTotal };
+
+      const plannedRows = partsMeta.reduce(
+        (sum, m) => sum + (m.targetRows || 0),
+        0
+      ) || null;
+
+      // 找出目前啟用的部位進度
+      let currentPartProgress = null;
+      if (Array.isArray(p.partsProgress) && p.partsProgress.length > 0) {
+        currentPartProgress =
+          (p.currentPartId &&
+            p.partsProgress.find((pp) => pp.partId === p.currentPartId)) ||
+          p.partsProgress[0];
+      }
+
+      const fallbackPartMeta = partsMeta[0] || null;
+
+      const activePartMeta =
+        (currentPartProgress &&
+          partsMeta.find((m) => m.partId === currentPartProgress.partId)) ||
+        fallbackPartMeta;
+
+      const currentPartRow =
+        (currentPartProgress && (currentPartProgress.totalRow || 0)) ||
+        p.totalRow ||
+        0;
+
+      const currentPartName = activePartMeta?.name || null;
+      const currentPartTarget = activePartMeta?.targetRows || null;
+
+      return {
+        project: p,
+        pattern: pat,
+        partsMeta,
+        plannedRows,
+        currentPartName,
+        currentPartRow,
+        currentPartTarget,
+      };
     });
   }, [activeProjects, savedPatterns, categoryFilter]);
 
@@ -1078,8 +1133,8 @@ function ProjectView({
 
     const now = new Date().toISOString();
 
-    const newTotal = Math.max(1, (currentPartProgress.totalRow || 1) + d);
-    const newSection = Math.max(1, (currentPartProgress.sectionRow || 1) + d);
+    const newTotal = Math.max(1, currentPartProgress.totalRow + d);
+    const newSection = Math.max(1, currentPartProgress.sectionRow + d);
 
     const updatedParts = (currentProject.partsProgress || []).map((p) =>
       p.partId === currentPartProgress.partId
@@ -1105,135 +1160,208 @@ function ProjectView({
 
   if (!selectedId) {
     return (
-      <div className="max-w-5xl mx-auto p-8 md:p-12 animate-fade-in pb-32">
+      <div className="max-w-6xl mx-auto p-8 md:p-12 animate-fade-in pb-32">
         <h2 className="text-3xl font-black text-theme-text mb-6 tracking-tight">
           進行中專案
         </h2>
-        <div className="grid gap-4">
-          {listProjects.map(({ project: p, pattern: pat, perPartRowTotal }) => {
-            let ratio = null;
-            let plannedRows = null;
-            let doneRows = null;
 
-            if (Array.isArray(perPartRowTotal) && perPartRowTotal.length > 0) {
-              plannedRows = perPartRowTotal.reduce((a, b) => a + b, 0);
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+          {listProjects.map(
+            ({
+              project: p,
+              pattern: pat,
+              partsMeta,
+              plannedRows,
+              currentPartName,
+              currentPartRow,
+              currentPartTarget,
+            }) => {
+              let ratio = null;
+              let doneRows = 0;
 
-              if (Array.isArray(p.partsProgress) && p.partsProgress.length > 0) {
-                doneRows = p.partsProgress.reduce((sum, part, idx) => {
-                  const limit = perPartRowTotal[idx] || 0;
-                  const actual =
-                    typeof part.totalRow === 'number' ? part.totalRow : 0;
-                  return sum + Math.min(actual, limit);
-                }, 0);
-              } else {
-                doneRows = typeof p.totalRow === 'number' ? p.totalRow : 0;
+              if (plannedRows && plannedRows > 0) {
+                if (
+                  Array.isArray(partsMeta) &&
+                  Array.isArray(p.partsProgress) &&
+                  p.partsProgress.length > 0
+                ) {
+                  // 用 index 對應部位進度，計算「全部部位加總的完成排數」
+                  doneRows = partsMeta.reduce((sum, meta, idx) => {
+                    const prog = p.partsProgress[idx];
+                    const actual =
+                      prog && typeof prog.totalRow === 'number'
+                        ? prog.totalRow
+                        : 0;
+                    const limit = meta.targetRows || 0;
+                    return sum + Math.min(actual, limit);
+                  }, 0);
+                } else {
+                  const total =
+                    typeof p.totalRow === 'number' ? p.totalRow : 0;
+                  doneRows = Math.min(total, plannedRows);
+                }
+
+                ratio =
+                  plannedRows > 0 ? Math.min(1, doneRows / plannedRows) : null;
               }
 
-              ratio =
-                plannedRows > 0 ? Math.min(1, doneRows / plannedRows) : null;
-            }
+              const overallPercent =
+                ratio !== null ? Math.round(ratio * 100) : null;
 
-            const title = p.projectName || p.patternName;
-            return (
-              <div
-                key={p.id}
-                onClick={() => setSelectedId(p.id)}
-                className="bg-white px-6 py-5 rounded-[2.25rem] shadow-cozy border border-white flex items-center gap-6 active:scale-[0.98] transition cursor-pointer overflow-hidden relative"
-              >
-                <div className="w-12 h-12 bg-theme-bg rounded-2xl flex items-center justify-center text-theme-primary text-xl font-black shadow-inner flex-shrink-0">
-                  R
-                </div>
+              const title = p.projectName || p.patternName;
 
-                <div className="flex-1 min-w-0">
-                  <div className="flex justify-between items-center gap-3 mb-1">
-                    <div className="min-w-0">
-                      <h3 className="font-bold text-theme-text text-base leading-tight truncate">
+              // ROWS 區塊顯示「目前部位」的排數
+              const displayDone = currentPartRow ?? 0;
+              const displayTarget = currentPartTarget || null;
+
+              return (
+                <div
+                  key={p.id}
+                  onClick={() => setSelectedId(p.id)}
+                  className="bg-white rounded-[32px] p-5 shadow-sm border border-gray-100 flex flex-col gap-4 hover:shadow-md transition-shadow active:scale-[0.98] cursor-pointer"
+                >
+                  {/* 頂端：ID + 標籤 + 刪除鈕 */}
+                  <div className="flex justify-between items-start gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-[10px] font-mono font-bold text-theme-primary bg-theme-bg px-2 py-0.5 rounded-md">
+                          {p.id.slice(0, 6).toUpperCase()}
+                        </span>
+                        <div className="flex flex-wrap gap-1">
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 font-medium">
+                            {p.category || '未分類'}
+                          </span>
+                          <span
+                            className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${
+                              pat?.type === 'CHART'
+                                ? 'border-purple-200 text-purple-500'
+                                : 'border-blue-200 text-blue-500'
+                            }`}
+                          >
+                            {pat?.type || 'TEXT'}
+                          </span>
+                        </div>
+                      </div>
+                      <h3 className="text-lg font-bold text-gray-900 leading-tight truncate">
                         {title}
                       </h3>
-                      <div className="text-[9px] font-black text-theme-primary opacity-60 uppercase tracking-widest">
-                        {p.category || '未分類'}
-                        {pat?.type === 'TEXT' ? ' · TEXT' : ' · CHART'}
+                    </div>
+
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (
+                          !window.confirm(
+                            '確定要刪除這個專案嗎？\n此動作無法復原。'
+                          )
+                        )
+                          return;
+                        onDeleteProject(p.id);
+                      }}
+                      className="text-gray-200 hover:text-red-400 p-1 transition-colors"
+                    >
+                      <Icons.Trash />
+                    </button>
+                  </div>
+
+                  {/* 中段：目前部位 + 基本資訊 */}
+                  <div className="flex gap-4">
+                    {/* 左邊：用一個色塊當封面（之後想接圖片也可以改這裡） */}
+                    <div className="w-24 h-32 md:w-28 md:h-36 flex-shrink-0 rounded-2xl overflow-hidden shadow-inner relative bg-theme-bg">
+                      <div className="absolute inset-0 flex items-center justify-center text-3xl">
+                        🧶
                       </div>
                       {p.startAt && (
-                        <div className="text-[9px] text-theme-text/40 uppercase tracking-widest mt-0.5">
-                          開始 {new Date(p.startAt).toLocaleDateString()}
-                        </div>
-                      )}
-                      {(p.needle || p.castOn || p.yarnId) && (
-                        <div className="text-[9px] text-theme-text/45 mt-0.5 line-clamp-2">
-                          {p.yarnId && (
-                            <>
-                              線材：{findYarnLabel(p.yarnId)}
-                              {(p.needle || p.castOn) && ' · '}
-                            </>
-                          )}
-                          {p.needle && <>針號 {p.needle}</>}
-                          {p.needle && p.castOn && ' · '}
-                          {p.castOn && <>起針 {p.castOn}</>}
+                        <div className="absolute bottom-0 inset-x-0 bg-black/35 backdrop-blur-[2px] py-1 text-center">
+                          <span className="text-[10px] text-white font-medium">
+                            開始 {new Date(p.startAt).toLocaleDateString()}
+                          </span>
                         </div>
                       )}
                     </div>
-                    <div className="text-right flex-shrink-0">
-                      <div className="text-xs font-black text-theme-text/60 uppercase tracking-[0.15em] mb-0.5">
-                        Rows
+
+                    <div className="flex-1 flex flex-col justify-between py-1">
+                      {/* 目前部位 + 目前部位排數 */}
+                      <div className="bg-[#F8F9FA] rounded-2xl p-2.5 space-y-2 border border-gray-50">
+                        <div className="flex items-center gap-2">
+                          <div className="p-1 bg-white rounded-lg shadow-sm text-theme-primary text-xs font-black">
+                            部位
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-[9px] text-gray-400 font-bold uppercase mb-0.5">
+                              目前部位
+                            </p>
+                            <p className="text-xs font-bold text-gray-700 truncate">
+                              {currentPartName || '主體'}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between px-1">
+                          <span className="text-[10px] text-gray-500">
+                            目前排數
+                          </span>
+                          <span className="text-[10px] font-mono font-bold text-theme-primary">
+                            {displayDone}
+                            {displayTarget ? ` / ${displayTarget}` : ''} 排
+                          </span>
+                        </div>
                       </div>
-                      <div className="text-lg font-black text-theme-primary tabular-nums">
-                        {p.totalRow}
-                        {plannedRows ? (
-                          <>
-                            <span className="opacity-30 mx-1">/</span>
-                            <span className="opacity-80">{plannedRows}</span>
-                          </>
-                        ) : null}
+
+                      {/* Yarn / Needle / Cast on */}
+                      <div className="grid grid-cols-1 gap-1 mt-2 px-1 text-[10px] text-gray-500">
+                        {p.yarnId && (
+                          <div className="truncate">
+                            線材：{findYarnLabel(p.yarnId)}
+                          </div>
+                        )}
+                        {p.needle && (
+                          <div className="truncate">針號：{p.needle}</div>
+                        )}
+                        {p.castOn && (
+                          <div className="truncate">起針：{p.castOn}</div>
+                        )}
                       </div>
                     </div>
                   </div>
 
-                  {ratio !== null && (
-                    <div className="mt-2">
-                      <div className="w-full h-2.5 bg-theme-bg rounded-full overflow-hidden shadow-inner">
-                        <div
-                          className="h-full bg-theme-primary/80 transition-all duration-500"
-                          style={{ width: `${ratio * 100}%` }}
-                        />
-                      </div>
-                      <div className="mt-1 flex justify-between text-[10px] text-theme-text/50">
-                        <span>
-                          進度約{' '}
-                          <span className="font-black">
-                            {Math.round(ratio * 100)}%
+                  {/* 底部：總進度區（深色區塊 + Progress Bar） */}
+                  {ratio !== null && plannedRows !== null && (
+                    <div className="bg-theme-text rounded-2xl p-4 text-white shadow-md">
+                      <div className="flex justify-between items-end mb-2">
+                        <div className="flex flex-col">
+                          <span className="text-[9px] text-white/50 font-bold uppercase tracking-widest">
+                            Overall Progress
                           </span>
-                        </span>
-                        {plannedRows !== null && (
-                          <span>
-                            {doneRows} / {plannedRows} rows
+                          <div className="flex items-baseline gap-1">
+                            <span className="text-base font-mono font-bold leading-none">
+                              {doneRows}
+                            </span>
+                            <span className="text-[9px] text-white/60">
+                              / {plannedRows} 總排數
+                            </span>
+                          </div>
+                        </div>
+                        {overallPercent !== null && (
+                          <span className="text-xl font-black italic opacity-90">
+                            {overallPercent}%
                           </span>
                         )}
+                      </div>
+                      <div className="h-1.5 bg-white/15 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-theme-primary rounded-full shadow-[0_0_10px_rgba(0,0,0,0.2)] transition-all duration-700"
+                          style={{ width: `${ratio * 100}%` }}
+                        />
                       </div>
                     </div>
                   )}
                 </div>
+              );
+            }
+          )}
 
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (
-                      !window.confirm(
-                        '確定要刪除這個專案嗎？\n此動作無法復原。'
-                      )
-                    )
-                      return;
-                    onDeleteProject(p.id);
-                  }}
-                  className="text-gray-200 hover:text-red-400 px-2 transition-colors self-start"
-                >
-                  <Icons.Trash />
-                </button>
-              </div>
-            );
-          })}
           {listProjects.length === 0 && (
-            <div className="text-center py-24 opacity-30 font-black tracking-widest uppercase text-xs">
+            <div className="col-span-full text-center py-24 opacity-30 font-black tracking-widest uppercase text-xs">
               此分類目前沒有進行中的專案
             </div>
           )}
@@ -1341,7 +1469,7 @@ function ProjectView({
             </span>
             <select
               className="bg-theme-bg/70 rounded-full px-3 py-1.5 border-none text-[10px]"
-              value({currentProject.category || '未分類'}
+              value={currentProject.category || '未分類'}
               onChange={(e) =>
                 onUpdateProject({
                   ...currentProject,
@@ -1691,89 +1819,6 @@ function ProjectView({
           </div>
         </div>
       </div>
-
-      {/* 👉 底部常駐 Row Counter Dock（依照你的範例改成 KnittingLog 風格） */}
-      {globalProgressRatio !== null && (
-        <div className="fixed bottom-0 left-0 right-0 p-4 md:p-6 z-40 pointer-events-none">
-          <div className="max-w-md mx-auto pointer-events-auto">
-            <div className="bg-white/95 backdrop-blur-xl rounded-[2.5rem] shadow-[0_18px_45px_rgba(15,23,42,0.28)] border border-white px-3 py-2 flex items-center justify-between gap-2">
-              {/* 減號 */}
-              <button
-                onClick={() => {
-                  update(-1);
-                  setShowAlertOverlay(false);
-                }}
-                className="w-12 h-12 rounded-full flex items-center justify-center text-theme-primary bg-theme-bg active:scale-90 transition-all text-2xl font-black"
-              >
-                −
-              </button>
-
-              {/* 中間目前排數 */}
-              <div className="flex flex-col items-center px-3 min-w-[90px]">
-                <span className="text-[9px] font-black text-theme-primary uppercase tracking-[0.22em] mb-0.5">
-                  Current Row
-                </span>
-                <div className="text-3xl font-black text-theme-text tabular-nums leading-none tracking-tight">
-                  {currentTotalRow}
-                </div>
-              </div>
-
-              {/* 加號 */}
-              <button
-                onClick={() => {
-                  update(1);
-                  setShowAlertOverlay(false);
-                }}
-                className="w-14 h-12 bg-theme-primary text-white rounded-full flex items-center justify-center shadow-lg shadow-theme-primary/30 active:scale-95 transition-all text-3xl font-black"
-              >
-                +
-              </button>
-
-              {/* 快速跳 +n */}
-              <div className="flex items-center bg-theme-bg/80 rounded-full h-12 pl-3 pr-1">
-                <input
-                  type="number"
-                  value={plusN}
-                  onChange={(e) => setPlusN(e.target.value)}
-                  placeholder="+n"
-                  className="w-10 bg-transparent border-none text-center font-black text-xs focus:ring-0 p-0 tabular-nums placeholder:text-theme-text/30"
-                />
-                <button
-                  onClick={() => {
-                    const n = parseInt(plusN);
-                    if (!isNaN(n)) {
-                      update(n);
-                      setShowAlertOverlay(false);
-                    }
-                    setPlusN('');
-                  }}
-                  className="w-9 h-9 bg-white rounded-full flex items-center justify-center text-[10px] font-black text-theme-primary shadow-sm active:scale-90 transition-all uppercase tracking-[0.18em]"
-                >
-                  Go
-                </button>
-              </div>
-            </div>
-
-            {/* 底下小進度條 */}
-            <div className="mt-2 px-6">
-              <div className="h-1.5 bg-theme-bg rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-theme-primary transition-all duration-500 rounded-full"
-                  style={{ width: `${globalProgressRatio * 100}%` }}
-                />
-              </div>
-              <div className="flex justify-between mt-1 px-1">
-                <span className="text-[8px] font-black text-theme-text/40 uppercase tracking-[0.18em]">
-                  Progress
-                </span>
-                <span className="text-[8px] font-black text-theme-primary uppercase tracking-[0.18em] tabular-nums">
-                  {Math.round(globalProgressRatio * 100)}%
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
