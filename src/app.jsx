@@ -251,14 +251,10 @@ const createNewPattern = (type = 'CHART', category = '未分類') => {
   };
 };
 
-
-
 // 幫舊版織圖補上 parts 欄位（TEXT 織圖預設一個「主體」部位）
-// 幫織圖補上 parts 結構：支援舊資料（沒有 parts 或 parts 是字串陣列）
 const normalizePattern = (p) => {
   if (!p) return p;
 
-  // 已經是新結構：parts 是物件陣列，直接回傳
   if (
     Array.isArray(p.parts) &&
     p.parts.length > 0 &&
@@ -268,7 +264,6 @@ const normalizePattern = (p) => {
     return p;
   }
 
-  // TEXT 織圖：要有至少一個部位
   if (p.type === 'TEXT') {
     const baseTextSections =
       Array.isArray(p.textSections) && p.textSections.length
@@ -285,7 +280,6 @@ const normalizePattern = (p) => {
 
     const baseAlerts = Array.isArray(p.alerts) ? p.alerts : [];
 
-    // 情況 A：完全沒有 parts → 做一個「主體」部位
     if (!Array.isArray(p.parts) || p.parts.length === 0) {
       const partId = crypto.randomUUID();
       return {
@@ -303,7 +297,6 @@ const normalizePattern = (p) => {
       };
     }
 
-    // 情況 B：parts 是字串陣列（之前你只存名字）
     if (
       Array.isArray(p.parts) &&
       p.parts.length > 0 &&
@@ -312,7 +305,6 @@ const normalizePattern = (p) => {
       const parts = p.parts.map((name) => ({
         id: crypto.randomUUID(),
         name,
-        // 先全部複製同一份，之後你可以各自改
         textSections: baseTextSections,
         alerts: baseAlerts,
       }));
@@ -326,11 +318,8 @@ const normalizePattern = (p) => {
     }
   }
 
-  // 其他型別（CHART 等）：先維持原樣，有需要再細拆
   return p;
 };
-
-
 
 const createProjectFromPattern = (ptn) => {
   const now = new Date().toISOString();
@@ -344,14 +333,13 @@ const createProjectFromPattern = (ptn) => {
           {
             id: crypto.randomUUID(),
             name: '主體',
-            textSections:
-              normalizedPattern.textSections || [],
+            textSections: normalizedPattern.textSections || [],
             alerts: normalizedPattern.alerts || [],
           },
         ];
 
   const partsProgress = patternParts.map((part) => ({
-    partId: part.id,        // ⭐ 跟 pattern 部位同一個 id
+    partId: part.id,
     name: part.name,
     totalRow: 1,
     sectionRow: 1,
@@ -378,18 +366,14 @@ const createProjectFromPattern = (ptn) => {
   };
 };
 
-
-
-// 把舊版專案資料補上多部位進度欄位（暫時只有「主體」一個部位）
+// 把舊版專案資料補上多部位進度欄位
 const normalizeProject = (p) => {
   if (!p) return p;
 
-  // 已經有 partsProgress 的就不用再處理
   if (Array.isArray(p.partsProgress) && p.partsProgress.length > 0) {
     return p;
   }
 
-  // 用舊版 totalRow / sectionRow 當這個部位的初始進度
   const mainTotalRow =
     typeof p.totalRow === 'number' && p.totalRow > 0 ? p.totalRow : 1;
   const mainSectionRow =
@@ -403,7 +387,7 @@ const normalizeProject = (p) => {
     partsProgress: [
       {
         partId: mainPartId,
-        name: '主體', // 先都叫主體，之後再讓你改名字 / 對應 pattern 部位
+        name: '主體',
         totalRow: mainTotalRow,
         sectionRow: mainSectionRow,
       },
@@ -411,13 +395,9 @@ const normalizeProject = (p) => {
   };
 };
 
-
 // === GitHub Sync Dialog ===
 
-const PATH_PRESETS = [
-  'data/knitting.json',
-  'data/xiangdata.json',
-];
+const PATH_PRESETS = ['data/knitting.json', 'data/xiangdata.json'];
 
 function GitHubSyncDialog({ open, onClose, onApplyRemote, currentState }) {
   const [owner, setOwner] = useState('');
@@ -440,7 +420,7 @@ function GitHubSyncDialog({ open, onClose, onApplyRemote, currentState }) {
     const loadedPath = s.path || 'data/knitting.json';
     setPath(loadedPath);
     if (loadedPath && !PATH_PRESETS.includes(loadedPath)) {
-      setCustomPath(loadedPath); // 不是預設選項時，當作自訂路徑
+      setCustomPath(loadedPath);
     } else {
       setCustomPath('');
     }
@@ -560,14 +540,12 @@ function GitHubSyncDialog({ open, onClose, onApplyRemote, currentState }) {
               <label className="text-[10px] font-black uppercase tracking-widest opacity-40 block mb-1">
                 Path
               </label>
-              {/* 下拉選單：預設幾個常用檔名＋一個「自訂」 */}
               <select
                 className="w-full rounded-xl bg-slate-50 border-none px-3 py-2 text-sm mb-2"
                 value={PATH_PRESETS.includes(path) ? path : 'CUSTOM'}
                 onChange={(e) => {
                   const v = e.target.value;
                   if (v === 'CUSTOM') {
-                    // 切到自訂模式時，如果之前有自訂值就沿用，沒有就先給空字串
                     setPath(customPath || '');
                   } else {
                     setPath(v);
@@ -581,8 +559,7 @@ function GitHubSyncDialog({ open, onClose, onApplyRemote, currentState }) {
                 ))}
                 <option value="CUSTOM">自訂路徑（Custom）</option>
               </select>
-            
-              {/* 當前 path 不在預設清單裡時，視為自訂路徑 → 顯示輸入框 */}
+
               {!PATH_PRESETS.includes(path) && (
                 <input
                   className="w-full rounded-xl bg-slate-50 border-none px-3 py-2 text-sm"
@@ -850,11 +827,10 @@ function ProjectView({
   onUpdateProject,
   onDeleteProject,
   categoryFilter,
-  categories,   // ⬅ 新增這個
-  selectedId, 
-  setSelectedId
+  categories,
+  selectedId,
+  setSelectedId,
 }) {
-
   const [plusN, setPlusN] = useState('');
   const [showAlertOverlay, setShowAlertOverlay] = useState(false);
 
@@ -863,12 +839,10 @@ function ProjectView({
     [activeProjects, selectedId]
   );
 
-    // 🔹 目前專案中「正在編織的部位進度」
   const currentPartProgress = useMemo(() => {
     if (!currentProject || !Array.isArray(currentProject.partsProgress)) {
       return null;
     }
-
     const parts = currentProject.partsProgress;
     if (parts.length === 0) return null;
 
@@ -880,17 +854,11 @@ function ProjectView({
     return parts.find((p) => p.partId === activePartId) || parts[0];
   }, [currentProject]);
 
-
-  // 🔹 統一用這兩個變數當「目前這個部位」的排數
   const currentTotalRow =
-    currentPartProgress?.totalRow ??
-    currentProject?.totalRow ??
-    1;
+    currentPartProgress?.totalRow ?? currentProject?.totalRow ?? 1;
 
   const currentSectionRow =
-    currentPartProgress?.sectionRow ??
-    currentProject?.sectionRow ??
-    1;
+    currentPartProgress?.sectionRow ?? currentProject?.sectionRow ?? 1;
 
   const currentPattern = useMemo(
     () =>
@@ -900,7 +868,6 @@ function ProjectView({
     [currentProject, savedPatterns]
   );
 
-  // 目前這個專案對應的「織圖部位」設定（用部位 id 對上 pattern.parts）
   const currentPatternPart = useMemo(() => {
     if (!currentPattern || !currentProject) return null;
     if (!Array.isArray(currentPattern.parts) || currentPattern.parts.length === 0)
@@ -921,7 +888,6 @@ function ProjectView({
     if (!currentPattern || currentPattern.type !== 'TEXT')
       return { targetTotal: 0, activeSection: null, sectionsSummary: [] };
 
-    // 🔹 優先用目前部位的 textSections，沒有就退回共用設定
     const sectionsSource =
       currentPatternPart?.textSections && currentPatternPart.textSections.length
         ? currentPatternPart.textSections
@@ -933,17 +899,14 @@ function ProjectView({
 
     let cumulativeRows = 0;
     let activeSection = null;
+    const total = currentTotalRow;
 
     const summary = sectionsSource.map((s) => {
       const sectionTotal = (s.rowsPerLoop || 1) * (s.repeats || 1);
       const startRow = cumulativeRows + 1;
       cumulativeRows += sectionTotal;
 
-      if (
-        currentProject &&
-        currentProject.totalRow >= startRow &&
-        currentProject.totalRow <= cumulativeRows
-      ) {
+      if (total >= startRow && total <= cumulativeRows) {
         activeSection = {
           ...s,
           startRow,
@@ -956,8 +919,7 @@ function ProjectView({
     });
 
     return { targetTotal: cumulativeRows, sectionsSummary: summary, activeSection };
-  }, [currentPattern, currentPatternPart, currentProject?.totalRow]);
-
+  }, [currentPattern, currentPatternPart, currentTotalRow]);
 
   const listProjects = useMemo(() => {
     const filtered =
@@ -983,7 +945,6 @@ function ProjectView({
   const currentAlerts = useMemo(() => {
     if (!currentProject || !currentPattern) return [];
 
-    // 🔹 優先用目前部位的 alerts，沒有就退回共用設定
     const alertsSource =
       currentPatternPart?.alerts && currentPatternPart.alerts.length
         ? currentPatternPart.alerts
@@ -991,7 +952,7 @@ function ProjectView({
 
     if (!alertsSource.length) return [];
 
-    const total = currentProject.totalRow; // 或你之前已經改過的 currentTotalRow
+    const total = currentTotalRow;
 
     return alertsSource.filter((a) => {
       let val;
@@ -1003,14 +964,13 @@ function ProjectView({
         if (!sec) return false;
 
         const sectionRowFromStart = total - sec.startRow + 1;
-
         if (sectionRowFromStart < 1 || sectionRowFromStart > sec.totalRows) {
           return false;
         }
 
         val = a.type === 'SECTION' ? sectionRowFromStart : total;
       } else {
-        val = a.type === 'SECTION' ? currentProject.sectionRow : total;
+        val = a.type === 'SECTION' ? currentSectionRow : total;
       }
 
       if (a.mode === 'EVERY') {
@@ -1023,30 +983,34 @@ function ProjectView({
 
       return val === a.value;
     });
-  }, [currentProject?.id, currentPattern, projectStats, currentTotalRow, currentSectionRow]);
+  }, [
+    currentProject?.id,
+    currentPattern,
+    currentPatternPart,
+    projectStats,
+    currentTotalRow,
+    currentSectionRow,
+  ]);
 
   const alertKey = useMemo(() => {
-  if (!currentProject || currentAlerts.length === 0) return null;
+    if (!currentProject || currentAlerts.length === 0) return null;
 
-  const ids = currentAlerts.map((a) => a.id || '').join('|');
-  const projId = currentProject.id || 'current';
-  const row = currentProject.totalRow || 0;
+    const ids = currentAlerts.map((a) => a.id || '').join('|');
+    const projId = currentProject.id || 'current';
+    const row = currentTotalRow || 0;
 
-  // 同一專案、同一排、同一組提醒 → 視為同一個 alert 狀態
-  return `${projId}:${row}:${ids}`;
-  }, [currentProject, currentAlerts]);
+    return `${projId}:${row}:${ids}`;
+  }, [currentProject, currentAlerts, currentTotalRow]);
 
   useEffect(() => {
-    // 只要「這一排的提醒組合」換了，就重新顯示提醒
     if (alertKey) {
-        setShowAlertOverlay(true);
+      setShowAlertOverlay(true);
     }
-    }, [alertKey]);
+  }, [alertKey]);
 
   const sectionLoopInfo = useMemo(() => {
     if (!currentProject || !currentPattern) return null;
 
-    // TEXT：用目前 activeSection 的 rowsPerLoop 來算循環內第幾排
     if (
       currentPattern.type === 'TEXT' &&
       projectStats.activeSection &&
@@ -1054,11 +1018,11 @@ function ProjectView({
     ) {
       const sec = projectStats.activeSection;
       const rowsPerLoop = sec.rowsPerLoop || 1;
-      const offsetFromStart = currentProject.totalRow - sec.startRow; // 0-based
+      const offsetFromStart = currentTotalRow - sec.startRow;
       if (offsetFromStart < 0) return null;
 
-      const loopRow = (offsetFromStart % rowsPerLoop) + 1; // 循環內第幾排
-      const loopIndex = Math.floor(offsetFromStart / rowsPerLoop) + 1; // 第幾輪
+      const loopRow = (offsetFromStart % rowsPerLoop) + 1;
+      const loopIndex = Math.floor(offsetFromStart / rowsPerLoop) + 1;
 
       return {
         mode: 'TEXT',
@@ -1069,7 +1033,6 @@ function ProjectView({
       };
     }
 
-    // CHART：用 sectionRow + 小節總排數來算
     if (
       currentPattern.type === 'CHART' &&
       currentPattern.sections &&
@@ -1092,38 +1055,31 @@ function ProjectView({
     }
 
     return null;
-  }, [currentProject, currentPattern, projectStats]);
-
-//   const primaryAlert = currentAlerts[0];
+  }, [currentProject, currentPattern, projectStats, currentTotalRow]);
 
   const update = (d) => {
-      if (!currentProject) return;
-      if (!currentPartProgress) return;
+    if (!currentProject) return;
+    if (!currentPartProgress) return;
 
-      const now = new Date().toISOString();
+    const now = new Date().toISOString();
 
-      const newTotal = Math.max(1, currentPartProgress.totalRow + d);
-      const newSection = Math.max(1, currentPartProgress.sectionRow + d);
+    const newTotal = Math.max(1, currentPartProgress.totalRow + d);
+    const newSection = Math.max(1, currentPartProgress.sectionRow + d);
 
-      const updatedParts = (currentProject.partsProgress || []).map((p) =>
-        p.partId === currentPartProgress.partId
-          ? { ...p, totalRow: newTotal, sectionRow: newSection }
-          : p
-      );
+    const updatedParts = (currentProject.partsProgress || []).map((p) =>
+      p.partId === currentPartProgress.partId
+        ? { ...p, totalRow: newTotal, sectionRow: newSection }
+        : p
+    );
 
-      onUpdateProject({
-        ...currentProject,
-        // 🧵 暫時仍然同步舊欄位，讓其它還沒改完的地方能正常運作
-        totalRow: newTotal,
-        sectionRow: newSection,
-        partsProgress: updatedParts,
-        lastActive: now,
-      });
-
-      // 如果你之前在這裡有 setShowAlertOverlay(false)，記得加回來：
-      // setShowAlertOverlay(false);
-    };
-
+    onUpdateProject({
+      ...currentProject,
+      totalRow: newTotal,
+      sectionRow: newSection,
+      partsProgress: updatedParts,
+      lastActive: now,
+    });
+  };
 
   const findYarnLabel = (id) => {
     const y = yarns.find((yy) => yy.id === id);
@@ -1131,7 +1087,7 @@ function ProjectView({
     const main = [y.brand, y.name].filter(Boolean).join(' ');
     return main || '未命名線材';
   };
-  // === 列表畫面：專案卡片帶進度條、開始時間 ===
+
   if (!selectedId) {
     return (
       <div className="max-w-5xl mx-auto p-8 md:p-12 animate-fade-in pb-32">
@@ -1155,7 +1111,6 @@ function ProjectView({
                 ratio =
                   plannedRows > 0 ? Math.min(1, doneRows / plannedRows) : null;
               } else {
-                // 舊資料：還沒啟用多部位時的 fallback
                 plannedRows = targetTotal;
                 const val = typeof p.totalRow === 'number' ? p.totalRow : 0;
                 doneRows = Math.min(val, targetTotal);
@@ -1247,7 +1202,12 @@ function ProjectView({
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    if (!window.confirm('確定要刪除這個專案嗎？\n此動作無法復原。')) return;
+                    if (
+                      !window.confirm(
+                        '確定要刪除這個專案嗎？\n此動作無法復原。'
+                      )
+                    )
+                      return;
                     onDeleteProject(p.id);
                   }}
                   className="text-gray-200 hover:text-red-400 px-2 transition-colors self-start"
@@ -1267,15 +1227,14 @@ function ProjectView({
     );
   }
 
-  // === 單一專案播放畫面 ===
-
   if (!currentProject || !currentPattern) return null;
 
-  const projectTitle = currentProject.projectName || currentProject.patternName;
+  const projectTitle =
+    currentProject.projectName || currentProject.patternName;
 
   return (
     <div className="flex flex-col h-full bg-theme-bg animate-fade-in pb-20 overflow-hidden relative">
-      {/* {showAlertOverlay && primaryAlert && (
+      {showAlertOverlay && currentAlerts.length > 0 && (
         <div className="absolute inset-x-0 top-20 z-40 px-4 md:px-0">
           <div className="max-w-xl mx-auto bg-theme-primary text-white rounded-[2.25rem] shadow-2xl border border-white/30 px-6 py-4 flex items-start gap-3">
             <div className="w-10 h-10 bg-white/15 rounded-2xl flex items-center justify-center text-2xl">
@@ -1283,13 +1242,29 @@ function ProjectView({
             </div>
             <div className="flex-1">
               <div className="text-[10px] font-black uppercase tracking-[0.18em] opacity-70 mb-1">
-                Row Alert ·{' '}
-                {primaryAlert.type === 'SECTION' ? 'Section' : 'Total'} ·{' '}
-                {primaryAlert.mode === 'EVERY' ? 'Every' : 'At'}{' '}
-                {primaryAlert.value}
+                Row Alert · {currentAlerts.length} rule
+                {currentAlerts.length > 1 ? 's' : ''} on this row
               </div>
-              <div className="text-sm font-bold leading-snug">
-                {primaryAlert.message || '下一段變化來了～'}
+
+              <div className="mt-1 space-y-2">
+                {currentAlerts.map((alert, idx) => (
+                  <div
+                    key={alert.id || idx}
+                    className="flex items-start gap-2"
+                  >
+                    <span className="mt-[2px] text-xs">•</span>
+                    <div>
+                      <div className="text-[10px] opacity-80 uppercase tracking-[0.12em] mb-0.5">
+                        {alert.type === 'SECTION' ? 'Section' : 'Total'} ·{' '}
+                        {alert.mode === 'EVERY' ? 'Every' : 'At'}{' '}
+                        {alert.value}
+                      </div>
+                      <div className="text-sm font-bold leading-snug">
+                        {alert.message || '下一段變化來了～'}
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
             <button
@@ -1300,52 +1275,7 @@ function ProjectView({
             </button>
           </div>
         </div>
-      )} */}
-
-        {showAlertOverlay && currentAlerts.length > 0 && (
-        <div className="absolute inset-x-0 top-20 z-40 px-4 md:px-0">
-            <div className="max-w-xl mx-auto bg-theme-primary text-white rounded-[2.25rem] shadow-2xl border border-white/30 px-6 py-4 flex items-start gap-3">
-            <div className="w-10 h-10 bg-white/15 rounded-2xl flex items-center justify-center text-2xl">
-                🔔
-            </div>
-            <div className="flex-1">
-                {/* 標題：這一排總共有幾則提醒 */}
-                <div className="text-[10px] font-black uppercase tracking-[0.18em] opacity-70 mb-1">
-                Row Alert · {currentAlerts.length} rule
-                {currentAlerts.length > 1 ? 's' : ''} on this row
-                </div>
-
-                {/* 下面把所有提醒疊起來列點顯示 */}
-                <div className="mt-1 space-y-2">
-                {currentAlerts.map((alert, idx) => (
-                    <div
-                    key={alert.id || idx}
-                    className="flex items-start gap-2"
-                    >
-                    <span className="mt-[2px] text-xs">•</span>
-                    <div>
-                        <div className="text-[10px] opacity-80 uppercase tracking-[0.12em] mb-0.5">
-                        {alert.type === 'SECTION' ? 'Section' : 'Total'} ·{' '}
-                        {alert.mode === 'EVERY' ? 'Every' : 'At'}{' '}
-                        {alert.value}
-                        </div>
-                        <div className="text-sm font-bold leading-snug">
-                        {alert.message || '下一段變化來了～'}
-                        </div>
-                    </div>
-                    </div>
-                ))}
-                </div>
-            </div>
-            <button
-                onClick={() => setShowAlertOverlay(false)}
-                className="text-xs font-black uppercase tracking-[0.15em] px-3 py-1 rounded-full bg-white/15 hover:bg-white/25 transition flex-shrink-0"
-            >
-                關閉
-            </button>
-            </div>
-        </div>
-        )}
+      )}
 
       <div className="bg-white/80 backdrop-blur p-4 border-b flex justify-between items-center sticky top-0 z-30 shadow-sm">
         <button
@@ -1361,7 +1291,6 @@ function ProjectView({
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 md:p-10 space-y-8 no-scrollbar pb-40">
-        {/* 專案名稱編輯＋開始時間 */}
         <div className="bg-white p-6 rounded-[2rem] shadow-cozy border border-white flex flex-col gap-2">
           <div className="flex justify-between items-end gap-3">
             <div className="flex-1">
@@ -1391,48 +1320,50 @@ function ProjectView({
               </div>
             )}
           </div>
-           <div className="mt-3 flex flex-wrap items-center gap-2">
-            <span className="text-[9px] font-black uppercase tracking-[0.18em] text-theme-text/50">
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text/50">
               Category
             </span>
             <select
-                className="bg-theme-bg/70 rounded-full px-3 py-1.5 border-none text-[10px]"
-                value={currentProject.category || '未分類'}
-                onChange={(e) =>
-                    onUpdateProject({
-                    ...currentProject,
-                    category: e.target.value,
-                    })
-                }
-                >
-                {(categories || ['未分類']).map((c) => (
-                    <option key={c} value={c}>
-                    {c}
-                    </option>
-                ))}
-                </select>
+              className="bg-theme-bg/70 rounded-full px-3 py-1.5 border-none text-[10px]"
+              value={currentProject.category || '未分類'}
+              onChange={(e) =>
+                onUpdateProject({
+                  ...currentProject,
+                  category: e.target.value,
+                })
+              }
+            >
+              {(categories || ['未分類']).map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
           </div>
-          {/* 新增：線材 + 針號 + 起針數 編輯列 */}
           <div className="flex flex-wrap items-center gap-3 text-[10px] text-theme-text/70">
             <div className="flex items-center gap-1">
-              <span className="font-black uppercase tracking-[0.2em]">Yarn</span>
+              <span className="font-black uppercase tracking-[0.2em]">
+                Yarn
+              </span>
               <select
                 className="bg-theme-bg/60 rounded-full px-3 py-1 border-none text-[10px]"
                 value={currentProject.yarnId || ''}
                 onChange={(e) =>
-                    onUpdateProject({
+                  onUpdateProject({
                     ...currentProject,
                     yarnId: e.target.value || null,
-                    })
+                  })
                 }
-                >
+              >
                 <option value="">未選擇</option>
                 {yarns.map((y) => (
-                    <option key={y.id} value={y.id}>
-                    {[y.brand, y.name].filter(Boolean).join(' ') || '未命名線材'}
-                    </option>
+                  <option key={y.id} value={y.id}>
+                    {[y.brand, y.name].filter(Boolean).join(' ') ||
+                      '未命名線材'}
+                  </option>
                 ))}
-            </select>
+              </select>
             </div>
 
             <div className="flex items-center gap-1">
@@ -1444,7 +1375,10 @@ function ProjectView({
                 placeholder="4.0mm"
                 value={currentProject.needle || ''}
                 onChange={(e) =>
-                  onUpdateProject({ ...currentProject, needle: e.target.value })
+                  onUpdateProject({
+                    ...currentProject,
+                    needle: e.target.value,
+                  })
                 }
               />
             </div>
@@ -1458,7 +1392,10 @@ function ProjectView({
                 placeholder="例如 112"
                 value={currentProject.castOn || ''}
                 onChange={(e) =>
-                  onUpdateProject({ ...currentProject, castOn: e.target.value })
+                  onUpdateProject({
+                    ...currentProject,
+                    castOn: e.target.value,
+                  })
                 }
               />
             </div>
@@ -1469,7 +1406,7 @@ function ProjectView({
           <div className="bg-white p-6 rounded-[2rem] shadow-cozy border border-white space-y-3">
             <div className="flex justify-between items-end">
               <div>
-                <span className="text-[9px] font-black uppercase opacity-40 tracking-widest block mb-1">
+                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text/50 mb-1 block">
                   目前階段 Currently
                 </span>
                 <span className="font-black text-theme-text text-base tracking-tight">
@@ -1499,41 +1436,40 @@ function ProjectView({
           </div>
         )}
 
-        {/* 🧵 部位切換 Tabs */}
-        {currentProject.partsProgress && currentProject.partsProgress.length > 0 && (
-          <div className="mt-4 flex flex-wrap gap-2">
-            {currentProject.partsProgress.map((part) => {
-              const isActive =
-                currentPartProgress && part.partId === currentPartProgress.partId;
+        {currentProject.partsProgress &&
+          currentProject.partsProgress.length > 0 && (
+            <div className="mt-4 flex flex-wrap gap-2">
+              {currentProject.partsProgress.map((part) => {
+                const isActive =
+                  currentPartProgress &&
+                  part.partId === currentPartProgress.partId;
 
-              return (
-                <button
-                  key={part.partId}
-                  onClick={() =>
-                    onUpdateProject({
-                      ...currentProject,
-                      currentPartId: part.partId,
-                      // 為了讓還沒改完的地方也跟著更新
-                      totalRow: part.totalRow || 1,
-                      sectionRow: part.sectionRow || 1,
-                    })
-                  }
-                  className={
-                    'px-4 py-1.5 rounded-full text-[10px] font-black tracking-[0.18em] uppercase transition ' +
-                    (isActive
-                      ? 'bg-theme-primary text-white shadow'
-                      : 'bg-theme-bg text-theme-text/60 hover:bg-theme-bg/80')
-                  }
-                >
-                  {part.name || '主體'}
-                </button>
-              );
-            })}
-          </div>
-        )}
+                return (
+                  <button
+                    key={part.partId}
+                    onClick={() =>
+                      onUpdateProject({
+                        ...currentProject,
+                        currentPartId: part.partId,
+                        totalRow: part.totalRow || 1,
+                        sectionRow: part.sectionRow || 1,
+                      })
+                    }
+                    className={
+                      'px-4 py-1.5 rounded-full text-[10px] font-black tracking-[0.18em] uppercase transition ' +
+                      (isActive
+                        ? 'bg-theme-primary text-white shadow'
+                        : 'bg-theme-bg text-theme-text/60 hover:bg-theme-bg/80')
+                    }
+                  >
+                    {part.name || '主體'}
+                  </button>
+                );
+              })}
+            </div>
+          )}
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mt-4">
-          {/* 左側：Counter + Section + 專案備註 */}
           <div className="lg:col-span-5 space-y-6">
             <div className="bg-white rounded-[3rem] p-8 flex flex-col items-center shadow-cozy border-2 border-white">
               <h3 className="text-theme-primary font-black uppercase tracking-widest text-[9px] mb-3 opacity-50">
@@ -1615,25 +1551,6 @@ function ProjectView({
               )}
             </div>
 
-            {/* <div className="bg-white p-6 rounded-[2rem] shadow-cozy border border-white flex justify-between items-center">
-              <div className="min-w-0 flex-1">
-                <h3 className="text-[9px] font-black uppercase tracking-widest text-theme-text opacity-50 mb-1">
-                  Section Loop
-                </h3>
-                <div className="text-4xl font-black text-theme-text tabular-nums tracking-tighter">
-                  {currentProject.sectionRow}
-                </div>
-              </div>
-              <button
-                onClick={() =>
-                  onUpdateProject({ ...currentProject, sectionRow: 1 })
-                }
-                className="text-[9px] font-black text-theme-primary border-2 border-theme-primary/10 px-5 py-2.5 rounded-full hover:bg-theme-bg transition uppercase tracking-widest flex-shrink-0 ml-4"
-              >
-                Reset
-              </button>
-            </div> */}
-
             <div className="bg-white p-6 rounded-[2rem] shadow-cozy border border-white space-y-3">
               <div className="flex items-center justify-between gap-2">
                 <div>
@@ -1650,16 +1567,15 @@ function ProjectView({
                 placeholder="例：第 35 排發現麻花偏緊，下次改 4.5mm 棒針；袖長預計多織 5cm。"
                 value={currentProject.notes || ''}
                 onChange={(e) =>
-                    onUpdateProject({
+                  onUpdateProject({
                     ...currentProject,
                     notes: e.target.value,
-                    })
+                  })
                 }
               />
             </div>
           </div>
 
-          {/* 右側：說明/織圖預覽 + pattern 備註 */}
           <div className="lg:col-span-7 space-y-6">
             <div className="bg-white p-8 rounded-[3rem] shadow-cozy border border-white min-h-[380px]">
               <h4 className="font-black text-theme-text border-b border-theme-bg pb-5 mb-8 flex items-center gap-3 tracking-widest uppercase text-[10px]">
@@ -1667,7 +1583,7 @@ function ProjectView({
               </h4>
               {currentPattern.type === 'TEXT' ? (
                 <div className="space-y-10">
-                  {currentPattern.textSections?.map((sec) => {
+                  {(projectStats.sectionsSummary || []).map((sec) => {
                     const isActive =
                       projectStats.activeSection?.id === sec.id;
                     return (
@@ -1768,7 +1684,7 @@ function ProjectView({
 
 function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
   const [data, setData] = useState({
-     ...pattern ,
+    ...pattern,
     meta: {
       castOn: '',
       needle: '',
@@ -1779,7 +1695,6 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
   const [activeTab, setActiveTab] = useState('CONTENT');
   const [selectedTool, setSelectedTool] = useState('KNIT');
 
-  // 🔹 編輯織圖時目前選擇的「部位」
   const [activePartId, setActivePartId] = useState(() => {
     if (pattern.parts && Array.isArray(pattern.parts) && pattern.parts.length) {
       return pattern.parts[0].id;
@@ -1787,7 +1702,6 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
     return null;
   });
 
-  // pattern 被切換 / 部位列表變化時，確保 activePartId 合法
   useEffect(() => {
     if (!data.parts || !data.parts.length) return;
     if (!activePartId || !data.parts.some((p) => p.id === activePartId)) {
@@ -1801,25 +1715,50 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
     return data.parts.find((p) => p.id === activePartId) || data.parts[0];
   }, [data.parts, activePartId]);
 
+  const sectionsSource = useMemo(() => {
+    if (data.type !== 'TEXT') return [];
+    if (
+      currentPart &&
+      Array.isArray(currentPart.textSections) &&
+      currentPart.textSections.length > 0
+    ) {
+      return currentPart.textSections;
+    }
+    return data.textSections || [];
+  }, [data.type, currentPart, data.textSections]);
+
+  const alertsSource = useMemo(() => {
+    if (
+      currentPart &&
+      Array.isArray(currentPart.alerts) &&
+      currentPart.alerts.length > 0
+    ) {
+      return currentPart.alerts;
+    }
+    return data.alerts || [];
+  }, [currentPart, data.alerts]);
+
+  const updateActivePart = (updater) => {
+    if (!currentPart) return;
+    setData((prev) => ({
+      ...prev,
+      parts: (prev.parts || []).map((p) =>
+        p.id === currentPart.id ? updater(p) : p
+      ),
+    }));
+  };
+
   useEffect(() => {
     onUpdate(data);
   }, [data]);
-  // useEffect(() => {
-  //   onUpdate(data);
-  // }, [data]);
 
   const totalRows = useMemo(() => {
     if (data.type !== 'TEXT') return 0;
-    const sections =
-      currentPart?.textSections && currentPart.textSections.length
-        ? currentPart.textSections
-        : data.textSections || [];
-    return sections.reduce(
+    return sectionsSource.reduce(
       (sum, s) => sum + (s.rowsPerLoop || 1) * (s.repeats || 1),
       0
     );
-  }, [data.type, currentPart, data.textSections]);
-
+  }, [data.type, sectionsSource]);
 
   const categoryOptions = useMemo(() => {
     const base =
@@ -1901,8 +1840,8 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
         </div>
         <button
           onClick={() => {
-            onUpdate(data);   // ⬅️ 先把目前編輯內容丟回去
-            onBack();         // ⬅️ 再回 Library
+            onUpdate(data);
+            onBack();
           }}
           className="text-theme-primary font-black px-2 text-xs uppercase tracking-widest"
         >
@@ -1953,6 +1892,7 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
             </div>
           )}
         </div>
+
         {/* 部位設定 Parts */}
         <div className="mt-6">
           <div className="flex items-center justify-between mb-2">
@@ -2003,7 +1943,6 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
             })}
           </div>
         </div>
-
 
         <div className="p-6 md:p-10 space-y-12">
           {activeTab === 'CONTENT' && (
@@ -2125,7 +2064,7 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                   <button
                     onClick={() => {
                       if (!currentPart) return;
-                      const base = currentPart.textSections || data.textSections || [];
+                      const base = sectionsSource;
                       const nextSections = [
                         ...base,
                         {
@@ -2136,20 +2075,17 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                           rowsPerLoop: 1,
                         },
                       ];
-                      setData((prev) => ({
-                        ...prev,
-                        parts: (prev.parts || []).map((p) =>
-                          p.id === currentPart.id ? { ...p, textSections: nextSections } : p
-                        ),
+                      updateActivePart((part) => ({
+                        ...part,
+                        textSections: nextSections,
                       }));
                     }}
-
                     className="bg-theme-primary text-white p-2.5 rounded-full shadow-lg transition-transform hover:scale-110 shadow-theme-primary/20"
                   >
                     <Icons.Plus />
                   </button>
                 </div>
-                {(data.textSections || []).map((sec) => (
+                {sectionsSource.map((sec) => (
                   <div
                     key={sec.id}
                     className="bg-white rounded-[3rem] border-2 border-theme-bg shadow-soft overflow-hidden group animate-fade-in"
@@ -2160,31 +2096,29 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                           value={sec.title}
                           onChange={(e) => {
                             if (!currentPart) return;
-                              const base = currentPart.textSections || [];
-                              const ns = base.map((s) =>
-                                s.id === sec.id ? { ...s, title: e.target.value } : s
-                              );
-                              setData((prev) => ({
-                                ...prev,
-                                parts: (prev.parts || []).map((p) =>
-                                  p.id === currentPart.id
-                                    ? { ...p, textSections: base.filter((s) => s.id !== sec.id) }
-                                    : p
-                                ),
-                              }));
-
+                            const value = e.target.value;
+                            updateActivePart((part) => ({
+                              ...part,
+                              textSections: (part.textSections || []).map(
+                                (s) =>
+                                  s.id === sec.id
+                                    ? { ...s, title: value }
+                                    : s
+                              ),
+                            }));
                           }}
                           className="bg-transparent font-black text-base uppercase focus:ring-0 border-none w-1/2 p-0 tracking-widest"
                           placeholder="段落標題"
                         />
                         <button
                           onClick={() => {
-                            setData({
-                              ...data,
-                              textSections: data.textSections.filter(
+                            if (!currentPart) return;
+                            updateActivePart((part) => ({
+                              ...part,
+                              textSections: (part.textSections || []).filter(
                                 (s) => s.id !== sec.id
                               ),
-                            });
+                            }));
                           }}
                           className="text-red-400 opacity-20 group-hover:opacity-100 transition-opacity p-2"
                         >
@@ -2200,15 +2134,16 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                             type="number"
                             value={sec.rowsPerLoop}
                             onChange={(e) => {
-                              const ns = data.textSections.map((s) =>
-                                s.id === sec.id
-                                  ? {
-                                      ...s,
-                                      rowsPerLoop: parseInt(e.target.value) || 1,
-                                    }
-                                  : s
-                              );
-                              setData({ ...data, textSections: ns });
+                              const v = parseInt(e.target.value) || 1;
+                              updateActivePart((part) => ({
+                                ...part,
+                                textSections: (part.textSections || []).map(
+                                  (s) =>
+                                    s.id === sec.id
+                                      ? { ...s, rowsPerLoop: v }
+                                      : s
+                                ),
+                              }));
                             }}
                             className="w-full text-2xl font-black border-none p-0 focus:ring-0 tabular-nums"
                           />
@@ -2221,15 +2156,16 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                             type="number"
                             value={sec.repeats}
                             onChange={(e) => {
-                              const ns = data.textSections.map((s) =>
-                                s.id === sec.id
-                                  ? {
-                                      ...s,
-                                      repeats: parseInt(e.target.value) || 1,
-                                    }
-                                  : s
-                              );
-                              setData({ ...data, textSections: ns });
+                              const v = parseInt(e.target.value) || 1;
+                              updateActivePart((part) => ({
+                                ...part,
+                                textSections: (part.textSections || []).map(
+                                  (s) =>
+                                    s.id === sec.id
+                                      ? { ...s, repeats: v }
+                                      : s
+                                ),
+                              }));
                             }}
                             className="w-full text-2xl font-black border-none p-0 focus:ring-0 tabular-nums"
                           />
@@ -2239,12 +2175,15 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                     <textarea
                       value={sec.content}
                       onChange={(e) => {
-                        const ns = data.textSections.map((s) =>
-                          s.id === sec.id
-                            ? { ...s, content: e.target.value }
-                            : s
-                        );
-                        setData({ ...data, textSections: ns });
+                        const value = e.target.value;
+                        updateActivePart((part) => ({
+                          ...part,
+                          textSections: (part.textSections || []).map((s) =>
+                            s.id === sec.id
+                              ? { ...s, content: value }
+                              : s
+                          ),
+                        }));
                       }}
                       className="w-full h-48 p-10 text-lg font-mono focus:ring-0 border-none resize-none leading-relaxed text-theme-text bg-white"
                       placeholder="輸入此階段編織說明..."
@@ -2262,7 +2201,7 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                 <button
                   onClick={() => {
                     if (!currentPart) return;
-                    const base = currentPart.alerts || data.alerts || [];
+                    const base = alertsSource;
                     const nextAlerts = [
                       ...base,
                       {
@@ -2275,21 +2214,18 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                         message: '',
                       },
                     ];
-                    setData((prev) => ({
-                      ...prev,
-                      parts: (prev.parts || []).map((p) =>
-                        p.id === currentPart.id ? { ...p, alerts: nextAlerts } : p
-                      ),
+                    updateActivePart((part) => ({
+                      ...part,
+                      alerts: nextAlerts,
                     }));
                   }}
-
                   className="bg-theme-primary text-white px-8 py-3 rounded-2xl font-black text-[10px] uppercase shadow-lg shadow-theme-primary/20 tracking-[0.1em] transition-all hover:scale-105"
                 >
                   + Add New Rule
                 </button>
               </div>
               <div className="grid gap-6">
-                {(data.alerts || []).map((a) => (
+                {alertsSource.map((a) => (
                   <div
                     key={a.id}
                     className="bg-white p-10 rounded-[3rem] shadow-cozy border-2 border-theme-bg flex flex-col gap-6 animate-fade-in group hover:border-theme-primary/20 transition-all"
@@ -2298,18 +2234,13 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                       <select
                         value={a.mode}
                         onChange={(e) => {
-                          if (!currentPart) return;
-                            const base = currentPart.alerts || [];
-                            const na = base.map((rule) =>
-                              rule.id === a.id ? { ...rule, value: newValue } : rule
-                            );
-                            setData((prev) => ({
-                              ...prev,
-                              parts: (prev.parts || []).map((p) =>
-                                p.id === currentPart.id ? { ...p, alerts: na } : p
-                              ),
-                            }));
- 
+                          const mode = e.target.value;
+                          updateActivePart((part) => ({
+                            ...part,
+                            alerts: (part.alerts || []).map((rule) =>
+                              rule.id === a.id ? { ...rule, mode } : rule
+                            ),
+                          }));
                         }}
                         className="text-[10px] font-black bg-theme-bg p-3.5 rounded-xl border-none uppercase tracking-widest"
                       >
@@ -2317,66 +2248,77 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                         <option value="EVERY">每幾排提醒 (Interval)</option>
                       </select>
 
-                        <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2">
                         {a.mode === 'EVERY' && (
-                            <>
+                          <>
                             <span className="text-[10px] font-black opacity-30 uppercase tracking-widest">
-                                從第
+                              從第
                             </span>
                             <input
-                                type="number"
-                                value={
+                              type="number"
+                              value={
                                 typeof a.startFrom === 'number'
-                                    ? a.startFrom
-                                    : a.value || 1 // 舊資料沒有 startFrom 時，預設顯示成「從第 value 排開始」
-                                }
-                                onChange={(e) => {
+                                  ? a.startFrom
+                                  : a.value || 1
+                              }
+                              onChange={(e) => {
                                 const v = parseInt(e.target.value) || 1;
-                                const na = (data.alerts || []).map((rule) =>
-                                    rule.id === a.id ? { ...rule, startFrom: v } : rule
-                                );
-                                setData({ ...data, alerts: na });
-                                }}
-                                className="w-20 text-center font-black bg-theme-bg border-none tabular-nums focus:ring-2 ring-theme-primary/20"
+                                updateActivePart((part) => ({
+                                  ...part,
+                                  alerts: (part.alerts || []).map((rule) =>
+                                    rule.id === a.id
+                                      ? { ...rule, startFrom: v }
+                                      : rule
+                                  ),
+                                }));
+                              }}
+                              className="w-20 text-center font-black bg-theme-bg border-none tabular-nums focus:ring-2 ring-theme-primary/20"
                             />
                             <span className="text-[10px] font-black opacity-30 uppercase tracking-widest">
-                                排開始，
+                              排開始，
                             </span>
-                            </>
+                          </>
                         )}
 
                         <input
-                            type="number"
-                            value={a.value}
-                            onChange={(e) => {
+                          type="number"
+                          value={a.value}
+                          onChange={(e) => {
                             const v = parseInt(e.target.value) || 1;
-                            const na = (data.alerts || []).map((rule) =>
-                                rule.id === a.id ? { ...rule, value: v } : rule
-                            );
-                            setData({ ...data, alerts: na });
-                            }}
-                            className="w-24 text-center font-black bg-theme-bg border-none tabular-nums focus:ring-2 ring-theme-primary/20"
+                            updateActivePart((part) => ({
+                              ...part,
+                              alerts: (part.alerts || []).map((rule) =>
+                                rule.id === a.id
+                                  ? { ...rule, value: v }
+                                  : rule
+                              ),
+                            }));
+                          }}
+                          className="w-24 text-center font-black bg-theme-bg border-none tabular-nums focus:ring-2 ring-theme-primary/20"
                         />
                         <span className="text-[10px] font-black opacity-30 uppercase tracking-widest">
-                            {a.mode === 'EVERY' ? '排為間隔' : '排'}
+                          {a.mode === 'EVERY' ? '排為間隔' : '排'}
                         </span>
-                        </div>
+                      </div>
 
                       {data.type === 'TEXT' && (
                         <select
                           value={a.sectionId || 'ALL'}
                           onChange={(e) => {
-                            const na = data.alerts.map((rule) =>
-                              rule.id === a.id
-                                ? { ...rule, sectionId: e.target.value }
-                                : rule
-                            );
-                            setData({ ...data, alerts: na });
+                            const sectionId = e.target.value;
+                            updateActivePart((part) => ({
+                              ...part,
+                              alerts: (part.alerts || []).map((rule) =>
+                                rule.id === a.id
+                                  ? { ...rule, sectionId }
+                                  : rule
+                              ),
+                            }));
                           }}
                           className="text-[10px] font-black bg-theme-primary/10 text-theme-primary p-3.5 rounded-xl border-none uppercase tracking-widest ml-auto min-w-[140px]"
                         >
                           <option value="ALL">適用所有區段</option>
-                          {(data.textSections || []).map((sec) => (
+                          {sectionsSource.map((sec) => (
                             <option key={sec.id} value={sec.id}>
                               限：{sec.title}
                             </option>
@@ -2387,12 +2329,13 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                       <select
                         value={a.type}
                         onChange={(e) => {
-                          const na = data.alerts.map((rule) =>
-                            rule.id === a.id
-                              ? { ...rule, type: e.target.value }
-                              : rule
-                          );
-                          setData({ ...data, alerts: na });
+                          const type = e.target.value;
+                          updateActivePart((part) => ({
+                            ...part,
+                            alerts: (part.alerts || []).map((rule) =>
+                              rule.id === a.id ? { ...rule, type } : rule
+                            ),
+                          }));
                         }}
                         className={`text-[10px] font-black bg-theme-bg p-3.5 rounded-xl border-none uppercase tracking-widest ${
                           data.type !== 'TEXT' ? 'ml-auto' : ''
@@ -2403,12 +2346,12 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                       </select>
                       <button
                         onClick={() => {
-                          setData({
-                            ...data,
-                            alerts: data.alerts.filter(
+                          updateActivePart((part) => ({
+                            ...part,
+                            alerts: (part.alerts || []).filter(
                               (rule) => rule.id !== a.id
                             ),
-                          });
+                          }));
                         }}
                         className="text-red-400 p-2 opacity-20 group-hover:opacity-100 transition-opacity"
                       >
@@ -2418,16 +2361,13 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                     <input
                       value={a.message}
                       onChange={(e) => {
-                        if (!currentPart) return;
-                          const base = currentPart.alerts || [];
-                          const na = base.filter((rule) => rule.id !== a.id);
-                          setData((prev) => ({
-                            ...prev,
-                            parts: (prev.parts || []).map((p) =>
-                              p.id === currentPart.id ? { ...p, alerts: na } : p
-                            ),
-                          }));
-
+                        const msg = e.target.value;
+                        updateActivePart((part) => ({
+                          ...part,
+                          alerts: (part.alerts || []).map((rule) =>
+                            rule.id === a.id ? { ...rule, message: msg } : rule
+                          ),
+                        }));
                       }}
                       className="w-full text-lg font-bold bg-theme-bg/30 p-6 rounded-[2rem] border-none focus:ring-2 ring-theme-primary/20 text-theme-text"
                       placeholder="提醒內容 (例如: 該扭麻花了!、該加一針了...)"
@@ -2515,7 +2455,10 @@ function LibraryView({
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    if (!window.confirm('確定要刪除這個織圖嗎？\n此動作無法復原。')) return;
+                    if (
+                      !window.confirm('確定要刪除這個織圖嗎？\n此動作無法復原。')
+                    )
+                      return;
                     onDeletePattern(ptn.id);
                   }}
                   className="text-gray-200 hover:text-red-400 p-3 transition-colors"
@@ -2549,27 +2492,13 @@ function LibraryView({
   );
 }
 
-// === 類別工具列（篩選＋快速新增） ===
+// === 類別工具列（篩選） ===
 
 function CategoryToolbar({
   categories,
   categoryFilter,
   onChangeFilter,
-  onAddCategory,
-  onQuickNewPattern,
-  onQuickNewProject,
-  hasPatternInFilter,
 }) {
-  const [newCat, setNewCat] = useState('');
-
-  const handleAdd = () => {
-    const name = newCat.trim();
-    if (!name) return;
-    onAddCategory(name);
-    onChangeFilter(name);
-    setNewCat('');
-  };
-
   const active = categoryFilter || 'ALL';
 
   return (
@@ -2601,30 +2530,13 @@ function CategoryToolbar({
               </button>
             ))}
           </div>
-          <div className="flex items-center gap-2 flex-shrink-0">
-            
-          </div>
         </div>
-        {/* <div className="flex items-center gap-2 mt-1">
-          <input
-            value={newCat}
-            onChange={(e) => setNewCat(e.target.value)}
-            placeholder="快速新增分類…"
-            className="flex-1 bg-theme-bg/40 rounded-full px-3 py-1.5 text-[11px] border-none focus:ring-2 ring-theme-primary/20"
-          />
-          <button
-            onClick={handleAdd}
-            className="px-3 py-1.5 rounded-full bg-theme-bg text-theme-text/60 text-[10px] font-black uppercase tracking-[0.15em]"
-          >
-            新增分類
-          </button>
-        </div> */}
       </div>
     </div>
   );
 }
 
-// === 類別庫頁（可改名＆刪除） ===
+// === 類別庫頁 ===
 
 function CategoryLibraryView({
   categories,
@@ -2682,7 +2594,11 @@ function CategoryLibraryView({
   };
 
   const handleDelete = (name) => {
-    if (!window.confirm(`確定要刪除分類「${name}」嗎？\n相關織圖與專案會移到「未分類」。`))
+    if (
+      !window.confirm(
+        `確定要刪除分類「${name}」嗎？\n相關織圖與專案會移到「未分類」。`
+      )
+    )
       return;
     onDeleteCategory(name);
   };
@@ -2696,9 +2612,7 @@ function CategoryLibraryView({
           <h2 className="text-4xl font-black text-theme-text tracking-tighter leading-none mb-3">
             類別庫
           </h2>
-          <p className="text-sm text-theme-text/60">
-            統一管理分類。
-          </p>
+          <p className="text-sm text-theme-text/60">統一管理分類。</p>
         </div>
       </div>
 
@@ -2839,7 +2753,7 @@ function CategoryLibraryView({
 // === App Root ===
 
 function App() {
-  const [view, setView] = useState('PROJECTS'); // PROJECTS / LIBRARY / CATEGORIES / YARNS / EDITOR / TUTORIAL
+  const [view, setView] = useState('PROJECTS');
   const [savedPatterns, setSavedPatterns] = useState([]);
   const [activeProjects, setActiveProjects] = useState([]);
   const [yarns, setYarns] = useState([]);
@@ -2858,17 +2772,20 @@ function App() {
   const [categoryFilter, setCategoryFilter] = useState('ALL');
   const [syncOpen, setSyncOpen] = useState(false);
 
-    useEffect(() => {
-      const state = loadAppState();
-      setSavedPatterns((state.savedPatterns || []).map((p) => normalizePattern(p)));
-      setActiveProjects((state.activeProjects || []).map((p) => normalizeProject(p)));
-      setYarns(state.yarns || []);
-      setThemeKey(state.themeKey || 'PURPLE');
-      if (state.categories && Array.isArray(state.categories)) {
-        setCategories(state.categories);
-      }
-    }, []);
-
+  useEffect(() => {
+    const state = loadAppState();
+    setSavedPatterns(
+      (state.savedPatterns || []).map((p) => normalizePattern(p))
+    );
+    setActiveProjects(
+      (state.activeProjects || []).map((p) => normalizeProject(p))
+    );
+    setYarns(state.yarns || []);
+    setThemeKey(state.themeKey || 'PURPLE');
+    if (state.categories && Array.isArray(state.categories)) {
+      setCategories(state.categories);
+    }
+  }, []);
 
   useEffect(() => {
     saveAppState({
@@ -2915,12 +2832,9 @@ function App() {
     setCategories((prev) => [...prev, name]);
   };
 
-  // 類別改名：同步更新 pattern / project 上的 category
   const handleRenameCategory = (oldName, newName) => {
     if (!newName.trim() || oldName === newName) return;
-    setCategories((prev) =>
-      prev.map((c) => (c === oldName ? newName : c))
-    );
+    setCategories((prev) => prev.map((c) => (c === oldName ? newName : c)));
     setSavedPatterns((prev) =>
       prev.map((p) =>
         (p.category || '未分類') === oldName
@@ -2938,7 +2852,6 @@ function App() {
     setCategoryFilter((prev) => (prev === oldName ? newName : prev));
   };
 
-  // 類別刪除：相關東西移到「未分類」
   const handleDeleteCategory = (name) => {
     setCategories((prev) => prev.filter((c) => c !== name));
     setSavedPatterns((prev) =>
@@ -2967,11 +2880,12 @@ function App() {
   const hasPatternInFilter =
     categoryFilter === 'ALL'
       ? savedPatterns.length > 0
-      : savedPatterns.some((p) => (p.category || '未分類') === categoryFilter);
+      : savedPatterns.some(
+          (p) => (p.category || '未分類') === categoryFilter
+        );
 
   return (
     <div className="flex h-screen overflow-hidden">
-      {/* Desktop Sidebar */}
       <div className="hidden md:flex w-24 bg-white border-r border-theme-accent/20 flex-col items-center py-12 space-y-12 z-30 shadow-sm relative">
         <div className="w-14 h-14 bg-theme-primary text-white rounded-[1.25rem] flex items-center justify-center shadow-xl shadow-theme-primary/20 font-black text-2xl">
           C
@@ -3053,7 +2967,6 @@ function App() {
       </div>
 
       <div className="flex-1 flex flex-col h-full overflow-hidden relative">
-        {/* Mobile Header */}
         <div className="md:hidden p-5 bg-white/60 backdrop-blur sticky top-0 z-20 border-b border-theme-accent/20 flex justify-between items-center">
           <div className="flex items-center gap-2">
             <div className="w-10 h-10 bg-theme-primary rounded-xl flex items-center justify-center text-white font-black text-[10px]">
@@ -3087,38 +3000,15 @@ function App() {
         </div>
 
         <main className="flex-1 overflow-y-auto no-scrollbar pb-safe">
-          {(view === 'PROJECTS' || view === 'LIBRARY') && !currentPattern && !selectedProjectId && (
+          {(view === 'PROJECTS' || view === 'LIBRARY') &&
+            !currentPattern &&
+            !selectedProjectId && (
               <CategoryToolbar
                 categories={categories}
                 categoryFilter={categoryFilter}
                 onChangeFilter={setCategoryFilter}
-                onAddCategory={handleAddCategory}
-                onQuickNewPattern={(type) =>
-                  handleNewPattern(
-                    type,
-                    categoryFilter === 'ALL' ? null : categoryFilter
-                  )
-                }
-                onQuickNewProject={() => {
-                  let basePattern = null;
-                  if (categoryFilter === 'ALL') {
-                    basePattern = savedPatterns[0] || null;
-                  } else {
-                    basePattern =
-                      savedPatterns.find(
-                        (p) => (p.category || '未分類') === categoryFilter
-                      ) || null;
-                  }
-                  if (!basePattern) return;
-                  setActiveProjects((prev) => [
-                    createProjectFromPattern(basePattern),
-                    ...prev,
-                  ]);
-                  setView('PROJECTS');
-                }}
-                hasPatternInFilter={hasPatternInFilter}
               />
-          )}
+            )}
 
           {view === 'PROJECTS' && (
             <ProjectView
@@ -3126,7 +3016,7 @@ function App() {
               savedPatterns={savedPatterns}
               activeProjects={activeProjects}
               categoryFilter={categoryFilter}
-              categories={categories}   // ⬅ 新增這行
+              categories={categories}
               selectedId={selectedProjectId}
               setSelectedId={setSelectedProjectId}
               onUpdateProject={(p) =>
@@ -3200,7 +3090,7 @@ function App() {
             <EditorView
               pattern={currentPattern}
               categories={categories}
-              yarns={yarns}        // 新增
+              yarns={yarns}
               onUpdate={(p) =>
                 setSavedPatterns((prev) =>
                   prev.find((x) => x.id === p.id)
@@ -3209,19 +3099,21 @@ function App() {
                           ? { ...p, updatedAt: new Date().toISOString() }
                           : x
                       )
-                    : [{ ...p, updatedAt: new Date().toISOString() }, ...prev]
+                    : [
+                        { ...p, updatedAt: new Date().toISOString() },
+                        ...prev,
+                      ]
                 )
               }
               onBack={() => {
                 setView('LIBRARY');
-                setCurrentPattern(null); // 確保退回時清空，Toolbar 才會出現
-            }}
+                setCurrentPattern(null);
+              }}
             />
           )}
           {view === 'TUTORIAL' && <TutorialView />}
         </main>
 
-        {/* Mobile Bottom Nav */}
         {view !== 'EDITOR' && (
           <div className="md:hidden fixed bottom-0 w-full bg-white/90 backdrop-blur-xl border-t border-theme-accent/30 flex justify-around py-6 pb-safe z-40 shadow-[0_-10px_40px_rgba(0,0,0,0.08)]">
             <button
