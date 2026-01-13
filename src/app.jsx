@@ -1807,71 +1807,71 @@ function ProjectView({
                       </div>
                 )}
             
-                <div className="pointer-events-auto">
-                  {/* 頂端極細進度條 */}
-                  {typeof totalRows === 'number' && totalRows > 0 && (
-                    <div className="h-1.5 bg-theme-bg/70 rounded-full overflow-hidden mb-2 shadow-inner">
-                      <div
-                        className="h-full bg-theme-primary rounded-full transition-all duration-500"
-                        style={{ width: `${Math.min(100, progressPercent)}%` }}
-                      />
-                    </div>
-                  )}
-                  <div className="bg-white/95 backdrop-blur rounded-[2.5rem] border border-theme-accent/10 shadow-xl p-4 md:px-8">
-                    <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                <div className="pointer-events-auto bg-white/98 backdrop-blur rounded-[2.5rem] border border-theme-accent/10 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] overflow-hidden">
+                  {/* A. 頂部進度條：橫跨整個盤面 */}
+                  <div className="h-1.5 w-full bg-theme-bg overflow-hidden flex">
+                    <div 
+                      className="h-full bg-theme-primary transition-all duration-700 ease-out shadow-[0_0_8px_rgba(var(--primary-rgb),0.4)]"
+                      style={{ width: `${progressPercent}%` }}
+                    />
+                  </div>
+
+                  <div className="p-4 md:px-8">
+                    <div className="w-full md:w-auto flex flex-row md:flex-col justify-between md:justify-start items-center md:items-start gap-4">
                       {/* 左：Section Loop（文字完全維持原本格式） */}
-                      <div className="w-full md:w-auto text-theme-text/70">
-                        <div className="text-[10px] font-black uppercase tracking-[0.25em] text-theme-text/50 mb-1">
-                          Section Loop
+                      <div className="text-theme-text/70">
+                        <div className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text/40 mb-1">
+                        Section Loop
                         </div>
                         {sectionLoopInfo ? (
-                          <div className="border-l border-theme-text/10 pl-3">
+                          <div className="border-l-2 border-theme-primary/20 pl-2">
                             {sectionLoopInfo.title && (
-                              <div className="text-sm md:text-base font-medium text-theme-text mb-0.5">
+                              <div className="text-xs font-bold text-theme-text truncate max-w-[120px] md:max-w-none">
                                 {sectionLoopInfo.title}
                               </div>
                             )}
-                            <div className="text-[11px] md:text-xs text-theme-text/60 tabular-nums">
-                              第{' '}
-                              <span className="font-semibold text-theme-text/90">
-                                {sectionLoopInfo.loopRow}
-                              </span>{' '}
-                              / {sectionLoopInfo.rowsPerLoop} 排
-                              <span className="mx-1 text-theme-text/30">|</span>
-                              第{' '}
-                              <span className="font-semibold text-theme-text/90">
-                                {sectionLoopInfo.loopIndex}
-                              </span>{' '}
-                              輪
+                              <div className="text-[11px] md:text-xs text-theme-text/60 tabular-nums">
+                                第{' '}
+                                <span className="font-semibold text-theme-text/90">
+                                  {sectionLoopInfo.loopRow}
+                                </span>{' '}
+                                / {sectionLoopInfo.rowsPerLoop} 排
+                                <span className="mx-1 text-theme-text/30">|</span>
+                                第{' '}
+                                <span className="font-semibold text-theme-text/90">
+                                  {sectionLoopInfo.loopIndex}
+                                </span>{' '}
+                                輪
+                              </div>
                             </div>
-                          </div>
                         ) : (
                           <div className="text-[10px] opacity-50">
                             尚未有 Section Loop 資訊
                           </div>
                         )}
                       </div>
-
-                      {/* 右：Currently + Row Counter */}
-                      <div className="w-full md:w-auto flex items-center justify-end gap-4">
-                        {/* 目前階段 Currently：手機 & 桌機都顯示 */}
-                        <div className="flex flex-col items-end mr-2 w-full md:w-auto">
-                          <span className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text/40 mb-0.5">
+                      {/* 目前階段 Currently：手機 & 桌機都顯示 */}
+                        <div className="text-right md:text-left border-r-2 md:border-r-0 md:border-l-2 border-theme-bg pr-4 md:pr-0 md:pl-2">
+                          <span className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text/40 mb-1 block">
                             Currently
                           </span>
-                          <div className="text-[10px] md:text-xs text-theme-text/80 tabular-nums text-right">
+                          <div className="text-[10px] font-bold text-theme-text tabular-nums">
                             {currentPartTitle && (
                               <span className="font-semibold mr-2">{currentPartTitle}</span>
                             )}
                             {typeof currentRow === 'number' && typeof totalRows === 'number' && (
-                              <>
+                              <div className="text-[10px] text-theme-text/50">
                                 第 <span className="font-bold">{currentRow}</span> / {totalRows} 排
                                 <span className="mx-1 text-theme-text/30">•</span>
                                 進度 {progressPercent}%
-                              </>
+                              </div>
                             )}
                           </div>
                         </div>
+
+                      {/* 右：Currently + Row Counter */}
+                      <div className="w-full md:w-auto flex items-center justify-end gap-4">
+                        
 
                         {/* Row Counter 本尊（＋／－ 大顆版 + +n） */}
                         <div className="w-full md:w-auto flex flex-col items-center md:items-end gap-2">
