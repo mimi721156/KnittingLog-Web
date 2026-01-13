@@ -1869,74 +1869,72 @@ function ProjectView({
 
                       {/* Row Counter 本尊（＋／－ 大顆版 + +n） */}
                       <div className="w-full md:w-auto flex flex-col items-center md:items-end gap-2">
-                      {/* 頂部標籤 */}
-                      <span className="text-[10px] font-black uppercase tracking-[0.2em] text-theme-text/40 self-start md:self-end">
-                        Row Counter
-                      </span>
+                        {/* 頂部標籤 */}
+                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-theme-text/40 self-start md:self-end">
+                          Row Counter
+                        </span>
 
-                      <div className="flex items-center gap-2 w-full">
-                        {/* 1. 減少按鈕 (-) */}
-                        <button
-                          onClick={() => {
-                            update(-1);
-                            setShowAlertOverlay(false);
-                          }}
-                          className="w-12 h-12 rounded-full bg-theme-bg text-theme-primary font-black text-xl flex items-center justify-center active:scale-90 transition-transform shadow-inner"
-                        >
-                          −
-                        </button>
-
-                        {/* 2. 當前排數顯示 (核心數值) */}
-                        <div className="flex-1 min-w-[70px] text-center">
-                          <div className="text-5xl md:text-6xl font-black text-theme-text tabular-nums leading-none tracking-tighter">
-                            {currentTotalRow}
-                          </div>
-                          <div className="text-[9px] font-bold text-theme-text/30 uppercase mt-1">Rows</div>
-                        </div>
-
-                        {/* 3. 增加按鈕 (+) - 比例最大、最顯眼 */}
-                        <button
-                          onClick={() => {
-                            update(1);
-                            setShowAlertOverlay(false);
-                          }}
-                          className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-theme-primary text-white font-black text-3xl flex items-center justify-center active:scale-95 transition-all shadow-lg shadow-theme-primary/30"
-                        >
-                          +
-                        </button>
-
-                        {/* 4. 快速跳轉 (+n Go) */}
-                        <div className="flex flex-col items-stretch gap-1 bg-theme-bg/60 rounded-2xl p-1 ml-1">
-                          <input
-                            type="number"
-                            value={plusN}
-                            onChange={(e) => setPlusN(e.target.value)}
-                            placeholder="+n"
-                            className="w-14 bg-transparent border-none text-center font-bold text-sm focus:ring-0 focus:outline-none tabular-nums placeholder:text-theme-text/20 p-1"
-                          />
+                        <div className="flex items-center gap-2 w-full">
+                          {/* 1. 減少按鈕 (-) */}
                           <button
                             onClick={() => {
-                              const n = parseInt(plusN);
-                              if (!isNaN(n)) {
-                                update(n);
-                                setShowAlertOverlay(false);
-                              }
-                              setPlusN('');
+                              update(-1);
+                              setShowAlertOverlay(false);
                             }}
-                            className="px-2 py-1.5 rounded-xl font-black text-[9px] tracking-wider uppercase bg-theme-text text-white active:scale-95 transition-transform"
+                            className="w-12 h-12 rounded-full bg-theme-bg text-theme-primary font-black text-xl flex items-center justify-center active:scale-90 transition-transform shadow-inner"
                           >
-                            Go
+                            −
                           </button>
+
+                          {/* 2. 當前排數顯示 (核心數值) */}
+                          <div className="flex-1 min-w-[70px] text-center">
+                            <div className="text-5xl md:text-6xl font-black text-theme-text tabular-nums leading-none tracking-tighter">
+                              {currentTotalRow}
+                            </div>
+                            <div className="text-[9px] font-bold text-theme-text/30 uppercase mt-1">Rows</div>
+                          </div>
+
+                          {/* 3. 增加按鈕 (+) - 比例最大、最顯眼 */}
+                          <button
+                            onClick={() => {
+                              update(1);
+                              setShowAlertOverlay(false);
+                            }}
+                            className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-theme-primary text-white font-black text-3xl flex items-center justify-center active:scale-95 transition-all shadow-lg shadow-theme-primary/30"
+                          >
+                            +
+                          </button>
+
+                          {/* 4. 快速跳轉 (+n Go) */}
+                          <div className="flex flex-col items-stretch gap-1 bg-theme-bg/60 rounded-2xl p-1 ml-1">
+                            <input
+                              type="number"
+                              value={plusN}
+                              onChange={(e) => setPlusN(e.target.value)}
+                              placeholder="+n"
+                              className="w-14 bg-transparent border-none text-center font-bold text-sm focus:ring-0 focus:outline-none tabular-nums placeholder:text-theme-text/20 p-1"
+                            />
+                            <button
+                              onClick={() => {
+                                const n = parseInt(plusN);
+                                if (!isNaN(n)) {
+                                  update(n);
+                                  setShowAlertOverlay(false);
+                                }
+                                setPlusN('');
+                              }}
+                              className="px-2 py-1.5 rounded-xl font-black text-[9px] tracking-wider uppercase bg-theme-text text-white active:scale-95 transition-transform"
+                            >
+                              Go
+                              </button>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </div>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-
         )}
     </div>
   );
