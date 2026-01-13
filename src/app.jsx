@@ -1398,7 +1398,7 @@ function ProjectView({
     currentProject.projectName || currentProject.patternName;
 
   return (
-      <div className="flex-1 flex flex-col min-h-0 bg-theme-bg relative overflow-hidden">
+      <div className="h-screen flex flex-col bg-theme-bg relative overflow-hidden">
         {showAlertOverlay && currentAlerts.length > 0 && (
           <div className="absolute inset-x-0 top-20 z-40 px-4 md:px-0">
             <div className="max-w-xl mx-auto bg-theme-primary text-white rounded-[2.25rem] shadow-2xl border border-white/30 px-6 py-4 flex items-start gap-3">
