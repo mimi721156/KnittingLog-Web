@@ -1224,7 +1224,7 @@ function ProjectView({
                   <div className="flex justify-between items-start gap-3">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="text-[10px] font-mono font-bold text-theme-primary bg-theme-bg px-2 py-0.5 rounded-md">
+                        <span className="text-[10px] font-zen-mono font-bold text-theme-primary bg-theme-bg px-2 py-0.5 rounded-md">
                           {p.id.slice(0, 6).toUpperCase()}
                         </span>
                         <div className="flex flex-wrap gap-1">
@@ -1301,7 +1301,7 @@ function ProjectView({
                           <span className="text-[10px] text-gray-500">
                             目前排數
                           </span>
-                          <span className="text-[10px] font-mono font-bold text-theme-primary">
+                          <span className="text-[10px] font-zen-mono font-bold text-theme-primary">
                             {displayDone}
                             {displayTarget ? ` / ${displayTarget}` : ''} 排
                           </span>
@@ -1334,7 +1334,7 @@ function ProjectView({
                             Overall Progress
                           </span>
                           <div className="flex items-baseline gap-1">
-                            <span className="text-base font-mono font-bold leading-none">
+                            <span className="text-base font-zen-mono font-bold leading-none">
                               {doneRows}
                             </span>
                             <span className="text-[9px] text-white/60">
@@ -1677,7 +1677,7 @@ function ProjectView({
                           </span>
                         </div>
                         <div
-                          className={`font-mono text-base leading-relaxed whitespace-pre-wrap ${
+                          className={`font-zen-mono text-base leading-relaxed whitespace-pre-wrap ${
                             isActive
                               ? 'text-theme-text font-bold'
                               : 'text-gray-400'
@@ -1710,7 +1710,7 @@ function ProjectView({
                             return (
                               <div
                                 key={`${r}-${c}`}
-                                className={`w-6 h-6 flex items-center justify-center text-[10px] font-mono select-none ${
+                                className={`w-6 h-6 flex items-center justify-center text-[10px] font-zen-mono select-none ${
                                   SYMBOLS[cell]?.color || 'bg-white'
                                 } ${
                                   isHighlight
@@ -2234,7 +2234,7 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                           : 'border-theme-bg opacity-40'
                       }`}
                     >
-                      <span className="font-mono font-black text-lg">
+                      <span className="font-zen-mono font-black text-lg">
                         {t.symbol}
                       </span>
                       <span className="text-[7px] font-black uppercase mt-0.5">
@@ -2294,7 +2294,7 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                             <div
                               key={`${r}-${c}`}
                               onClick={() => toggleCell(s.id, r, c)}
-                              className={`w-8 h-8 flex items-center justify-center text-xs font-mono font-black cursor-pointer hover:opacity-50 transition-all ${
+                              className={`w-8 h-8 flex items-center justify-center text-xs font-zen-mono font-black cursor-pointer hover:opacity-50 transition-all ${
                                 SYMBOLS[cell].color
                               }`}
                             >
@@ -2437,7 +2437,7 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                           ),
                         }));
                       }}
-                      className="w-full h-48 p-10 text-lg font-mono focus:ring-0 border-none resize-none leading-relaxed text-theme-text bg-white"
+                      className="w-full h-48 p-10 text-lg font-zen-mono focus:ring-0 border-none resize-none leading-relaxed text-theme-text bg-white"
                       placeholder="輸入此階段編織說明..."
                     />
                   </div>
