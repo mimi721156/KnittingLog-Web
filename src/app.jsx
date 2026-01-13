@@ -1442,22 +1442,24 @@ function ProjectView({
           </div>
         )}
 
-        {/* 上方標題列 */}
-        <div className="flex-none sticky top-0 z-30 bg-white/80 backdrop-blur p-4 border-b flex justify-between items-center shadow-sm">
-          <button
-            onClick={() => setSelectedId(null)}
-            className="text-gray-400 font-bold px-2 uppercase text-[10px] tracking-widest"
-          >
-            ← Back
-          </button>
-          <h2 className="font-black text-theme-text truncate text-sm tracking-tight px-4">
-            {projectTitle}
-          </h2>
-          <div className="w-10" />
-        </div>
+        
 
         {/* 中間可捲動內容 */}
         <div className="flex-1 overflow-y-auto px-4 py-8 md:px-10 space-y-8">
+          {/* 上方標題列 */}
+          <div className="flex-none sticky top-0 z-30 bg-white/80 backdrop-blur p-4 border-b flex justify-between items-center shadow-sm">
+            <button
+              onClick={() => setSelectedId(null)}
+              className="text-gray-400 font-bold px-2 uppercase text-[10px] tracking-widest"
+            >
+              ← Back
+            </button>
+            <h2 className="font-black text-theme-text truncate text-sm tracking-tight px-4">
+              {projectTitle}
+            </h2>
+            <div className="w-10" />
+          </div>
+
             <div className="bg-white p-6 rounded-[2rem] shadow-cozy border border-white flex flex-col gap-2">
               <div className="flex justify-between items-end gap-3">
                 <div className="flex-1">
