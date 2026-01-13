@@ -1442,12 +1442,8 @@ function ProjectView({
           </div>
         )}
 
-        
-
-        {/* 中間可捲動內容 */}
-        <div className="flex-1 overflow-y-auto px-4 py-8 md:px-10 space-y-8">
-          {/* 上方標題列 */}
-          <div className="flex-none sticky top-0 z-30 bg-white/80 backdrop-blur p-4 border-b flex justify-between items-center shadow-sm">
+        {/* 上方標題列 */}
+          <div className="flex-none bg-white/80 backdrop-blur p-4 border-b flex justify-between items-center z-30 shadow-sm">
             <button
               onClick={() => setSelectedId(null)}
               className="text-gray-400 font-bold px-2 uppercase text-[10px] tracking-widest"
@@ -1459,6 +1455,10 @@ function ProjectView({
             </h2>
             <div className="w-10" />
           </div>
+
+        {/* 中間可捲動內容 */}
+        <div className="flex-1 overflow-y-auto px-4 py-8 md:px-10 space-y-8">
+          
 
             <div className="bg-white p-6 rounded-[2rem] shadow-cozy border border-white flex flex-col gap-2">
               <div className="flex justify-between items-end gap-3">
@@ -1776,7 +1776,7 @@ function ProjectView({
             {/* 浮動當前指令：固定在計數器上方（這段你原本的可以保留） */}
             {activeInstructionText && (
               <div
-                className="mb-3 pointer-events-auto bg-white/95 backdrop-blur rounded-[2rem] shadow-lg border border-theme-bg/60 px-5 py-4 cursor-pointer"
+                className="animate-float-subtle mb-3 pointer-events-auto bg-white/95 backdrop-blur rounded-[2rem] shadow-lg border border-theme-bg/60 px-5 py-4 cursor-pointer"
                 onClick={() => setShowFullInstruction(!showFullInstruction)}
               >
                 <div className="flex items-start gap-3">
