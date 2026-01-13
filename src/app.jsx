@@ -1158,6 +1158,12 @@ function ProjectView({
     return main || '未命名線材';
   };
 
+  const [showFullInstruction, setShowFullInstruction] = React.useState(false);
+
+  const activeInstruction = projectStats.activeSection; // 目前段落
+  const activeInstructionText = activeInstruction?.content || '';
+
+
   if (!selectedId) {
     return (
       <div className="max-w-6xl mx-auto p-8 md:p-12 animate-fade-in pb-32">
@@ -1617,30 +1623,17 @@ function ProjectView({
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mt-4">
           <div className="lg:col-span-5 space-y-6">
-            {/* 左側改成只放 Project Notes */}
-            <div className="bg-white p-6 rounded-[2rem] shadow-cozy border border-white space-y-3">
-              <div className="flex items-center justify-between gap-2">
-                <div>
-                  <div className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text/60 mb-1">
-                    Project Notes
-                  </div>
-                  <div className="text-xs text-theme-text/60">
-                    織到一半的狀況、試穿感想、改版紀錄…
-                  </div>
+            {currentPattern.notes && (
+              <div className="bg-theme-bg/40 p-5 rounded-[2rem] border border-theme-bg/60">
+                <div className="text-[9px] font-black uppercase tracking-[0.2em] opacity-50 mb-2">
+                  Pattern Notes
+                </div>
+                <div className="text-sm text-theme-text whitespace-pre-wrap leading-relaxed">
+                  {currentPattern.notes}
                 </div>
               </div>
-              <textarea
-                className="w-full mt-2 bg-theme-bg/40 rounded-2xl p-3.5 text-sm leading-relaxed border-none focus:ring-2 ring-theme-primary/20 min-h-[100px] resize-none"
-                placeholder="例：第 35 排發現麻花偏緊，下次改 4.5mm 棒針；袖長預計多織 5cm。"
-                value={currentProject.notes || ''}
-                onChange={(e) =>
-                  onUpdateProject({
-                    ...currentProject,
-                    notes: e.target.value,
-                  })
-                }
-              />
-            </div>
+            )}
+            
           </div>
 
           <div className="lg:col-span-7 space-y-6">
@@ -1729,86 +1722,155 @@ function ProjectView({
                 </div>
               )}
             </div>
-
-            {currentPattern.notes && (
-              <div className="bg-theme-bg/40 p-5 rounded-[2rem] border border-theme-bg/60">
-                <div className="text-[9px] font-black uppercase tracking-[0.2em] opacity-50 mb-2">
-                  Pattern Notes
-                </div>
-                <div className="text-sm text-theme-text whitespace-pre-wrap leading-relaxed">
-                  {currentPattern.notes}
+            {/* 左側改成只放 Project Notes */}
+            <div className="bg-white p-6 rounded-[2rem] shadow-cozy border border-white space-y-3">
+              <div className="flex items-center justify-between gap-2">
+                <div>
+                  <div className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text/60 mb-1">
+                    Project Notes
+                  </div>
+                  <div className="text-xs text-theme-text/60">
+                    織到一半的狀況、試穿感想、改版紀錄…
+                  </div>
                 </div>
               </div>
-            )}
+              <textarea
+                className="w-full mt-2 bg-theme-bg/40 rounded-2xl p-3.5 text-sm leading-relaxed border-none focus:ring-2 ring-theme-primary/20 min-h-[100px] resize-none"
+                placeholder="例：第 35 排發現麻花偏緊，下次改 4.5mm 棒針；袖長預計多織 5cm。"
+                value={currentProject.notes || ''}
+                onChange={(e) =>
+                  onUpdateProject({
+                    ...currentProject,
+                    notes: e.target.value,
+                  })
+                }
+              />
+            </div>
+           
           </div>
         </div>
       </div>
-
-      {/* 底部常駐：Section Loop + Counter */}
+      
+      
+      {/* 底部常駐：Section Loop + Currently + Counter */}
       {currentPartProgress && (
-        <div className="sticky bottom-[env(safe-area-inset-bottom)] z-30">
-          <div className="border-t bg-white/95 backdrop-blur px-4 py-3 md:px-8 md:py-4 shadow-[0_-4px_12px_rgba(0,0,0,0.04)]">
-            <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-              {/* Section Loop */}
-              <div className="w-full md:w-auto text-[10px] text-theme-text/60">
-                <div className="font-black uppercase tracking-[0.2em] mb-1">
-                  Section Loop
+        <>
+        {/* 浮動當前指令：固定在計數器上方 */}
+        {activeInstructionText && (
+          <div className="fixed bottom-[5.5rem] md:bottom-[6rem] left-0 right-0 px-4 md:px-8 z-40">
+            <div
+              className="max-w-5xl mx-auto bg-white/95 backdrop-blur rounded-[2rem] shadow-cozy border border-theme-bg/60 px-4 py-3 md:px-6 md:py-4 cursor-pointer"
+              onClick={() => setShowFullInstruction((v) => !v)}
+            >
+              <div className="flex items-start gap-3">
+                <div className="mt-1 w-6 h-6 rounded-full bg-theme-primary/10 flex items-center justify-center text-[11px] font-black text-theme-primary">
+                  Now
                 </div>
-                {/* Section Loop */}
-                <div className="w-full md:w-auto text-theme-text/70">
-                  
-                
-                  {sectionLoopInfo ? (
-                    <div className="border-l border-theme-text/10 pl-3">
-                      {/* 花樣名稱：經典麻花段 */}
-                      {sectionLoopInfo.title && (
-                        <div className="text-sm md:text-base font-medium text-theme-text mb-0.5">
-                          {sectionLoopInfo.title}
-                        </div>
-                      )}
-                
-                      {/* 第 2 / 8 排 | 第 6 輪 */}
-                      <div className="text-[11px] md:text-xs text-theme-text/60 tabular-nums">
-                        第{' '}
-                        <span className="font-semibold text-theme-text/90">
-                          {sectionLoopInfo.loopRow}
-                        </span>{' '}
-                        / {sectionLoopInfo.rowsPerLoop} 排
-                        <span className="mx-1 text-theme-text/30">|</span>
-                        第{' '}
-                        <span className="font-semibold text-theme-text/90">
-                          {sectionLoopInfo.loopIndex}
-                        </span>{' '}
-                        輪
-                      </div>
+                <div className="flex-1 overflow-hidden">
+                  {/* 標題：段落名稱 */}
+                  {activeInstruction?.title && (
+                    <div className="text-[11px] font-semibold text-theme-text/70 mb-1">
+                      {activeInstruction.title}
                     </div>
-                  ) : (
-                    <div className="text-[10px] opacity-50">
-                      尚未有 Section Loop 資訊
+                  )}
+                  {/* 內容：當前指令文字（預設最多幾行） */}
+                  <div
+                    className={
+                      'text-xs md:text-sm text-theme-text/90 whitespace-pre-wrap leading-relaxed ' +
+                      (showFullInstruction ? 'max-h-64 overflow-y-auto' : 'max-h-12 overflow-hidden')
+                    }
+                  >
+                    {activeInstructionText}
+                  </div>
+                  {!showFullInstruction && (
+                    <div className="mt-1 text-[10px] text-theme-text/40">
+                      點擊展開完整指令…
                     </div>
                   )}
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        <div className="fixed bottom-0 left-0 right-0 border-t bg-white/95 backdrop-blur px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] md:px-8 md:py-4 shadow-[0_-4px_12px_rgba(0,0,0,0.04)] z-30">
+          <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+            {/* 左：Section Loop（文字完全維持原本格式） */}
+            <div className="w-full md:w-auto text-theme-text/70">
+              <div className="text-[10px] font-black uppercase tracking-[0.25em] text-theme-text/50 mb-1">
+                Section Loop
+              </div>
+              {sectionLoopInfo ? (
+                <div className="border-l border-theme-text/10 pl-3">
+                  {sectionLoopInfo.title && (
+                    <div className="text-sm md:text-base font-medium text-theme-text mb-0.5">
+                      {sectionLoopInfo.title}
+                    </div>
+                  )}
+                  <div className="text-[11px] md:text-xs text-theme-text/60 tabular-nums">
+                    第{' '}
+                    <span className="font-semibold text-theme-text/90">
+                      {sectionLoopInfo.loopRow}
+                    </span>{' '}
+                    / {sectionLoopInfo.rowsPerLoop} 排
+                    <span className="mx-1 text-theme-text/30">|</span>
+                    第{' '}
+                    <span className="font-semibold text-theme-text/90">
+                      {sectionLoopInfo.loopIndex}
+                    </span>{' '}
+                    輪
+                  </div>
+                </div>
+              ) : (
+                <div className="text-[10px] opacity-50">
+                  尚未有 Section Loop 資訊
+                </div>
+              )}
+            </div>
 
+            {/* 右：Currently + Row Counter */}
+            <div className="w-full md:w-auto flex items-center justify-end gap-4">
+              {/* 目前階段 Currently */}
+              <div className="hidden md:flex flex-col items-end mr-2">
+                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text/40 mb-0.5">
+                  Currently
+                </span>
+                <div className="text-xs text-theme-text/80 tabular-nums">
+                  {currentPartTitle && (
+                    <span className="font-semibold mr-2">{currentPartTitle}</span>
+                  )}
+                  {typeof currentRow === 'number' && typeof totalRows === 'number' && (
+                    <>
+                      第{' '}
+                      <span className="font-bold">
+                        {currentRow}
+                      </span>{' '}
+                      / {totalRows} 排
+                      <span className="mx-1 text-theme-text/30">•</span>
+                      進度 {progressPercent}%
+                    </>
+                  )}
+                </div>
               </div>
 
-              {/* Counter */}
-              <div className="w-full md:w-auto flex items-center justify-end gap-3">
+              {/* Row Counter 本尊（＋／－ 大顆版 + +n） */}
+              <div className="flex items-center gap-3">
                 <div className="flex flex-col items-end mr-1">
-                  <span className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text/40 mb-0.5">
+                  <span className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text/40 mb-1">
                     Row Counter
                   </span>
-                  <div className="text-3xl md:text-4xl font-black text-theme-text tabular-nums leading-none">
+                  <div className="text-4xl md:text-5xl font-black text-theme-text tabular-nums leading-none">
                     {currentTotalRow}
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
                   <button
                     onClick={() => {
                       update(-1);
                       setShowAlertOverlay(false);
                     }}
-                    className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-theme-bg text-theme-primary font-black text-xl flex items-center justify-center active:scale-95 shadow-inner"
+                    className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-theme-bg text-theme-primary font-black text-2xl flex items-center justify-center active:scale-95 shadow-inner"
                   >
                     −
                   </button>
@@ -1817,17 +1879,17 @@ function ProjectView({
                       update(1);
                       setShowAlertOverlay(false);
                     }}
-                    className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-theme-primary text-white font-black text-2xl flex items-center justify-center active:scale-95 shadow-lg shadow-theme-primary/30"
+                    className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-theme-primary text-white font-black text-2xl flex items-center justify-center active:scale-95 shadow-lg shadow-theme-primary/40"
                   >
                     +
                   </button>
-                  <div className="flex items-stretch gap-1 bg-theme-bg/70 rounded-full px-2 py-1">
+                  <div className="flex items-stretch gap-1 bg-theme-bg/80 rounded-full pl-3 pr-2 py-1.5">
                     <input
                       type="number"
                       value={plusN}
                       onChange={(e) => setPlusN(e.target.value)}
                       placeholder="+n"
-                      className="w-16 bg-transparent border-none text-center font-black text-xs md:text-sm focus:ring-0 tabular-nums placeholder:opacity-30"
+                      className="w-16 bg-transparent border-none text-center font-black text-xs md:text-sm focus:ring-0 focus:outline-none tabular-nums placeholder:opacity-30"
                     />
                     <button
                       onClick={() => {
@@ -1838,7 +1900,7 @@ function ProjectView({
                         }
                         setPlusN('');
                       }}
-                      className="bg-theme-text text-white px-3 md:px-4 py-1 rounded-full font-black text-[9px] md:text-[10px] tracking-[0.18em] uppercase active:scale-95"
+                      className="px-3 md:px-4 rounded-full font-black text-[9px] md:text-[10px] tracking-[0.18em] uppercase bg-theme-text text-white flex items-center justify-center active:scale-95"
                     >
                       Go
                     </button>
@@ -1848,7 +1910,9 @@ function ProjectView({
             </div>
           </div>
         </div>
+        </>
       )}
+
     </div>
   );
 }
