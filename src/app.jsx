@@ -1571,7 +1571,7 @@ function ProjectView({
               </div>
             </div>
 
-            {currentPattern.type === 'TEXT' && projectStats.targetTotal > 0 && (
+            {/* {currentPattern.type === 'TEXT' && projectStats.targetTotal > 0 && (
               <div className="bg-white p-6 rounded-[2rem] shadow-cozy border border-white space-y-3">
                 <div className="flex justify-between items-end">
                   <div>
@@ -1603,7 +1603,7 @@ function ProjectView({
                   />
                 </div>
               </div>
-            )}
+            )} */}
 
             {currentProject.partsProgress &&
               currentProject.partsProgress.length > 0 && (
