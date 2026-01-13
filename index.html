@@ -101,7 +101,34 @@
             "Noto Sans TC",
             monospace;
         }
-    </style>
+        
+    /* 定義一個優雅的微動漂浮動畫 */
+    @keyframes float-animation {
+      0%, 100% {
+        transform: translateY(0);
+      }
+      50% {
+        transform: translateY(-6px); /* 向上漂移 6 像素 */
+      }
+    }
+
+    /* 建立對應的 CSS 類名 */
+    .animate-float-subtle {
+      animation: float-animation 3s infinite ease-in-out;
+    }
+
+    /* 可以順便美化捲軸 */
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(0, 0, 0, 0.1);
+      border-radius: 10px;
+    }
+  </style>
 </head>
 <body class="h-screen overflow-hidden flex flex-col bg-knitting-pattern">
 <div id="root" class="h-full flex flex-col"></div>
