@@ -1443,7 +1443,7 @@ function ProjectView({
         )}
 
         {/* 上方標題列 */}
-        <div className="flex-none bg-white/80 backdrop-blur p-4 border-b flex justify-between items-center z-30 shadow-sm">
+        <div className="flex-none sticky top-0 z-30 bg-white/80 backdrop-blur p-4 border-b flex justify-between items-center shadow-sm">
           <button
             onClick={() => setSelectedId(null)}
             className="text-gray-400 font-bold px-2 uppercase text-[10px] tracking-widest"
