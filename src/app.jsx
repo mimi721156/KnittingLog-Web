@@ -1398,8 +1398,7 @@ function ProjectView({
     currentProject.projectName || currentProject.patternName;
 
   return (
-    <div className="flex flex-col bg-theme-bg animate-fade-in relative">
-      {showAlertOverlay && currentAlerts.length > 0 && (
+      <div className="flex flex-col h-screen bg-theme-bg animate-fade-in relative overflow-hidden">      {showAlertOverlay && currentAlerts.length > 0 && (
         <div className="absolute inset-x-0 top-20 z-40 px-4 md:px-0">
           <div className="max-w-xl mx-auto bg-theme-primary text-white rounded-[2.25rem] shadow-2xl border border-white/30 px-6 py-4 flex items-start gap-3">
             <div className="w-10 h-10 bg-white/15 rounded-2xl flex items-center justify-center text-2xl">
@@ -1443,8 +1442,7 @@ function ProjectView({
       )}
 
       {/* 上方標題列 */}
-      <div className="bg-white/80 backdrop-blur p-4 border-b flex justify-between items-center sticky top-0 z-30 shadow-sm">
-        <button
+      <div className="flex-none bg-white/80 backdrop-blur p-4 border-b ... sticky top-0 z-30 shadow-sm">        <button
           onClick={() => setSelectedId(null)}
           className="text-gray-400 font-bold px-2 uppercase text-[10px] tracking-widest"
         >
@@ -1457,315 +1455,316 @@ function ProjectView({
       </div>
 
       {/* 中間可捲動內容 */}
-      <div className="p-4 md:p-10 space-y-8 pb-40">
-        <div className="bg白 p-6 rounded-[2rem] shadow-cozy border border-white flex flex-col gap-2">
-          <div className="flex justify-between items-end gap-3">
-            <div className="flex-1">
-              <div className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text/50 mb-1">
-                Project Name
+      <div className="flex-1 overflow-y-auto p-4 md:p-10 space-y-8 pb-60">
+        <div className="p-4 md:p-10 space-y-8 pb-40">
+          <div className="bg-white p-6 rounded-[2rem] shadow-cozy border border-white flex flex-col gap-2">
+            <div className="flex justify-between items-end gap-3">
+              <div className="flex-1">
+                <div className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text/50 mb-1">
+                  Project Name
+                </div>
+                <input
+                  type="text"
+                  value={projectTitle}
+                  onChange={(e) =>
+                    onUpdateProject({
+                      ...currentProject,
+                      projectName: e.target.value,
+                    })
+                  }
+                  className="w-full bg-transparent border-none text-lg md:text-xl font-black tracking-tight p-0 focus:ring-0"
+                  placeholder="給這個作品取一個名字…"
+                />
               </div>
-              <input
-                type="text"
-                value={projectTitle}
-                onChange={(e) =>
-                  onUpdateProject({
-                    ...currentProject,
-                    projectName: e.target.value,
-                  })
-                }
-                className="w-full bg-transparent border-none text-lg md:text-xl font-black tracking-tight p-0 focus:ring-0"
-                placeholder="給這個作品取一個名字…"
-              />
+              {currentProject.startAt && (
+                <div className="text-right text-[9px] text-theme-text/50 uppercase tracking-[0.18em]">
+                  Started
+                  <br />
+                  <span className="font-black text-theme-text/80">
+                    {new Date(currentProject.startAt).toLocaleDateString()}
+                  </span>
+                </div>
+              )}
             </div>
-            {currentProject.startAt && (
-              <div className="text-right text-[9px] text-theme-text/50 uppercase tracking-[0.18em]">
-                Started
-                <br />
-                <span className="font-black text-theme-text/80">
-                  {new Date(currentProject.startAt).toLocaleDateString()}
-                </span>
-              </div>
-            )}
-          </div>
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text/50">
-              Category
-            </span>
-            <select
-              className="bg-theme-bg/70 rounded-full px-3 py-1.5 border-none text-[10px]"
-              value={currentProject.category || '未分類'}
-              onChange={(e) =>
-                onUpdateProject({
-                  ...currentProject,
-                  category: e.target.value,
-                })
-              }
-            >
-              {(categories || ['未分類']).map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="flex flex-wrap items-center gap-3 text-[10px] text-theme-text/70">
-            <div className="flex items-center gap-1">
-              <span className="font-black uppercase tracking-[0.2em]">
-                Yarn
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <span className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text/50">
+                Category
               </span>
               <select
-                className="bg-theme-bg/60 rounded-full px-3 py-1 border-none text-[10px]"
-                value={currentProject.yarnId || ''}
+                className="bg-theme-bg/70 rounded-full px-3 py-1.5 border-none text-[10px]"
+                value={currentProject.category || '未分類'}
                 onChange={(e) =>
                   onUpdateProject({
                     ...currentProject,
-                    yarnId: e.target.value || null,
+                    category: e.target.value,
                   })
                 }
               >
-                <option value="">未選擇</option>
-                {yarns.map((y) => (
-                  <option key={y.id} value={y.id}>
-                    {[y.brand, y.name].filter(Boolean).join(' ') ||
-                      '未命名線材'}
+                {(categories || ['未分類']).map((c) => (
+                  <option key={c} value={c}>
+                    {c}
                   </option>
                 ))}
               </select>
             </div>
+            <div className="flex flex-wrap items-center gap-3 text-[10px] text-theme-text/70">
+              <div className="flex items-center gap-1">
+                <span className="font-black uppercase tracking-[0.2em]">
+                  Yarn
+                </span>
+                <select
+                  className="bg-theme-bg/60 rounded-full px-3 py-1 border-none text-[10px]"
+                  value={currentProject.yarnId || ''}
+                  onChange={(e) =>
+                    onUpdateProject({
+                      ...currentProject,
+                      yarnId: e.target.value || null,
+                    })
+                  }
+                >
+                  <option value="">未選擇</option>
+                  {yarns.map((y) => (
+                    <option key={y.id} value={y.id}>
+                      {[y.brand, y.name].filter(Boolean).join(' ') ||
+                        '未命名線材'}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-            <div className="flex items-center gap-1">
-              <span className="uppercase tracking-[0.2em] font-black opacity-60">
-                Needle
-              </span>
-              <input
-                className="bg-theme-bg/60 rounded-full px-3 py-1 border-none text-[10px] w-20"
-                placeholder="4.0mm"
-                value={currentProject.needle || ''}
-                onChange={(e) =>
-                  onUpdateProject({
-                    ...currentProject,
-                    needle: e.target.value,
-                  })
-                }
-              />
-            </div>
+              <div className="flex items-center gap-1">
+                <span className="uppercase tracking-[0.2em] font-black opacity-60">
+                  Needle
+                </span>
+                <input
+                  className="bg-theme-bg/60 rounded-full px-3 py-1 border-none text-[10px] w-20"
+                  placeholder="4.0mm"
+                  value={currentProject.needle || ''}
+                  onChange={(e) =>
+                    onUpdateProject({
+                      ...currentProject,
+                      needle: e.target.value,
+                    })
+                  }
+                />
+              </div>
 
-            <div className="flex items-center gap-1">
-              <span className="uppercase tracking-[0.2em] font-black opacity-60">
-                Cast on
-              </span>
-              <input
-                className="bg-theme-bg/60 rounded-full px-3 py-1 border-none text-[10px] w-20"
-                placeholder="例如 112"
-                value={currentProject.castOn || ''}
-                onChange={(e) =>
-                  onUpdateProject({
-                    ...currentProject,
-                    castOn: e.target.value,
-                  })
-                }
-              />
+              <div className="flex items-center gap-1">
+                <span className="uppercase tracking-[0.2em] font-black opacity-60">
+                  Cast on
+                </span>
+                <input
+                  className="bg-theme-bg/60 rounded-full px-3 py-1 border-none text-[10px] w-20"
+                  placeholder="例如 112"
+                  value={currentProject.castOn || ''}
+                  onChange={(e) =>
+                    onUpdateProject({
+                      ...currentProject,
+                      castOn: e.target.value,
+                    })
+                  }
+                />
+              </div>
             </div>
           </div>
-        </div>
 
-        {currentPattern.type === 'TEXT' && projectStats.targetTotal > 0 && (
-          <div className="bg-white p-6 rounded-[2rem] shadow-cozy border border-white space-y-3">
-            <div className="flex justify-between items-end">
-              <div>
-                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text/50 mb-1 block">
-                  目前階段 Currently
-                </span>
-                <span className="font-black text-theme-text text-base tracking-tight">
-                  {projectStats.activeSection?.title || 'Unknown'}
+          {currentPattern.type === 'TEXT' && projectStats.targetTotal > 0 && (
+            <div className="bg-white p-6 rounded-[2rem] shadow-cozy border border-white space-y-3">
+              <div className="flex justify-between items-end">
+                <div>
+                  <span className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text/50 mb-1 block">
+                    目前階段 Currently
+                  </span>
+                  <span className="font-black text-theme-text text-base tracking-tight">
+                    {projectStats.activeSection?.title || 'Unknown'}
+                  </span>
+                </div>
+                <span className="font-black text-theme-primary tabular-nums text-lg">
+                  {currentTotalRow}
+                  <span className="opacity-20 mx-1">/</span>
+                  {projectStats.targetTotal}
+                  <span className="text-[9px] opacity-40 uppercase ml-1">
+                    Rows
+                  </span>
                 </span>
               </div>
-              <span className="font-black text-theme-primary tabular-nums text-lg">
-                {currentTotalRow}
-                <span className="opacity-20 mx-1">/</span>
-                {projectStats.targetTotal}
-                <span className="text-[9px] opacity-40 uppercase ml-1">
-                  Rows
-                </span>
-              </span>
-            </div>
-            <div className="w-full h-2.5 bg-theme-bg rounded-full overflow-hidden shadow-inner">
-              <div
-                className="h-full bg-theme-primary transition-all duration-700"
-                style={{
-                  width: `${Math.min(
-                    100,
-                    (currentTotalRow / projectStats.targetTotal) * 100
-                  )}%`,
-                }}
-              />
-            </div>
-          </div>
-        )}
-
-        {currentProject.partsProgress &&
-          currentProject.partsProgress.length > 0 && (
-            <div className="mt-4 flex flex-wrap gap-2">
-              {currentProject.partsProgress.map((part) => {
-                const isActive =
-                  currentPartProgress &&
-                  part.partId === currentPartProgress.partId;
-
-                return (
-                  <button
-                    key={part.partId}
-                    onClick={() =>
-                      onUpdateProject({
-                        ...currentProject,
-                        currentPartId: part.partId,
-                        totalRow: part.totalRow || 1,
-                        sectionRow: part.sectionRow || 1,
-                      })
-                    }
-                    className={
-                      'px-4 py-1.5 rounded-full text-[10px] font-black tracking-[0.18em] uppercase transition ' +
-                      (isActive
-                        ? 'bg-theme-primary text-white shadow'
-                        : 'bg-theme-bg text-theme-text/60 hover:bg-theme-bg/80')
-                    }
-                  >
-                    {part.name || '主體'}
-                  </button>
-                );
-              })}
+              <div className="w-full h-2.5 bg-theme-bg rounded-full overflow-hidden shadow-inner">
+                <div
+                  className="h-full bg-theme-primary transition-all duration-700"
+                  style={{
+                    width: `${Math.min(
+                      100,
+                      (currentTotalRow / projectStats.targetTotal) * 100
+                    )}%`,
+                  }}
+                />
+              </div>
             </div>
           )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mt-4">
-          <div className="lg:col-span-5 space-y-6">
-            {currentPattern.notes && (
-              <div className="bg-theme-bg/40 p-5 rounded-[2rem] border border-theme-bg/60">
-                <div className="text-[9px] font-black uppercase tracking-[0.2em] opacity-50 mb-2">
-                  Pattern Notes
-                </div>
-                <div className="text-sm text-theme-text whitespace-pre-wrap leading-relaxed">
-                  {currentPattern.notes}
-                </div>
+          {currentProject.partsProgress &&
+            currentProject.partsProgress.length > 0 && (
+              <div className="mt-4 flex flex-wrap gap-2">
+                {currentProject.partsProgress.map((part) => {
+                  const isActive =
+                    currentPartProgress &&
+                    part.partId === currentPartProgress.partId;
+
+                  return (
+                    <button
+                      key={part.partId}
+                      onClick={() =>
+                        onUpdateProject({
+                          ...currentProject,
+                          currentPartId: part.partId,
+                          totalRow: part.totalRow || 1,
+                          sectionRow: part.sectionRow || 1,
+                        })
+                      }
+                      className={
+                        'px-4 py-1.5 rounded-full text-[10px] font-black tracking-[0.18em] uppercase transition ' +
+                        (isActive
+                          ? 'bg-theme-primary text-white shadow'
+                          : 'bg-theme-bg text-theme-text/60 hover:bg-theme-bg/80')
+                      }
+                    >
+                      {part.name || '主體'}
+                    </button>
+                  );
+                })}
               </div>
             )}
-            
-          </div>
 
-          <div className="lg:col-span-7 space-y-6">
-            <div className="bg-white p-8 rounded-[3rem] shadow-cozy border border-white min-h-[380px]">
-              <h4 className="font-black text-theme-text border-b border-theme-bg pb-5 mb-8 flex items-center gap-3 tracking-widest uppercase text-[10px]">
-                <Icons.Library /> Instruction
-              </h4>
-              {currentPattern.type === 'TEXT' ? (
-                <div className="space-y-10">
-                  {(projectStats.sectionsSummary || []).map((sec) => {
-                    const isActive =
-                      projectStats.activeSection?.id === sec.id;
-                    return (
-                      <div
-                        key={sec.id}
-                        className={`relative pl-6 border-l-4 transition-all group ${
-                          isActive
-                            ? 'border-theme-primary scale-[1.02]'
-                            : 'border-theme-bg opacity-40 grayscale'
-                        }`}
-                      >
-                        <div className="flex flex-wrap items-center gap-3 mb-3">
-                          <span
-                            className={`text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full ${
-                              isActive
-                                ? 'bg-theme-primary text-white shadow-md'
-                                : 'bg-theme-bg'
-                            }`}
-                          >
-                            {sec.title}
-                          </span>
-                          <span className="text-[8px] font-bold opacity-30 uppercase tracking-tighter">
-                            {sec.rowsPerLoop} rows × {sec.repeats} times
-                          </span>
-                        </div>
-                        <div
-                          className={`font-zen-mono text-base leading-relaxed whitespace-pre-wrap ${
-                            isActive
-                              ? 'text-theme-text font-bold'
-                              : 'text-gray-400'
-                          }`}
-                        >
-                          {sec.content}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="flex flex-col items-center">
-                  {currentPattern.sections?.[0] && (
-                    <div className="inline-block bg-white border-4 border-theme-bg rounded-2xl p-2 shadow-inner overflow-x-auto max-w-full">
-                      <div
-                        className="grid gap-[1px] bg-theme-accent/30"
-                        style={{
-                          gridTemplateColumns: `repeat(${currentPattern.sections[0].cols}, 24px)`,
-                        }}
-                      >
-                        {currentPattern.sections[0].grid.map((row, r) =>
-                          row.map((cell, c) => {
-                            const localIdx =
-                              (currentProject.sectionRow - 1) %
-                              currentPattern.sections[0].rows;
-                            const isHighlight =
-                              r ===
-                              currentPattern.sections[0].rows - 1 - localIdx;
-                            return (
-                              <div
-                                key={`${r}-${c}`}
-                                className={`w-6 h-6 flex items-center justify-center text-[10px] font-zen-mono select-none ${
-                                  SYMBOLS[cell]?.color || 'bg-white'
-                                } ${
-                                  isHighlight
-                                    ? 'ring-2 ring-theme-primary z-10 scale-110 shadow-lg'
-                                    : 'opacity-40 grayscale'
-                                }`}
-                              >
-                                {SYMBOLS[cell]?.symbol}
-                              </div>
-                            );
-                          })
-                        )}
-                      </div>
-                    </div>
-                  )}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mt-4">
+            <div className="lg:col-span-5 space-y-6">
+              {currentPattern.notes && (
+                <div className="bg-theme-bg/40 p-5 rounded-[2rem] border border-theme-bg/60">
+                  <div className="text-[9px] font-black uppercase tracking-[0.2em] opacity-50 mb-2">
+                    Pattern Notes
+                  </div>
+                  <div className="text-sm text-theme-text whitespace-pre-wrap leading-relaxed">
+                    {currentPattern.notes}
+                  </div>
                 </div>
               )}
+              
             </div>
-            {/* 左側改成只放 Project Notes */}
-            <div className="bg-white p-6 rounded-[2rem] shadow-cozy border border-white space-y-3">
-              <div className="flex items-center justify-between gap-2">
-                <div>
-                  <div className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text/60 mb-1">
-                    Project Notes
+
+            <div className="lg:col-span-7 space-y-6">
+              <div className="bg-white p-8 rounded-[3rem] shadow-cozy border border-white min-h-[380px]">
+                <h4 className="font-black text-theme-text border-b border-theme-bg pb-5 mb-8 flex items-center gap-3 tracking-widest uppercase text-[10px]">
+                  <Icons.Library /> Instruction
+                </h4>
+                {currentPattern.type === 'TEXT' ? (
+                  <div className="space-y-10">
+                    {(projectStats.sectionsSummary || []).map((sec) => {
+                      const isActive =
+                        projectStats.activeSection?.id === sec.id;
+                      return (
+                        <div
+                          key={sec.id}
+                          className={`relative pl-6 border-l-4 transition-all group ${
+                            isActive
+                              ? 'border-theme-primary scale-[1.02]'
+                              : 'border-theme-bg opacity-40 grayscale'
+                          }`}
+                        >
+                          <div className="flex flex-wrap items-center gap-3 mb-3">
+                            <span
+                              className={`text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full ${
+                                isActive
+                                  ? 'bg-theme-primary text-white shadow-md'
+                                  : 'bg-theme-bg'
+                              }`}
+                            >
+                              {sec.title}
+                            </span>
+                            <span className="text-[8px] font-bold opacity-30 uppercase tracking-tighter">
+                              {sec.rowsPerLoop} rows × {sec.repeats} times
+                            </span>
+                          </div>
+                          <div
+                            className={`font-zen-mono text-base leading-relaxed whitespace-pre-wrap ${
+                              isActive
+                                ? 'text-theme-text font-bold'
+                                : 'text-gray-400'
+                            }`}
+                          >
+                            {sec.content}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                  <div className="text-xs text-theme-text/60">
-                    織到一半的狀況、試穿感想、改版紀錄…
+                ) : (
+                  <div className="flex flex-col items-center">
+                    {currentPattern.sections?.[0] && (
+                      <div className="inline-block bg-white border-4 border-theme-bg rounded-2xl p-2 shadow-inner overflow-x-auto max-w-full">
+                        <div
+                          className="grid gap-[1px] bg-theme-accent/30"
+                          style={{
+                            gridTemplateColumns: `repeat(${currentPattern.sections[0].cols}, 24px)`,
+                          }}
+                        >
+                          {currentPattern.sections[0].grid.map((row, r) =>
+                            row.map((cell, c) => {
+                              const localIdx =
+                                (currentProject.sectionRow - 1) %
+                                currentPattern.sections[0].rows;
+                              const isHighlight =
+                                r ===
+                                currentPattern.sections[0].rows - 1 - localIdx;
+                              return (
+                                <div
+                                  key={`${r}-${c}`}
+                                  className={`w-6 h-6 flex items-center justify-center text-[10px] font-zen-mono select-none ${
+                                    SYMBOLS[cell]?.color || 'bg-white'
+                                  } ${
+                                    isHighlight
+                                      ? 'ring-2 ring-theme-primary z-10 scale-110 shadow-lg'
+                                      : 'opacity-40 grayscale'
+                                  }`}
+                                >
+                                  {SYMBOLS[cell]?.symbol}
+                                </div>
+                              );
+                            })
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+              {/* 左側改成只放 Project Notes */}
+              <div className="bg-white p-6 rounded-[2rem] shadow-cozy border border-white space-y-3">
+                <div className="flex items-center justify-between gap-2">
+                  <div>
+                    <div className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text/60 mb-1">
+                      Project Notes
+                    </div>
+                    <div className="text-xs text-theme-text/60">
+                      織到一半的狀況、試穿感想、改版紀錄…
+                    </div>
                   </div>
                 </div>
+                <textarea
+                  className="w-full mt-2 bg-theme-bg/40 rounded-2xl p-3.5 text-sm leading-relaxed border-none focus:ring-2 ring-theme-primary/20 min-h-[100px] resize-none"
+                  placeholder="例：第 35 排發現麻花偏緊，下次改 4.5mm 棒針；袖長預計多織 5cm。"
+                  value={currentProject.notes || ''}
+                  onChange={(e) =>
+                    onUpdateProject({
+                      ...currentProject,
+                      notes: e.target.value,
+                    })
+                  }
+                />
               </div>
-              <textarea
-                className="w-full mt-2 bg-theme-bg/40 rounded-2xl p-3.5 text-sm leading-relaxed border-none focus:ring-2 ring-theme-primary/20 min-h-[100px] resize-none"
-                placeholder="例：第 35 排發現麻花偏緊，下次改 4.5mm 棒針；袖長預計多織 5cm。"
-                value={currentProject.notes || ''}
-                onChange={(e) =>
-                  onUpdateProject({
-                    ...currentProject,
-                    notes: e.target.value,
-                  })
-                }
-              />
+            
             </div>
-           
           </div>
         </div>
       </div>
-      
       
       {/* 底部常駐：Section Loop + Currently + Counter */}
       {currentPartProgress && (
