@@ -1398,7 +1398,7 @@ function ProjectView({
     currentProject.projectName || currentProject.patternName;
 
   return (
-      <div className="flex flex-col h-screen bg-theme-bg animate-fade-in relative overflow-hidden">
+      <div className="fixed inset-0 flex flex-col bg-theme-bg animate-fade-in overflow-hidden">
       {showAlertOverlay && currentAlerts.length > 0 && (
         <div className="absolute inset-x-0 top-20 z-40 px-4 md:px-0">
           <div className="max-w-xl mx-auto bg-theme-primary text-white rounded-[2.25rem] shadow-2xl border border-white/30 px-6 py-4 flex items-start gap-3">
@@ -1443,8 +1443,8 @@ function ProjectView({
       )}
 
       {/* 上方標題列 */}
-      <div className="flex-none bg-white/80 backdrop-blur p-4 border-b ... sticky top-0 z-30 shadow-sm">
-      <button
+      <div className="flex-none bg-white/80 backdrop-blur p-4 border-b flex justify-between items-center z-30 shadow-sm">
+        <button
           onClick={() => setSelectedId(null)}
           className="text-gray-400 font-bold px-2 uppercase text-[10px] tracking-widest"
         >
@@ -1457,8 +1457,7 @@ function ProjectView({
       </div>
 
       {/* 中間可捲動內容 */}
-      <div className="flex-1 overflow-y-auto p-4 md:p-10 space-y-8 pb-60">
-        <div className="p-4 md:p-10 space-y-8 pb-40">
+      <div className="flex-1 overflow-y-auto px-4 py-8 md:px-10 space-y-8">
           <div className="bg-white p-6 rounded-[2rem] shadow-cozy border border-white flex flex-col gap-2">
             <div className="flex justify-between items-end gap-3">
               <div className="flex-1">
@@ -1762,171 +1761,174 @@ function ProjectView({
                   }
                 />
               </div>
-            
+              <div className="h-64" />
             </div>
-          </div>
         </div>
       </div>
       
       {/* 底部常駐：Section Loop + Currently + Counter */}
       {currentPartProgress && (
-        <>
-        {/* 浮動當前指令：固定在計數器上方 */}
-        {activeInstructionText && (
-          <div className="fixed bottom-[5.5rem] md:bottom-[6rem] left-0 right-0 px-4 md:px-8 z-40">
-            <div
-              className="max-w-5xl mx-auto bg-white/95 backdrop-blur rounded-[2rem] shadow-cozy border border-theme-bg/60 px-4 py-3 md:px-6 md:py-4 cursor-pointer"
-              onClick={() => setShowFullInstruction((v) => !v)}
-            >
-              <div className="flex items-start gap-3">
-                <div className="mt-1 w-6 h-6 rounded-full bg-theme-primary/10 flex items-center justify-center text-[11px] font-black text-theme-primary">
-                  Now
-                </div>
-                <div className="flex-1 overflow-hidden">
-                  {/* 標題：段落名稱 */}
-                  {activeInstruction?.title && (
-                    <div className="text-[11px] font-semibold text-theme-text/70 mb-1">
-                      {activeInstruction.title}
-                    </div>
-                  )}
-                  {/* 內容：當前指令文字（預設最多幾行） */}
-                  <div
-                    className={
-                      'text-xs md:text-sm text-theme-text/90 whitespace-pre-wrap leading-relaxed ' +
-                      (showFullInstruction ? 'max-h-64 overflow-y-auto' : 'max-h-12 overflow-hidden')
-                    }
-                  >
-                    {activeInstructionText}
-                  </div>
-                  {!showFullInstruction && (
-                    <div className="mt-1 text-[10px] text-theme-text/40">
-                      點擊展開完整指令…
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-        
-        <div className="fixed bottom-0 left-0 right-0 border-t bg-white/95 backdrop-blur px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] md:px-8 md:py-4 shadow-[0_-4px_12px_rgba(0,0,0,0.04)] z-30">
-          <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-            {/* 左：Section Loop（文字完全維持原本格式） */}
-            <div className="w-full md:w-auto text-theme-text/70">
-              <div className="text-[10px] font-black uppercase tracking-[0.25em] text-theme-text/50 mb-1">
-                Section Loop
-              </div>
-              {sectionLoopInfo ? (
-                <div className="border-l border-theme-text/10 pl-3">
-                  {sectionLoopInfo.title && (
-                    <div className="text-sm md:text-base font-medium text-theme-text mb-0.5">
-                      {sectionLoopInfo.title}
-                    </div>
-                  )}
-                  <div className="text-[11px] md:text-xs text-theme-text/60 tabular-nums">
-                    第{' '}
-                    <span className="font-semibold text-theme-text/90">
-                      {sectionLoopInfo.loopRow}
-                    </span>{' '}
-                    / {sectionLoopInfo.rowsPerLoop} 排
-                    <span className="mx-1 text-theme-text/30">|</span>
-                    第{' '}
-                    <span className="font-semibold text-theme-text/90">
-                      {sectionLoopInfo.loopIndex}
-                    </span>{' '}
-                    輪
-                  </div>
-                </div>
-              ) : (
-                <div className="text-[10px] opacity-50">
-                  尚未有 Section Loop 資訊
-                </div>
-              )}
-            </div>
+        <div className="flex-none relative z-40">
+          <div className="absolute bottom-0 left-0 right-0 pointer-events-none">
+            <div className="max-w-5xl mx-auto px-4 md:px-8 pointer-events-auto">
 
-            {/* 右：Currently + Row Counter */}
-            <div className="w-full md:w-auto flex items-center justify-end gap-4">
-              {/* 目前階段 Currently */}
-              <div className="hidden md:flex flex-col items-end mr-2">
-                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text/40 mb-0.5">
-                  Currently
-                </span>
-                <div className="text-xs text-theme-text/80 tabular-nums">
-                  {currentPartTitle && (
-                    <span className="font-semibold mr-2">{currentPartTitle}</span>
-                  )}
-                  {typeof currentRow === 'number' && typeof totalRows === 'number' && (
-                    <>
-                      第{' '}
-                      <span className="font-bold">
-                        {currentRow}
-                      </span>{' '}
-                      / {totalRows} 排
-                      <span className="mx-1 text-theme-text/30">•</span>
-                      進度 {progressPercent}%
-                    </>
-                  )}
-                </div>
-              </div>
-
-              {/* Row Counter 本尊（＋／－ 大顆版 + +n） */}
-              <div className="flex items-center gap-3">
-                <div className="flex flex-col items-end mr-1">
-                  <span className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text/40 mb-1">
-                    Row Counter
-                  </span>
-                  <div className="text-4xl md:text-5xl font-black text-theme-text tabular-nums leading-none">
-                    {currentTotalRow}
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={() => {
-                      update(-1);
-                      setShowAlertOverlay(false);
-                    }}
-                    className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-theme-bg text-theme-primary font-black text-2xl flex items-center justify-center active:scale-95 shadow-inner"
-                  >
-                    −
-                  </button>
-                  <button
-                    onClick={() => {
-                      update(1);
-                      setShowAlertOverlay(false);
-                    }}
-                    className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-theme-primary text-white font-black text-2xl flex items-center justify-center active:scale-95 shadow-lg shadow-theme-primary/40"
-                  >
-                    +
-                  </button>
-                  <div className="flex items-stretch gap-1 bg-theme-bg/80 rounded-full pl-3 pr-2 py-1.5">
-                    <input
-                      type="number"
-                      value={plusN}
-                      onChange={(e) => setPlusN(e.target.value)}
-                      placeholder="+n"
-                      className="w-16 bg-transparent border-none text-center font-black text-xs md:text-sm focus:ring-0 focus:outline-none tabular-nums placeholder:opacity-30"
-                    />
-                    <button
-                      onClick={() => {
-                        const n = parseInt(plusN);
-                        if (!isNaN(n)) {
-                          update(n);
-                          setShowAlertOverlay(false);
-                        }
-                        setPlusN('');
-                      }}
-                      className="px-3 md:px-4 rounded-full font-black text-[9px] md:text-[10px] tracking-[0.18em] uppercase bg-theme-text text-white flex items-center justify-center active:scale-95"
+              {/* 浮動當前指令：固定在計數器上方 */}
+              {activeInstructionText && (
+                    <div
+                      className="max-w-5xl mx-auto bg-white/95 backdrop-blur rounded-[2rem] shadow-cozy border border-theme-bg/60 px-4 py-3 md:px-6 md:py-4 cursor-pointer"
+                      onClick={() => setShowFullInstruction((v) => !v)}
                     >
-                      Go
-                    </button>
+                      <div className="flex items-start gap-3">
+                        <div className="mt-1 w-6 h-6 rounded-full bg-theme-primary/10 flex items-center justify-center text-[11px] font-black text-theme-primary">
+                          Now
+                        </div>
+                        <div className="flex-1 overflow-hidden">
+                          {/* 標題：段落名稱 */}
+                          {activeInstruction?.title && (
+                            <div className="text-[11px] font-semibold text-theme-text/70 mb-1">
+                              {activeInstruction.title}
+                            </div>
+                          )}
+                          {/* 內容：當前指令文字（預設最多幾行） */}
+                          <div
+                            className={
+                              'text-xs md:text-sm text-theme-text/90 whitespace-pre-wrap leading-relaxed ' +
+                              (showFullInstruction ? 'max-h-64 overflow-y-auto' : 'max-h-12 overflow-hidden')
+                            }
+                          >
+                            {activeInstructionText}
+                          </div>
+                          {!showFullInstruction && (
+                            <div className="mt-1 text-[10px] text-theme-text/40">
+                              點擊展開完整指令…
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+              )}
+          
+              <div className="bg-white/95 backdrop-blur border border-theme-bg/60 shadow-xl px-4 py-4 md:px-8 rounded-t-[2.5rem] mb-0">
+                <div className="flex flex-col md:flex-row items-center justify-between gap-4 pb-[env(safe-area-inset-bottom)]">
+                  {/* 左：Section Loop（文字完全維持原本格式） */}
+                  <div className="w-full md:w-auto text-theme-text/70">
+                    <div className="text-[10px] font-black uppercase tracking-[0.25em] text-theme-text/50 mb-1">
+                      Section Loop
+                    </div>
+                    {sectionLoopInfo ? (
+                      <div className="border-l border-theme-text/10 pl-3">
+                        {sectionLoopInfo.title && (
+                          <div className="text-sm md:text-base font-medium text-theme-text mb-0.5">
+                            {sectionLoopInfo.title}
+                          </div>
+                        )}
+                        <div className="text-[11px] md:text-xs text-theme-text/60 tabular-nums">
+                          第{' '}
+                          <span className="font-semibold text-theme-text/90">
+                            {sectionLoopInfo.loopRow}
+                          </span>{' '}
+                          / {sectionLoopInfo.rowsPerLoop} 排
+                          <span className="mx-1 text-theme-text/30">|</span>
+                          第{' '}
+                          <span className="font-semibold text-theme-text/90">
+                            {sectionLoopInfo.loopIndex}
+                          </span>{' '}
+                          輪
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-[10px] opacity-50">
+                        尚未有 Section Loop 資訊
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 右：Currently + Row Counter */}
+                  <div className="w-full md:w-auto flex items-center justify-end gap-4">
+                    {/* 目前階段 Currently */}
+                    <div className="hidden md:flex flex-col items-end mr-2">
+                      <span className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text/40 mb-0.5">
+                        Currently
+                      </span>
+                      <div className="text-xs text-theme-text/80 tabular-nums">
+                        {currentPartTitle && (
+                          <span className="font-semibold mr-2">{currentPartTitle}</span>
+                        )}
+                        {typeof currentRow === 'number' && typeof totalRows === 'number' && (
+                          <>
+                            第{' '}
+                            <span className="font-bold">
+                              {currentRow}
+                            </span>{' '}
+                            / {totalRows} 排
+                            <span className="mx-1 text-theme-text/30">•</span>
+                            進度 {progressPercent}%
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Row Counter 本尊（＋／－ 大顆版 + +n） */}
+                    <div className="flex items-center gap-3">
+                      <div className="flex flex-col items-end mr-1">
+                        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text/40 mb-1">
+                          Row Counter
+                        </span>
+                        <div className="text-4xl md:text-5xl font-black text-theme-text tabular-nums leading-none">
+                          {currentTotalRow}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={() => {
+                            update(-1);
+                            setShowAlertOverlay(false);
+                          }}
+                          className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-theme-bg text-theme-primary font-black text-2xl flex items-center justify-center active:scale-95 shadow-inner"
+                        >
+                          −
+                        </button>
+                        <button
+                          onClick={() => {
+                            update(1);
+                            setShowAlertOverlay(false);
+                          }}
+                          className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-theme-primary text-white font-black text-2xl flex items-center justify-center active:scale-95 shadow-lg shadow-theme-primary/40"
+                        >
+                          +
+                        </button>
+                        <div className="flex items-stretch gap-1 bg-theme-bg/80 rounded-full pl-3 pr-2 py-1.5">
+                          <input
+                            type="number"
+                            value={plusN}
+                            onChange={(e) => setPlusN(e.target.value)}
+                            placeholder="+n"
+                            className="w-16 bg-transparent border-none text-center font-black text-xs md:text-sm focus:ring-0 focus:outline-none tabular-nums placeholder:opacity-30"
+                          />
+                          <button
+                            onClick={() => {
+                              const n = parseInt(plusN);
+                              if (!isNaN(n)) {
+                                update(n);
+                                setShowAlertOverlay(false);
+                              }
+                              setPlusN('');
+                            }}
+                            className="px-3 md:px-4 rounded-full font-black text-[9px] md:text-[10px] tracking-[0.18em] uppercase bg-theme-text text-white flex items-center justify-center active:scale-95"
+                          >
+                            Go
+                          </button>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-        </>
+
       )}
 
     </div>
