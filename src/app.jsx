@@ -1398,7 +1398,8 @@ function ProjectView({
     currentProject.projectName || currentProject.patternName;
 
   return (
-      <div className="flex flex-col h-screen bg-theme-bg animate-fade-in relative overflow-hidden">      {showAlertOverlay && currentAlerts.length > 0 && (
+      <div className="flex flex-col h-screen bg-theme-bg animate-fade-in relative overflow-hidden">
+      {showAlertOverlay && currentAlerts.length > 0 && (
         <div className="absolute inset-x-0 top-20 z-40 px-4 md:px-0">
           <div className="max-w-xl mx-auto bg-theme-primary text-white rounded-[2.25rem] shadow-2xl border border-white/30 px-6 py-4 flex items-start gap-3">
             <div className="w-10 h-10 bg-white/15 rounded-2xl flex items-center justify-center text-2xl">
@@ -1442,7 +1443,8 @@ function ProjectView({
       )}
 
       {/* 上方標題列 */}
-      <div className="flex-none bg-white/80 backdrop-blur p-4 border-b ... sticky top-0 z-30 shadow-sm">        <button
+      <div className="flex-none bg-white/80 backdrop-blur p-4 border-b ... sticky top-0 z-30 shadow-sm">
+      <button
           onClick={() => setSelectedId(null)}
           className="text-gray-400 font-bold px-2 uppercase text-[10px] tracking-widest"
         >
