@@ -921,6 +921,21 @@ function ProjectView({
     return { targetTotal: cumulativeRows, sectionsSummary: summary, activeSection };
   }, [currentPattern, currentPatternPart, currentTotalRow]);
 
+  const currentPartTitle =
+    currentPatternPart?.name || currentPatternPart?.title || '目前部位';
+
+  const currentRow = currentTotalRow;
+
+  const totalRows =
+    currentPattern?.type === 'TEXT' && projectStats.targetTotal
+      ? projectStats.targetTotal
+      : null;
+
+  const progressPercent =
+    typeof totalRows === 'number' && totalRows > 0
+      ? Math.round((currentRow / totalRows) * 100)
+      : 0;
+
   const listProjects = useMemo(() => {
     const filtered =
       categoryFilter && categoryFilter !== 'ALL'
