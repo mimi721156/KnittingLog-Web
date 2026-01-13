@@ -1398,7 +1398,7 @@ function ProjectView({
     currentProject.projectName || currentProject.patternName;
 
   return (
-      <div className="fixed inset-0 flex flex-col bg-theme-bg animate-fade-in overflow-hidden">
+      <div className="flex-1 flex flex-col min-h-0 bg-theme-bg relative overflow-hidden">
       {showAlertOverlay && currentAlerts.length > 0 && (
         <div className="absolute inset-x-0 top-20 z-40 px-4 md:px-0">
           <div className="max-w-xl mx-auto bg-theme-primary text-white rounded-[2.25rem] shadow-2xl border border-white/30 px-6 py-4 flex items-start gap-3">
@@ -1761,22 +1761,21 @@ function ProjectView({
                   }
                 />
               </div>
-              <div className="h-64" />
+              <div className="h-72" />
             </div>
         </div>
       </div>
       
       {/* 底部常駐：Section Loop + Currently + Counter */}
       {currentPartProgress && (
-        <div className="flex-none relative z-40">
-          <div className="absolute bottom-0 left-0 right-0 pointer-events-none">
-            <div className="max-w-5xl mx-auto px-4 md:px-8 pointer-events-auto">
+        <div className="absolute bottom-0 left-0 right-0 z-40 pointer-events-none">
+          <div className="max-w-5xl mx-auto px-4 md:px-8 pb-[calc(1rem+env(safe-area-inset-bottom))]">
 
               {/* 浮動當前指令：固定在計數器上方 */}
               {activeInstructionText && (
-                    <div
-                      className="max-w-5xl mx-auto bg-white/95 backdrop-blur rounded-[2rem] shadow-cozy border border-theme-bg/60 px-4 py-3 md:px-6 md:py-4 cursor-pointer"
-                      onClick={() => setShowFullInstruction((v) => !v)}
+                    <div 
+                      className="mb-3 pointer-events-auto bg-white/95 backdrop-blur rounded-[2rem] shadow-lg border border-theme-bg/60 px-5 py-4 cursor-pointer"
+                      onClick={() => setShowFullInstruction(!showFullInstruction)}
                     >
                       <div className="flex items-start gap-3">
                         <div className="mt-1 w-6 h-6 rounded-full bg-theme-primary/10 flex items-center justify-center text-[11px] font-black text-theme-primary">
@@ -1808,8 +1807,8 @@ function ProjectView({
                     </div>
               )}
           
-              <div className="bg-white/95 backdrop-blur border border-theme-bg/60 shadow-xl px-4 py-4 md:px-8 rounded-t-[2.5rem] mb-0">
-                <div className="flex flex-col md:flex-row items-center justify-between gap-4 pb-[env(safe-area-inset-bottom)]">
+              <div className="pointer-events-auto bg-white/95 backdrop-blur rounded-[2.5rem] border border-theme-accent/10 shadow-xl p-4 md:px-8">
+               <div className="flex flex-col md:flex-row items-center justify-between gap-4">
                   {/* 左：Section Loop（文字完全維持原本格式） */}
                   <div className="w-full md:w-auto text-theme-text/70">
                     <div className="text-[10px] font-black uppercase tracking-[0.25em] text-theme-text/50 mb-1">
@@ -1927,7 +1926,6 @@ function ProjectView({
               </div>
             </div>
           </div>
-        </div>
 
       )}
 
