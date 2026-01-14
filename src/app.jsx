@@ -488,10 +488,6 @@ const normalizeProject = (p) => {
     </div>
   );
 
-  // 先算出：現在是不是「專案詳細頁（選了某個 project）」
-  // 看你的邏輯，選了 project 才會出現那個 counter 畫面
-  const isProjectDetail =
-    view === 'PROJECTS' && !!selectedProjectId; // 如果 detail 只在沒有 currentPattern 時出現，也可以再加 && !currentPattern
 
 
 
@@ -3372,6 +3368,11 @@ function App() {
       : savedPatterns.some(
           (p) => (p.category || '未分類') === categoryFilter
         );
+
+  // 先算出：現在是不是「專案詳細頁（選了某個 project）」
+  // 看你的邏輯，選了 project 才會出現那個 counter 畫面
+  const isProjectDetail =
+    view === 'PROJECTS' && !!selectedProjectId; // 如果 detail 只在沒有 currentPattern 時出現，也可以再加 && !currentPattern
 
 
   return (
