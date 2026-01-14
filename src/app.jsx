@@ -50,7 +50,7 @@ const THEMES = {
     id: 'PINK',
     primary: '#c48e8e',
     bg: '#faf3f3',
-    text: '#735252', 
+    text: '#735252',
     accent: '#ebcfcf',
   },
   DARK: {
@@ -3049,7 +3049,7 @@ function LibraryView({
 
             {/* 內容區 */}
             <div className="p-6 md:p-7 flex-1 flex flex-col relative">
-              {/* 類別＋日期 */}
+              {/* 類別＋日期
               <div className="mb-4">
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-[10px] font-black opacity-30 uppercase tracking-[0.2em]">
@@ -3063,7 +3063,7 @@ function LibraryView({
                 <div className="text-[10px] font-black opacity-30 uppercase tracking-[0.18em]">
                   {new Date(ptn.updatedAt).toLocaleDateString()}
                 </div>
-              </div>
+              </div> */}
 
               {/* 標題 */}
               <h3 className="text-xl md:text-2xl font-black text-theme-text tracking-tight leading-tight mb-4 group-hover:translate-x-[1px] transition-transform">
