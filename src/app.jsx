@@ -1548,7 +1548,7 @@ function ProjectView({
 
         {/* 中間可捲動內容 */}
         {/* 中間主要內容：只保留部位切換 + 底部 Panel 區域 */}
-        <div className="flex-1 px-4 py-4 md:px-10 flex flex-col">
+        <div className="flex-1 px-4 py-4 md:px-10 flex flex-col overflow-hidden">
           {/* 部位切換按鈕列 */}
           {currentProject.partsProgress && currentProject.partsProgress.length > 0 && (
             <div className="flex flex-wrap gap-2 mb-3">
@@ -1582,7 +1582,7 @@ function ProjectView({
           )}
 
           {/* 🆕 提醒區：固定高度，覆蓋於中間，不撐開主要版面 */}
-          <div className="relative h-12 md:h-14 mb-1">
+          <div className="relative h-4 mb-1">
             {showAlertOverlay && currentAlerts.length > 0 && (
               <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
                 <div className="max-w-xl w-full px-1 sm:px-0">
@@ -1631,14 +1631,11 @@ function ProjectView({
           </div>
 
           {/* 讓下面 Panel 靠近畫面底部 */}
-          <div className="flex-1 flex flex-col justify-end">
+          <div className="flex-none mt-1">
             {/* 底部 Panel 等一下放進來（第 3 段） */}
-            {currentPartProgress && (
-              <div className="mt-1">
                 {/* 底部常駐：Section Loop + Currently + Counter */}
                 {currentPartProgress && (
                     <div className="max-w-5xl mx-auto px-4 md:px-8 pb-[calc(1rem+env(safe-area-inset-bottom))]">
-
                       {/* 浮動當前指令：固定在計數器上方（這段你原本的可以保留） */}
                       {activeInstructionText && (
                         <div
@@ -1822,8 +1819,6 @@ function ProjectView({
                       </div>{/* /pointer-events-auto + bg-white */}
                     </div>
                 )}
-              </div>
-            )}
           </div>
         </div>
 
@@ -3673,4 +3668,3 @@ function App() {
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(<App />);
-
