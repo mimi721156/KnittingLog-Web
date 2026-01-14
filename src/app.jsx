@@ -2327,11 +2327,14 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
   };
 
   return (
-  <div
-      style={containerStyle}
-      className="flex flex-col h-screen pb-safe overflow-hidden animate-fade-in font-sans transition-colors duration-500"
-    >
-      {/* ===== 1. 頂部導覽列（手機 + 電腦共用） ===== */}
+    <div
+    style={{
+      backgroundColor: 'var(--bg-color)',
+      color: 'var(--text-color)',
+    }}
+    className="flex flex-col h-screen pb-safe overflow-hidden animate-fade-in font-sans transition-colors duration-500"
+  >
+      {/* 頂部導覽列 */}
       <header className="h-16 px-4 md:px-6 bg-white/95 backdrop-blur border-b border-gray-100 flex justify-between items-center z-40 shadow-sm">
         {/* 左：返回 + 標題 */}
         <div className="flex items-center gap-2 md:gap-4">
@@ -2347,10 +2350,10 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
           </h2>
         </div>
 
-        {/* 中：內容 / 提醒 Tab 切換（沿用樣式.txt 的膠囊樣式） */}
+        {/* 中：內容 / 提醒 Tab 切換（膠囊樣式） */}
         <div
           className="flex p-1 rounded-2xl shadow-inner"
-          style={{ backgroundColor: theme.accent + '33' }}
+          style={{ backgroundColor: 'var(--accent-color)' }}
         >
           <button
             onClick={() => setActiveTab('CONTENT')}
@@ -2361,7 +2364,9 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
             }`}
             style={{
               color:
-                activeTab === 'CONTENT' ? theme.text : theme.text,
+                activeTab === 'CONTENT'
+                  ? 'var(--text-color)'
+                  : 'var(--text-color)',
             }}
           >
             編輯內容
@@ -2375,7 +2380,9 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
             }`}
             style={{
               color:
-                activeTab === 'ALERTS' ? theme.text : theme.text,
+                activeTab === 'ALERTS'
+                  ? 'var(--text-color)'
+                  : 'var(--text-color)',
             }}
           >
             提醒規則
@@ -2384,22 +2391,20 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
 
         {/* 右：手機設定抽屜按鈕 + Save */}
         <div className="flex items-center gap-2">
-          {/* 手機設定抽屜（只在小螢幕顯示） */}
           <button
             onClick={() => setShowMobileSidebar(true)}
             className="md:hidden p-2 rounded-full"
-            style={{ color: theme.text }}
+            style={{ color: 'var(--text-color)' }}
           >
             <Menu size={20} />
           </button>
-          {/* Save / Quick Save */}
           <button
-            onClick={() => {
-              onUpdate(data);
-              onBack();
-            }}
+            onClick={handleSaveAndBack}
             className="flex items-center gap-1 md:gap-2 px-4 md:px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-[0.18em] shadow-md hover:scale-105 transition-all"
-            style={{ backgroundColor: theme.primary, color: '#ffffff' }}
+            style={{
+              backgroundColor: 'var(--primary-color)',
+              color: '#ffffff',
+            }}
           >
             <Check size={14} className="md:hidden" />
             <span className="hidden md:inline">Save</span>
@@ -2408,12 +2413,9 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
         </div>
       </header>
 
-      {/* ===== 2. 主區域：左側控制台 + 右側內容 ===== */}
+      {/* 主區域 */}
       <div className="flex-1 flex overflow-hidden">
-        {/* ==== 左：設定 / 部位 / 備註 ====
-            - md 以上固定在左側
-            - 行動端走側邊抽屜（遮罩滑入）
-        */}
+        {/* 左側設定 / 部位 / 備註 */}
         <aside
           className={`
             fixed inset-0 z-50 md:relative md:z-0 md:w-80
@@ -2427,7 +2429,7 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
             }
           `}
         >
-          {/* 手機抽屜 header（關閉鈕） */}
+          {/* 手機抽屜 header */}
           <div className="md:hidden flex items-center justify-between px-4 py-3 border-b border-gray-100">
             <span className="text-[11px] font-black tracking-[0.2em] uppercase opacity-60">
               Pattern Settings
@@ -2465,7 +2467,7 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                   }
                   className="w-full text-lg md:text-xl font-black bg-transparent border-none p-0 focus:ring-0 tracking-tight"
                   placeholder="設計標題..."
-                  style={{ color: theme.text }}
+                  style={{ color: 'var(--text-color)' }}
                 />
               </div>
 
@@ -2476,8 +2478,8 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                 <select
                   className="w-full rounded-xl px-3 py-2 text-[11px] font-bold border-none focus:ring-2 text-sm"
                   style={{
-                    backgroundColor: theme.bg,
-                    color: theme.text,
+                    backgroundColor: 'var(--bg-color)',
+                    color: 'var(--text-color)',
                     boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.03)',
                   }}
                   value={data.category || '未分類'}
@@ -2488,7 +2490,7 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                     }))
                   }
                 >
-                  {(categoryOptions || []).map((c) => (
+                  {categoryOptions.map((c) => (
                     <option key={c} value={c}>
                       {c}
                     </option>
@@ -2496,7 +2498,7 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                 </select>
               </div>
 
-              {/* 總排數（僅文字織圖時顯示） */}
+              {/* 總排數（文字織圖時顯示） */}
               {data.type === 'TEXT' && (
                 <div className="pt-2">
                   <div className="text-[9px] font-black opacity-30 uppercase tracking-[0.25em]">
@@ -2504,12 +2506,91 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                   </div>
                   <div
                     className="text-2xl font-black tabular-nums tracking-tight"
-                    style={{ color: theme.primary }}
+                    style={{ color: 'var(--primary-color)' }}
                   >
                     {totalRows} 排
                   </div>
                 </div>
               )}
+
+              {/* 起針 / 針號 / 線材 */}
+              <div className="grid grid-cols-1 gap-3 pt-2">
+                <div>
+                  <label className="text-[9px] font-black opacity-40 uppercase tracking-[0.25em] block mb-1">
+                    Cast On 起針數
+                  </label>
+                  <input
+                    type="number"
+                    className="w-full rounded-xl px-3 py-2 text-[11px] border-none focus:ring-2"
+                    style={{
+                      backgroundColor: 'var(--bg-color)',
+                      color: 'var(--text-color)',
+                    }}
+                    value={data.meta.castOn || ''}
+                    onChange={(e) =>
+                      setData((prev) => ({
+                        ...prev,
+                        meta: {
+                          ...prev.meta,
+                          castOn: e.target.value,
+                        },
+                      }))
+                    }
+                  />
+                </div>
+                <div>
+                  <label className="text-[9px] font-black opacity-40 uppercase tracking-[0.25em] block mb-1">
+                    Needle 針號
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full rounded-xl px-3 py-2 text-[11px] border-none focus:ring-2"
+                    style={{
+                      backgroundColor: 'var(--bg-color)',
+                      color: 'var(--text-color)',
+                    }}
+                    value={data.meta.needle || ''}
+                    onChange={(e) =>
+                      setData((prev) => ({
+                        ...prev,
+                        meta: {
+                          ...prev.meta,
+                          needle: e.target.value,
+                        },
+                      }))
+                    }
+                  />
+                </div>
+                <div>
+                  <label className="text-[9px] font-black opacity-40 uppercase tracking-[0.25em] block mb-1">
+                    Yarn 線材
+                  </label>
+                  <select
+                    className="w-full rounded-xl px-3 py-2 text-[11px] border-none focus:ring-2"
+                    style={{
+                      backgroundColor: 'var(--bg-color)',
+                      color: 'var(--text-color)',
+                    }}
+                    value={data.meta.yarnId || ''}
+                    onChange={(e) =>
+                      setData((prev) => ({
+                        ...prev,
+                        meta: {
+                          ...prev.meta,
+                          yarnId: e.target.value || null,
+                        },
+                      }))
+                    }
+                  >
+                    <option value="">未指定</option>
+                    {yarnOptions.map((y) => (
+                      <option key={y.id} value={y.id}>
+                        {y.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
             </section>
 
             {/* 部位列表 */}
@@ -2519,35 +2600,15 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                   <div className="text-[9px] font-black opacity-30 uppercase tracking-[0.25em]">
                     Parts / 部位
                   </div>
-                  <div className="text-[11px] opacity-60">
+                  <div className="text-[11px] text-theme-text/60">
                     例如：前片、後片、左袖、右袖…
                   </div>
                 </div>
                 <button
-                  onClick={() => {
-                    const parts = data.parts || [];
-                    const defaultName = `部位 ${parts.length + 1}`;
-                    const input = window.prompt(
-                      '請輸入新的部位名稱：',
-                      defaultName
-                    );
-                    const name = (input ?? '').trim() || defaultName;
-                    const newPart = {
-                      id: crypto.randomUUID(),
-                      name,
-                      textSections: [],
-                      alerts: [],
-                    };
-                    setData((prev) => ({
-                      ...prev,
-                      parts: [...(prev.parts || []), newPart],
-                    }));
-                    setActivePartId(newPart.id);
-                    setShowMobileSidebar(false);
-                  }}
+                  onClick={handleAddPart}
                   className="text-[10px] px-3 py-1 rounded-full font-black tracking-[0.16em] uppercase shadow-sm"
                   style={{
-                    backgroundColor: theme.primary,
+                    backgroundColor: 'var(--primary-color)',
                     color: '#ffffff',
                   }}
                 >
@@ -2576,9 +2637,9 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                         }`}
                         style={{
                           backgroundColor: isActive
-                            ? theme.primary
-                            : theme.bg,
-                          color: isActive ? '#ffffff' : theme.text,
+                            ? 'var(--primary-color)'
+                            : 'var(--bg-color)',
+                          color: isActive ? '#ffffff' : 'var(--text-color)',
                         }}
                       >
                         {part.name}
@@ -2606,8 +2667,8 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                   <input
                     className="flex-1 rounded-full px-3 py-1.5 text-[11px] border-none focus:ring-2 text-sm"
                     style={{
-                      backgroundColor: theme.bg,
-                      color: theme.text,
+                      backgroundColor: 'var(--bg-color)',
+                      color: 'var(--text-color)',
                     }}
                     value={currentPart.name || ''}
                     onChange={(e) => {
@@ -2615,9 +2676,7 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                       setData((prev) => ({
                         ...prev,
                         parts: (prev.parts || []).map((p) =>
-                          p.id === currentPart.id
-                            ? { ...p, name: newName }
-                            : p
+                          p.id === currentPart.id ? { ...p, name: newName } : p
                         ),
                       }));
                     }}
@@ -2631,8 +2690,8 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
             <section
               className="rounded-2xl p-4 border space-y-2"
               style={{
-                backgroundColor: theme.bg,
-                borderColor: theme.accent,
+                backgroundColor: 'var(--bg-color)',
+                borderColor: 'var(--accent-color)',
               }}
             >
               <button
@@ -2641,19 +2700,18 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                 className="w-full flex items-center justify-between"
               >
                 <div className="flex items-center gap-2">
-                  <StickyNote size={14} style={{ color: theme.primary }} />
+                  <StickyNote
+                    size={14}
+                    style={{ color: 'var(--primary-color)' }}
+                  />
                   <span
                     className="text-[10px] font-black uppercase tracking-[0.22em]"
-                    style={{ color: theme.primary }}
+                    style={{ color: 'var(--primary-color)' }}
                   >
                     Pattern Notes
                   </span>
                 </div>
-                {isNotesOpen ? (
-                  <ChevronUp size={12} />
-                ) : (
-                  <ChevronDown size={12} />
-                )}
+                {isNotesOpen ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
               </button>
               {isNotesOpen && (
                 <textarea
@@ -2666,16 +2724,16 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                       notes: e.target.value,
                     }))
                   }
-                  style={{ color: theme.text }}
+                  style={{ color: 'var(--text-color)' }}
                 />
               )}
             </section>
           </div>
         </aside>
 
-        {/* ==== 右：內容工作區 ==== */}
+        {/* 右：內容工作區 */}
         <main className="flex-1 flex flex-col overflow-hidden relative">
-          {/* 行動端：部位橫向選單（吸頂） */}
+          {/* 行動端：部位橫向選單 */}
           <div className="md:hidden sticky top-16 z-30 bg-white/95 backdrop-blur border-b border-gray-100">
             <div className="flex overflow-x-auto no-scrollbar gap-2 p-3">
               {(data.parts || []).map((part) => (
@@ -2689,9 +2747,13 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                   }`}
                   style={{
                     backgroundColor:
-                      activePartId === part.id ? theme.primary : theme.bg,
+                      activePartId === part.id
+                        ? 'var(--primary-color)'
+                        : 'var(--bg-color)',
                     color:
-                      activePartId === part.id ? '#ffffff' : theme.text,
+                      activePartId === part.id
+                        ? '#ffffff'
+                        : 'var(--text-color)',
                   }}
                 >
                   {part.name}
@@ -2705,7 +2767,7 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
             className="flex-1 overflow-y-auto no-scrollbar p-4 md:p-10 space-y-8"
             ref={scrollContainerRef}
           >
-            {/* 吸頂工作區標頭（目前部位 + 新增段落） */}
+            {/* 吸頂工作區標頭 */}
             <div className="sticky top-0 z-20 -mx-4 md:mx-0 pb-3 mb-3 bg-gradient-to-b from-[rgba(255,255,255,0.96)] to-[rgba(255,255,255,0)] backdrop-blur">
               <div className="px-4 md:px-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
@@ -2713,10 +2775,13 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                     className="p-3 rounded-2xl shadow-sm border"
                     style={{
                       backgroundColor: '#ffffff',
-                      borderColor: theme.accent,
+                      borderColor: 'var(--accent-color)',
                     }}
                   >
-                    <Layers size={20} style={{ color: theme.primary }} />
+                    <Layers
+                      size={20}
+                      style={{ color: 'var(--primary-color)' }}
+                    />
                   </div>
                   <div>
                     <span className="text-[9px] font-black opacity-40 uppercase tracking-[0.25em]">
@@ -2731,7 +2796,7 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                           name: e.target.value,
                         }))
                       }
-                      style={{ color: theme.text }}
+                      style={{ color: 'var(--text-color)' }}
                     />
                   </div>
                 </div>
@@ -2739,9 +2804,9 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                   onClick={handleAddSection}
                   className="flex items-center justify-center gap-2 px-5 md:px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-[0.18em] shadow-lg transition-all hover:scale-105"
                   style={{
-                    backgroundColor: theme.primary,
+                    backgroundColor: 'var(--primary-color)',
                     color: '#ffffff',
-                    boxShadow: `0 10px 25px -6px ${theme.primary}55`,
+                    boxShadow: '0 10px 25px -6px var(--primary-color)',
                   }}
                 >
                   <Plus size={16} />
@@ -2750,22 +2815,21 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
               </div>
             </div>
 
-            {/* ===== 內容 / 提醒 切換 ===== */}
+            {/* 內容 / 提醒 Tab */}
             {activeTab === 'CONTENT' ? (
               <div className="space-y-8">
-                {/* 各個段落卡片 */}
+                {/* 文字織圖段落卡片 */}
                 {sectionsSource.map((sec, idx) => (
                   <div
                     key={sec.id}
                     className="bg-white rounded-[3rem] border shadow-cozy overflow-hidden group animate-fade-in"
-                    style={{ borderColor: theme.accent }}
+                    style={{ borderColor: 'var(--accent-color)' }}
                   >
-                    {/* 卡片 header：序號 + 段落標題 + 刪除 */}
                     <div
                       className="px-6 md:px-8 py-4 md:py-5 border-b flex items-center justify-between gap-4"
                       style={{
-                        backgroundColor: theme.bg,
-                        borderColor: theme.accent,
+                        backgroundColor: 'var(--bg-color)',
+                        borderColor: 'var(--accent-color)',
                       }}
                     >
                       <div className="flex items-center gap-3">
@@ -2773,8 +2837,8 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                           className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black border"
                           style={{
                             backgroundColor: '#ffffff',
-                            borderColor: theme.accent,
-                            color: theme.text,
+                            borderColor: 'var(--accent-color)',
+                            color: 'var(--text-color)',
                           }}
                         >
                           {idx + 1}
@@ -2784,17 +2848,14 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                           onChange={(e) =>
                             updateActivePart((p) => ({
                               ...p,
-                              textSections: (p.textSections || []).map(
-                                (s) =>
-                                  s.id === sec.id
-                                    ? { ...s, title: e.target.value }
-                                    : s
+                              textSections: (p.textSections || []).map((s) =>
+                                s.id === sec.id ? { ...s, title: e.target.value } : s
                               ),
                             }))
                           }
                           className="bg-transparent font-black text-sm md:text-base focus:ring-0 border-none p-0 tracking-tight uppercase"
                           placeholder="段落標題"
-                          style={{ color: theme.text }}
+                          style={{ color: 'var(--text-color)' }}
                         />
                       </div>
                       <button
@@ -2818,7 +2879,7 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                         <div
                           className="rounded-2xl p-4 shadow-sm space-y-1"
                           style={{
-                            backgroundColor: theme.bg,
+                            backgroundColor: 'var(--bg-color)',
                             boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.02)',
                           }}
                         >
@@ -2832,22 +2893,21 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                               const v = parseInt(e.target.value) || 0;
                               updateActivePart((p) => ({
                                 ...p,
-                                textSections: (p.textSections || []).map(
-                                  (s) =>
-                                    s.id === sec.id
-                                      ? { ...s, rowsPerLoop: v }
-                                      : s
+                                textSections: (p.textSections || []).map((s) =>
+                                  s.id === sec.id
+                                    ? { ...s, rowsPerLoop: v }
+                                    : s
                                 ),
                               }));
                             }}
                             className="w-full text-xl md:text-2xl font-black border-none p-0 focus:ring-0 tabular-nums bg-transparent"
-                            style={{ color: theme.text }}
+                            style={{ color: 'var(--text-color)' }}
                           />
                         </div>
                         <div
                           className="rounded-2xl p-4 shadow-sm space-y-1"
                           style={{
-                            backgroundColor: theme.bg,
+                            backgroundColor: 'var(--bg-color)',
                             boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.02)',
                           }}
                         >
@@ -2861,19 +2921,18 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                               const v = parseInt(e.target.value) || 0;
                               updateActivePart((p) => ({
                                 ...p,
-                                textSections: (p.textSections || []).map(
-                                  (s) =>
-                                    s.id === sec.id
-                                      ? { ...s, repeats: v }
-                                      : s
+                                textSections: (p.textSections || []).map((s) =>
+                                  s.id === sec.id
+                                    ? { ...s, repeats: v }
+                                    : s
                                 ),
                               }));
                             }}
                             className="w-full text-xl md:text-2xl font-black border-none p-0 focus:ring-0 tabular-nums bg-transparent"
-                            style={{ color: theme.text }}
+                            style={{ color: 'var(--text-color)' }}
                           />
                         </div>
-                        {/* 電腦端顯示單段落總排數 */}
+
                         <div
                           className="hidden md:flex flex-col justify-center rounded-2xl px-4 shadow-inner"
                           style={{
@@ -2910,23 +2969,22 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                         className="w-full min-h-[120px] md:min-h-[140px] rounded-3xl mt-2 px-4 py-3 text-sm leading-relaxed border-none focus:ring-2 resize-none font-mono"
                         placeholder="輸入此段落的編織說明..."
                         style={{
-                          backgroundColor: theme.bg,
-                          color: theme.text,
-                          boxShadow:
-                            'inset 0 0 0 1px rgba(0,0,0,0.02)',
+                          backgroundColor: 'var(--bg-color)',
+                          color: 'var(--text-color)',
+                          boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.02)',
                         }}
                       />
                     </div>
                   </div>
                 ))}
 
-                {/* 底部：快速新增下一段落（列表尾端入口） */}
+                {/* 底部：快速新增下一段落 */}
                 <button
                   onClick={handleAddSection}
                   className="w-full py-8 border-2 border-dashed rounded-[2.5rem] flex flex-col items-center justify-center gap-2 group transition-all"
                   style={{
-                    borderColor: theme.accent,
-                    color: theme.text,
+                    borderColor: 'var(--accent-color)',
+                    color: 'var(--text-color)',
                     backgroundColor: 'rgba(255,255,255,0.6)',
                   }}
                 >
@@ -2940,38 +2998,19 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                 </button>
               </div>
             ) : (
-              /* ===== 提醒規則 TAB ===== */
+              /* 提醒規則 TAB */
               <div className="space-y-8 animate-fade-in">
                 <div className="flex justify-between items-center px-1 md:px-0">
                   <h3 className="font-black text-xl tracking-tight opacity-70">
                     Smart Notifications
                   </h3>
                   <button
-                    onClick={() => {
-                      if (!currentPart) return;
-                      const base = alertsSource;
-                      const nextAlerts = [
-                        ...base,
-                        {
-                          id: crypto.randomUUID(),
-                          value: 1,
-                          mode: 'SPECIFIC',
-                          type: 'TOTAL',
-                          sectionId: 'ALL',
-                          startFrom: 1,
-                          message: '',
-                        },
-                      ];
-                      updateActivePart((p) => ({
-                        ...p,
-                        alerts: nextAlerts,
-                      }));
-                    }}
+                    onClick={addAlertRule}
                     className="px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-[0.16em] shadow-lg transition-all hover:scale-105"
                     style={{
-                      backgroundColor: theme.primary,
+                      backgroundColor: 'var(--primary-color)',
                       color: '#ffffff',
-                      boxShadow: `0 10px 24px -6px ${theme.primary}55`,
+                      boxShadow: '0 10px 24px -6px var(--primary-color)',
                     }}
                   >
                     + Add New Rule
@@ -2983,10 +3022,10 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                     <div
                       key={a.id}
                       className="bg-white p-7 md:p-9 rounded-[3rem] shadow-cozy border-2 flex flex-col gap-6 group transition-all"
-                      style={{ borderColor: theme.accent }}
+                      style={{ borderColor: 'var(--accent-color)' }}
                     >
                       <div className="flex flex-wrap gap-4 items-center">
-                        {/* 模式：一次性 / 循環 */}
+                        {/* 模式 */}
                         <select
                           value={a.mode || 'SPECIFIC'}
                           onChange={(e) => {
@@ -2994,24 +3033,18 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                             updateActivePart((p) => ({
                               ...p,
                               alerts: (p.alerts || []).map((rule) =>
-                                rule.id === a.id
-                                  ? { ...rule, mode }
-                                  : rule
+                                rule.id === a.id ? { ...rule, mode } : rule
                               ),
                             }));
                           }}
                           className="text-[10px] font-black px-3.5 py-3 rounded-xl border-none uppercase tracking-[0.16em]"
                           style={{
-                            backgroundColor: theme.bg,
-                            color: theme.text,
+                            backgroundColor: 'var(--bg-color)',
+                            color: 'var(--text-color)',
                           }}
                         >
-                          <option value="SPECIFIC">
-                            第幾排提醒 (Once)
-                          </option>
-                          <option value="EVERY">
-                            每幾排提醒 (Interval)
-                          </option>
+                          <option value="SPECIFIC">第幾排提醒 (Once)</option>
+                          <option value="EVERY">每幾排提醒 (Interval)</option>
                         </select>
 
                         {/* 起始排（EVERY 才顯示） */}
@@ -3029,22 +3062,20 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                                     : a.value || 1
                                 }
                                 onChange={(e) => {
-                                  const v =
-                                    parseInt(e.target.value) || 1;
+                                  const v = parseInt(e.target.value) || 1;
                                   updateActivePart((p) => ({
                                     ...p,
-                                    alerts: (p.alerts || []).map(
-                                      (rule) =>
-                                        rule.id === a.id
-                                          ? { ...rule, startFrom: v }
-                                          : rule
+                                    alerts: (p.alerts || []).map((rule) =>
+                                      rule.id === a.id
+                                        ? { ...rule, startFrom: v }
+                                        : rule
                                     ),
                                   }));
                                 }}
                                 className="w-16 text-center font-black border-none tabular-nums rounded-xl px-2 py-1.5 focus:ring-2"
                                 style={{
-                                  backgroundColor: theme.bg,
-                                  color: theme.text,
+                                  backgroundColor: 'var(--bg-color)',
+                                  color: 'var(--text-color)',
                                 }}
                               />
                               <span className="text-[10px] font-black opacity-40 uppercase tracking-[0.16em]">
@@ -3058,22 +3089,18 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                             type="number"
                             value={a.value || 1}
                             onChange={(e) => {
-                              const v =
-                                parseInt(e.target.value) || 1;
+                              const v = parseInt(e.target.value) || 1;
                               updateActivePart((p) => ({
                                 ...p,
-                                alerts: (p.alerts || []).map(
-                                  (rule) =>
-                                    rule.id === a.id
-                                      ? { ...rule, value: v }
-                                      : rule
+                                alerts: (p.alerts || []).map((rule) =>
+                                  rule.id === a.id ? { ...rule, value: v } : rule
                                 ),
                               }));
                             }}
                             className="w-20 text-center font-black border-none tabular-nums rounded-xl px-2 py-1.5 focus:ring-2"
                             style={{
-                              backgroundColor: theme.bg,
-                              color: theme.text,
+                              backgroundColor: 'var(--bg-color)',
+                              color: 'var(--text-color)',
                             }}
                           />
                           <span className="text-[10px] font-black opacity-40 uppercase tracking-[0.16em]">
@@ -3089,23 +3116,18 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                               const sectionId = e.target.value;
                               updateActivePart((p) => ({
                                 ...p,
-                                alerts: (p.alerts || []).map(
-                                  (rule) =>
-                                    rule.id === a.id
-                                      ? { ...rule, sectionId }
-                                      : rule
+                                alerts: (p.alerts || []).map((rule) =>
+                                  rule.id === a.id ? { ...rule, sectionId } : rule
                                 ),
                               }));
                             }}
                             className="text-[10px] font-black px-3.5 py-3 rounded-xl border-none uppercase tracking-[0.16em] ml-auto min-w-[140px]"
                             style={{
-                              backgroundColor: theme.primary + '1a',
-                              color: theme.primary,
+                              backgroundColor: 'color-mix(in srgb, var(--primary-color) 10%, transparent)',
+                              color: 'var(--primary-color)',
                             }}
                           >
-                            <option value="ALL">
-                              適用所有區段
-                            </option>
+                            <option value="ALL">適用所有區段</option>
                             {sectionsSource.map((sec) => (
                               <option key={sec.id} value={sec.id}>
                                 限：{sec.title || '未命名段落'}
@@ -3114,25 +3136,22 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                           </select>
                         )}
 
-                        {/* 類型：總排數 / 區段 */}
+                        {/* 類型 */}
                         <select
                           value={a.type || 'TOTAL'}
                           onChange={(e) => {
                             const type = e.target.value;
                             updateActivePart((p) => ({
                               ...p,
-                              alerts: (p.alerts || []).map(
-                                (rule) =>
-                                  rule.id === a.id
-                                    ? { ...rule, type }
-                                    : rule
+                              alerts: (p.alerts || []).map((rule) =>
+                                rule.id === a.id ? { ...rule, type } : rule
                               ),
                             }));
                           }}
                           className="text-[10px] font-black px-3.5 py-3 rounded-xl border-none uppercase tracking-[0.16em]"
                           style={{
-                            backgroundColor: theme.bg,
-                            color: theme.text,
+                            backgroundColor: 'var(--bg-color)',
+                            color: 'var(--text-color)',
                           }}
                         >
                           <option value="TOTAL">累計總排數</option>
@@ -3155,10 +3174,13 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                         </button>
                       </div>
 
-                      {/* 提醒訊息輸入框（左邊加一個 Bell icon） */}
+                      {/* 提醒訊息輸入框 */}
                       <div className="relative">
                         <div className="absolute left-4 top-1/2 -translate-y-1/2 opacity-40">
-                          <Bell size={18} style={{ color: theme.primary }} />
+                          <Bell
+                            size={18}
+                            style={{ color: 'var(--primary-color)' }}
+                          />
                         </div>
                         <input
                           value={a.message || ''}
@@ -3167,17 +3189,15 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                             updateActivePart((p) => ({
                               ...p,
                               alerts: (p.alerts || []).map((rule) =>
-                                rule.id === a.id
-                                  ? { ...rule, message: msg }
-                                  : rule
+                                rule.id === a.id ? { ...rule, message: msg } : rule
                               ),
                             }));
                           }}
                           className="w-full pl-12 pr-5 py-4 rounded-[2rem] border-none focus:ring-2 text-sm font-bold"
                           placeholder="提醒內容（例如：該扭麻花了、該加一針了…）"
                           style={{
-                            backgroundColor: theme.bg,
-                            color: theme.text,
+                            backgroundColor: 'var(--bg-color)',
+                            color: 'var(--text-color)',
                           }}
                         />
                       </div>
@@ -3192,7 +3212,7 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
         </main>
       </div>
 
-      {/* ===== 3. 行動端底部：進度 & Quick Save ===== */}
+      {/* 行動端底部：進度 & Quick Save */}
       <div className="md:hidden h-14 bg-white border-t border-gray-100 flex items-center justify-between px-6 z-30">
         <div className="flex items-center gap-2">
           <span className="text-[9px] font-black opacity-40 uppercase tracking-[0.16em]">
@@ -3200,23 +3220,21 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
           </span>
           <span
             className="text-sm font-black tabular-nums"
-            style={{ color: theme.primary }}
+            style={{ color: 'var(--primary-color)' }}
           >
             {totalRows} 排
           </span>
         </div>
         <button
-          onClick={() => {
-            onUpdate(data);
-            onBack();
-          }}
+          onClick={handleSaveAndBack}
           className="text-[10px] font-black uppercase tracking-[0.18em] px-4 py-2 rounded-lg shadow-sm"
-          style={{ backgroundColor: theme.primary, color: '#ffffff' }}
+          style={{ backgroundColor: 'var(--primary-color)', color: '#ffffff' }}
         >
           Quick Save
         </button>
       </div>
     </div>
+
   );
 }
 
