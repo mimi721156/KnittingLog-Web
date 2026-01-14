@@ -488,6 +488,11 @@ const normalizeProject = (p) => {
     </div>
   );
 
+  // 先算出：現在是不是「專案詳細頁（選了某個 project）」
+  // 看你的邏輯，選了 project 才會出現那個 counter 畫面
+  const isProjectDetail =
+    view === 'PROJECTS' && !!selectedProjectId; // 如果 detail 只在沒有 currentPattern 時出現，也可以再加 && !currentPattern
+
 
 
 // === GitHub Sync Dialog ===
@@ -1494,7 +1499,7 @@ function ProjectView({
     currentProject.projectName || currentProject.patternName;
 
   return (
-    <div className="h-screen flex flex-col bg-theme-bg relative overflow-hidden">
+    <div className="h-full flex flex-col bg-theme-bg relative overflow-hidden">
       {/* 1️⃣ 上方標題列：略縮一點高度 */}
       <div className="flex-none bg-white/80 backdrop-blur px-4 py-3 border-b flex items-center justify-between z-20 shadow-sm">
         {/* Left：返回 */}
@@ -3484,7 +3489,14 @@ function App() {
           </div>
         </div>
 
-        <main className="flex-1 overflow-y-auto no-scrollbar pb-safe">
+        <main
+          className={
+            'flex-1 pb-safe ' +
+            (isProjectDetail
+              ? 'overflow-hidden'                // ✅ detail 頁：不要捲動
+              : 'overflow-y-auto no-scrollbar')  // 其他頁：保持原本可捲動
+          }
+        >
           {(view === 'PROJECTS' || view === 'LIBRARY') &&
             !currentPattern &&
             !selectedProjectId && (
