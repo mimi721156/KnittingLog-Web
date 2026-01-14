@@ -2059,14 +2059,12 @@ function ProjectView({
                 </div>
               </div>
             )}
-          <div className="space-y-2">
-            <h4 className="font-black text-theme-text border-b border-theme-bg pb-3 mb-4 flex items-center gap-3 tracking-widest uppercase text-[10px]">
-                <Icons.StickyNote /> Project Notes
-            </h4>
-            <div className="text-xs text-theme-text/60">
-              織到一半的狀況、試穿感想、改版紀錄…
+          <div className="bg-theme-bg/40 p-4 rounded-[1.5rem] border border-theme-bg/60">
+            <div className="text-[9px] font-black uppercase tracking-[0.2em] opacity-50 mb-2">
+              Project Notes
             </div>
-            <textarea
+            <div className="text-sm text-theme-text whitespace-pre-wrap leading-relaxed">
+              <textarea
               className="w-full mt-2 bg-theme-bg/40 rounded-2xl p-3.5 text-sm leading-relaxed border-none focus:ring-2 ring-theme-primary/20 min-h-[180px] resize-none"
               placeholder="例：第 35 排發現麻花偏緊，下次改 4.5mm 棒針；袖長預計多織 5cm。"
               value={currentProject.notes || ''}
@@ -2077,6 +2075,7 @@ function ProjectView({
                 })
               }
             />
+            </div>
           </div>
         </Modal>
       )}
