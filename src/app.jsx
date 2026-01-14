@@ -11,6 +11,24 @@ import { loadFromGitHub, saveToGitHub } from './src/githubContentsApi.js';
 
 const { useState, useEffect, useMemo, useRef } = React;
 
+import { 
+  Save, 
+  X, 
+  Plus, 
+  Trash2, 
+  StickyNote, 
+  Bell, 
+  Layers, 
+  ChevronRight,
+  Hash,
+  Settings2,
+  ChevronDown,
+  ChevronUp,
+  Menu,
+  Check
+} from 'lucide-react';
+
+
 // === 基礎設定 ===
 
 const SYMBOLS = {
