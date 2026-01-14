@@ -186,6 +186,71 @@ const Icons = {
       <path d="M18 10a4 4 0 0 0-7.9-1A4 4 0 0 0 6 17h11a3 3 0 0 0 1-5.83" />
     </svg>
   ),
+  X: () => (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <line x1="18" y1="6" x2="6" y2="18" />
+      <line x1="6" y1="6" x2="18" y2="18" />
+    </svg>
+  ),
+  StickyNote: () => (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M6 3h9l5 5v13H6z" />
+      <path d="M15 3v5h5" />
+    </svg>
+  ),
+  ScrollText: () => (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M7 4h11a2 2 0 0 1 2 2v10" />
+      <path d="M7 20h10a2 2 0 0 0 2-2v-1" />
+      <path d="M7 4a2 2 0 0 0-2 2v10" />
+      <path d="M11 7h4" />
+      <path d="M9 11h6" />
+      <path d="M9 15h3" />
+    </svg>
+  ),
+  Sparkles: () => (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M12 3 9.5 9.5 3 12l6.5 2.5L12 21l2.5-6.5L21 12l-6.5-2.5z" />
+      <path d="M5 3l1 2 2 1-2 1-1 2-1-2-2-1 2-1z" />
+      <path d="M19 16l.5 1 .9.5-.9.5-.5 1-.5-1-.9-.5.9-.5z" />
+    </svg>
+  ),
 };
 
 // === 小工具 ===
@@ -863,6 +928,8 @@ function ProjectView({
 }) {
   const [plusN, setPlusN] = useState('');
   const [showAlertOverlay, setShowAlertOverlay] = useState(false);
+  const [activeModal, setActiveModal] = useState(null); // 👈 這行要加
+
 
   const currentProject = useMemo(
     () => activeProjects.find((x) => x.id === selectedId),
@@ -3602,4 +3669,3 @@ function App() {
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(<App />);
-
