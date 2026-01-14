@@ -1948,28 +1948,16 @@ function ProjectView({
 
         {activeModal === 'instruction' && (
         <Modal
-          title="織圖說明"
+          title="Instruction"
           onClose={() => setActiveModal(null)}
           icon={Icons.Library}
         >
           <div className="space-y-4">
-            {/* Pattern Notes */}
-            {currentPattern.notes && (
-              <div className="bg-theme-bg/40 p-4 rounded-[1.5rem] border border-theme-bg/60">
-                <div className="text-[9px] font-black uppercase tracking-[0.2em] opacity-50 mb-2">
-                  Pattern Notes
-                </div>
-                <div className="text-sm text-theme-text whitespace-pre-wrap leading-relaxed">
-                  {currentPattern.notes}
-                </div>
-              </div>
-            )}
-
             {/* Instruction 內容（沿用你原本的邏輯） */}
             <div className="bg-white p-6 rounded-[2rem] shadow-cozy border border-white min-h-[260px]">
-              <h4 className="font-black text-theme-text border-b border-theme-bg pb-3 mb-4 flex items-center gap-3 tracking-widest uppercase text-[10px]">
+              {/* <h4 className="font-black text-theme-text border-b border-theme-bg pb-3 mb-4 flex items-center gap-3 tracking-widest uppercase text-[10px]">
                 <Icons.Library /> Instruction
-              </h4>
+              </h4> */}
               {currentPattern.type === 'TEXT' ? (
                 <div className="space-y-8">
                   {(projectStats.sectionsSummary || []).map((sec) => {
@@ -2056,11 +2044,25 @@ function ProjectView({
 
         {activeModal === 'notes' && (
         <Modal
-          title="Project Notes"
+          title="Notes"
           onClose={() => setActiveModal(null)}
           icon={Icons.StickyNote}
         >
+          {/* Pattern Notes */}
+            {currentPattern.notes && (
+              <div className="bg-theme-bg/40 p-4 rounded-[1.5rem] border border-theme-bg/60">
+                <div className="text-[9px] font-black uppercase tracking-[0.2em] opacity-50 mb-2">
+                  Pattern Notes
+                </div>
+                <div className="text-sm text-theme-text whitespace-pre-wrap leading-relaxed">
+                  {currentPattern.notes}
+                </div>
+              </div>
+            )}
           <div className="space-y-2">
+            <h4 className="font-black text-theme-text border-b border-theme-bg pb-3 mb-4 flex items-center gap-3 tracking-widest uppercase text-[10px]">
+                <Icons.StickyNote /> Project Notes
+            </h4>
             <div className="text-xs text-theme-text/60">
               織到一半的狀況、試穿感想、改版紀錄…
             </div>
