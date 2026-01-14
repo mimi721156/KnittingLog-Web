@@ -2199,73 +2199,17 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
 
   const currentPart = useMemo(() => {
     if (!data.parts || !data.parts.length) return null;
-    if (!activePartId) return data.parts[0];
     return data.parts.find((p) => p.id === activePartId) || data.parts[0];
   }, [data.parts, activePartId]);
 
-  const sectionsSource = useMemo(() => {
-    if (data.type !== 'TEXT') return [];
-    if (
-      currentPart &&
-      Array.isArray(currentPart.textSections) &&
-      currentPart.textSections.length > 0
-    ) {
-      return currentPart.textSections;
-    }
-    return data.textSections || [];
-  }, [data.type, currentPart, data.textSections]);
+  const sectionsSource = currentPart?.textSections || [];
+  const alertsSource = currentPart?.alerts || [];
 
-  const alertsSource = useMemo(() => {
-    if (
-      currentPart &&
-      Array.isArray(currentPart.alerts) &&
-      currentPart.alerts.length > 0
-    ) {
-      return currentPart.alerts;
-    }
-    return data.alerts || [];
-  }, [currentPart, data.alerts]);
+  const [showMobileSidebar, setShowMobileSidebar] = useState(false);
+  const [isNotesOpen, setIsNotesOpen] = useState(true);
 
-  const updateActivePart = (updater) => {
-    if (!currentPart) return;
-    setData((prev) => ({
-      ...prev,
-      parts: (prev.parts || []).map((p) =>
-        p.id === currentPart.id ? updater(p) : p
-      ),
-    }));
-  };
-  
-    const handleDeletePart = (partId) => {
-      // 先防呆：如果只剩一個部位，就不給刪
-      if (!data.parts || data.parts.length <= 1) return;
-
-      if (
-        !window.confirm(
-          '確定要刪除此部位嗎？\n此部位的文字段落與提醒規則也會一併刪除。'
-        )
-      ) {
-        return;
-      }
-
-      setData((prev) => {
-        const currentParts = prev.parts || [];
-        if (currentParts.length <= 1) return prev;
-
-        const newParts = currentParts.filter((p) => p.id !== partId);
-
-        let nextActiveId = prev.activePartId;
-        // 如果刪掉的是現在選的那個部位，就把 active 改成剩下陣列的第一個
-        if (!newParts.some((p) => p.id === nextActiveId)) {
-          nextActiveId = newParts[0]?.id ?? null;
-        }
-
-        return {
-          ...prev,
-          parts: newParts,
-        };
-      });
-    };
+  const scrollContainerRef = useRef(null);
+  const listEndRef = useRef(null);
 
   useEffect(() => {
     onUpdate(data);
@@ -2279,31 +2223,263 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
     );
   }, [data.type, sectionsSource]);
 
+  const containerStyle = {
+    backgroundColor: 'var(--bg-color)',
+    color: 'var(--text-color)',
+  };
+
   const categoryOptions = useMemo(() => {
     const base =
       Array.isArray(categories) && categories.length
         ? categories
-        : ['未分類'];
-    const current = data.category || '未分類';
-    return base.includes(current) ? base : [current, ...base];
+        : ['圍巾', '毛帽', '毛衣', '襪子', '未分類'];
+    if (!data.category) return base;
+    return base.includes(data.category) ? base : [...base, data.category];
   }, [categories, data.category]);
 
-  const resizeGrid = (sid, field, value) => {
-    const n = Math.max(1, Math.min(60, parseInt(value) || 1));
+  const yarnOptions = useMemo(
+    () =>
+      (yarns || []).map((y) => ({
+        id: y.id,
+        label: y.name || `${y.brand || ''} ${y.series || ''}`.trim() || '未命名線材',
+      })),
+    [yarns]
+  );
+
+  const createEmptyTextSection = () => ({
+    id: crypto.randomUUID(),
+    title: `段落 ${sectionsSource.length + 1}`,
+    content: '',
+    repeats: 1,
+    rowsPerLoop: 1,
+  });
+
+  const ensureParts = () => {
+    if (data.parts && data.parts.length > 0) return;
+    const newPart = {
+      id: crypto.randomUUID(),
+      name: '主體',
+      textSections: [createEmptyTextSection()],
+      alerts: [],
+    };
     setData((prev) => ({
       ...prev,
-      sections: prev.sections.map((s) => {
-        if (s.id !== sid) return s;
-        const rs = field === 'rows' ? n : s.rows;
-        const cs = field === 'cols' ? n : s.cols;
-        const grid = Array(rs)
-          .fill()
-          .map((_, r) =>
-            Array(cs)
-              .fill()
-              .map((_, c) => (s.grid[r] && s.grid[r][c]) || 'KNIT')
-          );
-        return { ...s, rows: rs, cols: cs, grid };
+      parts: [newPart],
+    }));
+    setActivePartId(newPart.id);
+  };
+
+  useEffect(() => {
+    ensureParts();
+  }, []);
+
+  const updateActivePart = (updater) => {
+    if (!currentPart) return;
+    setData((prev) => ({
+      ...prev,
+      parts: (prev.parts || []).map((p) =>
+        p.id === currentPart.id ? updater(p) : p
+      ),
+    }));
+  };
+
+  const handleAddSection = () => {
+    if (!currentPart) {
+      ensureParts();
+      return;
+    }
+    const nextSections = [
+      ...sectionsSource,
+      {
+        id: crypto.randomUUID(),
+        title: `段落 ${sectionsSource.length + 1}`,
+        content: '',
+        repeats: 1,
+        rowsPerLoop: 1,
+      },
+    ];
+    updateActivePart((p) => ({ ...p, textSections: nextSections }));
+    setTimeout(() => {
+      listEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, 150);
+  };
+
+  const handleDeletePart = (partId) => {
+    if (
+      !window.confirm(
+        '確定要刪除此部位嗎？\n此部位的文字段落與提醒規則也會一併刪除。'
+      )
+    ) {
+      return;
+    }
+
+    setData((prev) => {
+      const currentParts = prev.parts || [];
+      if (currentParts.length <= 1) return prev;
+
+      const newParts = currentParts.filter((p) => p.id !== partId);
+
+      let nextActiveId = prev.activePartId;
+      if (!newParts.some((p) => p.id === nextActiveId)) {
+        nextActiveId = newParts[0]?.id ?? null;
+      }
+
+      return {
+        ...prev,
+        parts: newParts,
+        activePartId: nextActiveId,
+      };
+    });
+
+    if (activePartId === partId && data.parts?.length > 1) {
+      const rest = data.parts.filter((p) => p.id !== partId);
+      setActivePartId(rest[0]?.id ?? null);
+    }
+  };
+
+  const handleAddPart = () => {
+    const parts = data.parts && data.parts.length ? data.parts : [];
+    const defaultName = `部位 ${parts.length + 1}`;
+    const input = window.prompt('請輸入新的部位名稱：', defaultName);
+    const name = (input ?? '').trim() || defaultName;
+    const newPart = {
+      id: crypto.randomUUID(),
+      name,
+      textSections: [],
+      alerts: [],
+    };
+    setData((prev) => ({
+      ...prev,
+      parts: [...(prev.parts || []), newPart],
+    }));
+    setActivePartId(newPart.id);
+    setShowMobileSidebar(false);
+  };
+
+  const handleSaveAndBack = () => {
+    onUpdate({
+      ...data,
+      updatedAt: new Date().toISOString(),
+    });
+    onBack();
+  };
+
+  const addAlertRule = () => {
+    if (!currentPart) return;
+    const base = alertsSource;
+    const nextAlerts = [
+      ...base,
+      {
+        id: crypto.randomUUID(),
+        value: 1,
+        mode: 'SPECIFIC',
+        type: 'TOTAL',
+        sectionId: 'ALL',
+        startFrom: 1,
+        message: '',
+      },
+    ];
+    updateActivePart((p) => ({
+      ...p,
+      alerts: nextAlerts,
+    }));
+  };
+
+  const clonePatternToText = (patternSection) => {
+    const lines = [];
+    for (let r = 0; r < patternSection.rows; r++) {
+      const rowTools = [];
+      for (let c = 0; c < patternSection.cols; c++) {
+        const cell = (patternSection.grid[r] && patternSection.grid[r][c]) || 'KNIT';
+        const sym = SYMBOLS[cell];
+        if (sym) {
+          rowTools.push(sym.label);
+        }
+      }
+      if (rowTools.length) {
+        lines.push(`第 ${r + 1} 排：${rowTools.join('、')}`);
+      }
+    }
+    return lines.join('\n');
+  };
+
+  const convertPatternToTextSection = (patternSection) => {
+    const asText = clonePatternToText(patternSection);
+    const newTextSec = {
+      id: crypto.randomUUID(),
+      title: patternSection.title || '轉換自圖示段落',
+      content: asText,
+      repeats: 1,
+      rowsPerLoop: patternSection.rows || 1,
+    };
+    updateActivePart((p) => ({
+      ...p,
+      textSections: [...(p.textSections || []), newTextSec],
+    }));
+    setActiveTab('CONTENT');
+  };
+
+  const addPatternSection = () => {
+    const base = data.sections || [];
+    const newSection = {
+      id: crypto.randomUUID(),
+      title: `圖樣 ${base.length + 1}`,
+      rows: 8,
+      cols: 8,
+      grid: Array.from({ length: 8 }, () =>
+        Array.from({ length: 8 }, () => 'KNIT')
+      ),
+    };
+    setData((prev) => ({
+      ...prev,
+      sections: [...base, newSection],
+    }));
+  };
+
+  const updatePatternSection = (id, updater) => {
+    setData((prev) => ({
+      ...prev,
+      sections: (prev.sections || []).map((s) =>
+        s.id === id ? updater(s) : s
+      ),
+    }));
+  };
+
+  const removePatternSection = (id) => {
+    setData((prev) => ({
+      ...prev,
+      sections: (prev.sections || []).filter((s) => s.id !== id),
+    }));
+  };
+
+  const resizePatternSection = (id, rowsDelta, colsDelta) => {
+    setData((prev) => ({
+      ...prev,
+      sections: (prev.sections || []).map((s) => {
+        if (s.id !== id) return s;
+        const nextRows = Math.max(1, (s.rows || 0) + rowsDelta);
+        const nextCols = Math.max(1, (s.cols || 0) + colsDelta);
+
+        const rs =
+          nextRows > s.rows
+            ? [
+                ...s.grid,
+                ...Array.from({ length: nextRows - s.rows }, () =>
+                  Array.from({ length: s.cols }, () => 'KNIT')
+                ),
+              ]
+            : s.grid.slice(0, nextRows);
+
+        const cs =
+          nextCols > s.cols
+            ? rs.map((row) => [
+                ...row,
+                ...Array.from({ length: nextCols - s.cols }, () => 'KNIT'),
+              ])
+            : rs.map((row) => row.slice(0, nextCols));
+
+        const grid = cs;
+        return { ...s, rows: rs.length, cols: cs[0]?.length || 0, grid };
       }),
     }));
   };
@@ -2328,12 +2504,9 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
 
   return (
     <div
-    style={{
-      backgroundColor: 'var(--bg-color)',
-      color: 'var(--text-color)',
-    }}
-    className="flex flex-col h-screen pb-safe overflow-hidden animate-fade-in font-sans transition-colors duration-500"
-  >
+      style={containerStyle}
+      className="flex flex-col h-screen pb-safe overflow-hidden animate-fade-in font-sans transition-colors duration-500"
+    >
       {/* 頂部導覽列 */}
       <header className="h-16 px-4 md:px-6 bg-white/95 backdrop-blur border-b border-gray-100 flex justify-between items-center z-40 shadow-sm">
         {/* 左：返回 + 標題 */}
@@ -3234,7 +3407,6 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
         </button>
       </div>
     </div>
-
   );
 }
 
