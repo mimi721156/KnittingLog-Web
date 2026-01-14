@@ -488,7 +488,91 @@ const normalizeProject = (p) => {
     </div>
   );
 
+  // --- 棒針 + 勾針 組合圖示 ---
+  const KnittingIcon = ({ color = '#D4A373' }) => (
+    <svg
+      width="64"
+      height="64"
+      viewBox="0 0 64 64"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      {/* 棒針 1 */}
+      <line
+        x1="15"
+        y1="15"
+        x2="49"
+        y2="49"
+        stroke={color}
+        strokeWidth="2.5"
+        strokeLinecap="round"
+      />
+      <circle cx="13" cy="13" r="3" fill={color} />
 
+      {/* 棒針 2 */}
+      <line
+        x1="49"
+        y1="15"
+        x2="15"
+        y2="49"
+        stroke={color}
+        strokeWidth="2.5"
+        strokeLinecap="round"
+      />
+      <circle cx="51" cy="13" r="3" fill={color} />
+
+      {/* 勾針 */}
+      <path
+        d="M32 10V50M32 50C32 50 32 54 28 54"
+        stroke={color}
+        strokeWidth="3"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M32 50.5C33.5 49 35 48 37 49"
+        stroke={color}
+        strokeWidth="2.5"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+
+// --- 預設封面元件 ---
+const DefaultCover = ({ name }) => {
+  return (
+    <div className="w-full h-full flex items-center justify-center relative overflow-hidden bg-[#F1F3EE]">
+      {/* 背景紋路 - 模擬編織感 */}
+      <svg className="absolute inset-0 w-full h-full opacity-[0.05]" viewBox="0 0 100 100">
+        <pattern id="knitPattern" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
+          <path
+            d="M10 0 Q15 10 10 20 M10 0 Q5 10 10 20"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1"
+          />
+        </pattern>
+        <rect width="100%" height="100%" fill="url(#knitPattern)" />
+      </svg>
+
+      {/* 中央組合圖示 */}
+      <div className="relative flex flex-col items-center gap-4">
+        <div className="p-6 bg-white/60 backdrop-blur-md rounded-[2rem] shadow-sm border border-white/50 transform -rotate-3 group-hover:rotate-0 transition-transform duration-500">
+          <KnittingIcon />
+        </div>
+        <div className="flex flex-col items-center">
+          <span className="text-[10px] font-black opacity-20 uppercase tracking-[0.4em] mb-1">
+            Handmade
+          </span>
+          <div className="h-[1px] w-8 bg-black/10 mb-2" />
+          <span className="text-[11px] font-bold text-[#344E41]/40 max-w-[120px] text-center truncate px-2">
+            {name || 'New Pattern'}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 
 // === GitHub Sync Dialog ===
@@ -2912,28 +2996,32 @@ function LibraryView({
         {savedPatterns.map((ptn) => (
           <div
             key={ptn.id}
-            className="bg-white p-5 md:p-8 lg:p-10 rounded-[2rem] md:rounded-[3rem] shadow-cozy border ... group"
+            onClick={() => onEditPattern(ptn)}
+            className="group bg-white rounded-[2.8rem] overflow-hidden border border-gray-100 shadow-[0_15px_40px_-20px_rgba(0,0,0,0.06)] hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.12)] transition-all duration-700 flex flex-col cursor-pointer"
           >
-            <div className="absolute top-0 right-0 w-32 h-32 bg-theme-bg rounded-bl-full -mr-12 -mt-12 opacity-60 transition-transform group-hover:scale-110"></div>
-            <div className="flex justify-between items-start mb-8 relative z-10">
-              <div
-                className={`w-16 h-16 rounded-[1.5rem] flex items-center justify-center text-3xl shadow-inner ${
-                  ptn.type === 'CHART'
-                    ? 'bg-rose-50 text-rose-300'
-                    : 'bg-amber-50 text-amber-500'
-                }`}
-              >
-                {ptn.type === 'CHART' ? '▦' : '≡'}
-              </div>
-              <div className="flex gap-2">
+            {/* 封面區：圖片／預設封面 */}
+            <div className="relative aspect-square overflow-hidden bg-[#F1F3EE]">
+              {ptn.coverImage ? (
+                <img
+                  src={ptn.coverImage}
+                  alt={ptn.name}
+                  className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
+                />
+              ) : (
+                <DefaultCover name={ptn.name} />
+              )}
+
+              {/* 右上角：編輯／刪除 */}
+              <div className="absolute top-4 right-4 flex gap-2">
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     onEditPattern(ptn);
                   }}
-                  className="text-theme-primary p-3 hover:bg-theme-bg rounded-2xl transition-all shadow-sm"
+                  className="w-9 h-9 rounded-full bg-white/90 backdrop-blur-md flex items-center justify-center text-theme-primary shadow-sm hover:bg-white transition-all"
+                  title="編輯織圖"
                 >
-                  <Icons.Library />
+                  <Icons.Library className="w-4 h-4" />
                 </button>
                 <button
                   onClick={(e) => {
@@ -2944,27 +3032,58 @@ function LibraryView({
                       return;
                     onDeletePattern(ptn.id);
                   }}
-                  className="text-gray-200 hover:text-red-400 p-3 transition-colors"
+                  className="w-9 h-9 rounded-full bg-white/80 backdrop-blur-md flex items-center justify-center text-gray-300 hover:text-red-400 hover:bg-white transition-all"
+                  title="刪除織圖"
                 >
-                  <Icons.Trash />
+                  <Icons.Trash className="w-4 h-4" />
                 </button>
               </div>
+
+              {/* 左下角：類型 Badge */}
+              <div className="absolute bottom-4 left-4">
+                <span className="px-4 py-2 bg-[#344E41]/90 backdrop-blur-md text-[10px] font-black text-white rounded-2xl tracking-[0.2em] uppercase">
+                  {ptn.type === 'CHART' ? 'Chart' : 'Pattern'}
+                </span>
+              </div>
             </div>
-            <h3 className="font-black text-theme-text text-2xl mb-2 relative z-10 tracking-tighter leading-tight">
-              {ptn.name}
-            </h3>
-            <div className="text-[10px] font-black text-theme-primary opacity-60 uppercase tracking-widest mb-10 relative z-10">
-              {ptn.category || '未分類'} ·{' '}
-              {new Date(ptn.updatedAt).toLocaleDateString()}
+
+            {/* 內容區 */}
+            <div className="p-6 md:p-7 flex-1 flex flex-col relative">
+              {/* 類別＋日期 */}
+              <div className="mb-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-[10px] font-black opacity-30 uppercase tracking-[0.2em]">
+                    {ptn.category || '未分類'}
+                  </span>
+                  <div className="w-1 h-1 rounded-full bg-black/10" />
+                  <span className="text-[10px] font-black text-theme-primary/70 uppercase tracking-[0.2em]">
+                    {ptn.type === 'CHART' ? 'Chart' : 'Text'}
+                  </span>
+                </div>
+                <div className="text-[10px] font-black opacity-30 uppercase tracking-[0.18em]">
+                  {new Date(ptn.updatedAt).toLocaleDateString()}
+                </div>
+              </div>
+
+              {/* 標題 */}
+              <h3 className="text-xl md:text-2xl font-black text-theme-text tracking-tight leading-tight mb-4 group-hover:translate-x-[1px] transition-transform">
+                {ptn.name}
+              </h3>
+
+              {/* 底部：Start Knitting 按鈕 */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onCreateProject(ptn);
+                }}
+                className="mt-auto w-full py-4 bg-theme-primary text-white rounded-[1.8rem] font-black text-[11px] uppercase tracking-[0.3em] shadow-xl shadow-theme-primary/20 hover:shadow-2xl hover:shadow-theme-primary/30 transition-all"
+              >
+                Start Knitting
+              </button>
             </div>
-            <button
-              onClick={() => onCreateProject(ptn)}
-              className="w-full py-6 bg-theme-primary text-white rounded-[2rem] font-black text-[11px] uppercase tracking-[0.3em] shadow-xl hover:shadow-2xl hover:shadow-theme-primary/30 transition-all mt-auto"
-            >
-              Start Knitting
-            </button>
           </div>
         ))}
+
         {savedPatterns.length === 0 && (
           <div className="col-span-full text-center text-xs text-gray-400 py-10">
             目前沒有織圖，可以從右上角按鈕新增。
