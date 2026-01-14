@@ -2327,384 +2327,512 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
   };
 
   return (
-    <div className="flex flex-col h-full bg-white animate-fade-in pb-safe overflow-hidden">
-      <div className="p-4 border-b bg-white flex justify-between items-center sticky top-0 z-20 shadow-sm">
-        <button
-          onClick={onBack}
-          className="text-gray-400 font-bold px-2 text-xs uppercase tracking-widest"
+  <div
+      style={containerStyle}
+      className="flex flex-col h-screen pb-safe overflow-hidden animate-fade-in font-sans transition-colors duration-500"
+    >
+      {/* ===== 1. 頂部導覽列（手機 + 電腦共用） ===== */}
+      <header className="h-16 px-4 md:px-6 bg-white/95 backdrop-blur border-b border-gray-100 flex justify-between items-center z-40 shadow-sm">
+        {/* 左：返回 + 標題 */}
+        <div className="flex items-center gap-2 md:gap-4">
+          <button
+            onClick={onBack}
+            className="p-2 hover:bg-gray-50 rounded-full text-gray-400"
+          >
+            <X size={20} />
+          </button>
+          <div className="hidden md:block h-4 w-[1px] bg-gray-200" />
+          <h2 className="text-sm font-black tracking-tight truncate max-w-[120px] md:max-w-[220px]">
+            {data.name || '未命名織圖'}
+          </h2>
+        </div>
+
+        {/* 中：內容 / 提醒 Tab 切換（沿用樣式.txt 的膠囊樣式） */}
+        <div
+          className="flex p-1 rounded-2xl shadow-inner"
+          style={{ backgroundColor: theme.accent + '33' }}
         >
-          Cancel
-        </button>
-        <div className="flex bg-theme-bg p-1 rounded-2xl shadow-inner">
           <button
             onClick={() => setActiveTab('CONTENT')}
-            className={`px-6 py-2 text-[10px] font-black rounded-xl transition ${
+            className={`px-3 md:px-6 py-1.5 text-[10px] font-black rounded-xl transition-all ${
               activeTab === 'CONTENT'
-                ? 'bg-white shadow text-theme-text'
-                : 'opacity-30'
+                ? 'bg-white shadow'
+                : 'opacity-40'
             }`}
+            style={{
+              color:
+                activeTab === 'CONTENT' ? theme.text : theme.text,
+            }}
           >
             編輯內容
           </button>
           <button
             onClick={() => setActiveTab('ALERTS')}
-            className={`px-6 py-2 text-[10px] font-black rounded-xl transition ${
+            className={`px-3 md:px-6 py-1.5 text-[10px] font-black rounded-xl transition-all ${
               activeTab === 'ALERTS'
-                ? 'bg-white shadow text-theme-text'
-                : 'opacity-30'
+                ? 'bg-white shadow'
+                : 'opacity-40'
             }`}
+            style={{
+              color:
+                activeTab === 'ALERTS' ? theme.text : theme.text,
+            }}
           >
             提醒規則
           </button>
         </div>
-        <button
-          onClick={() => {
-            onUpdate(data);
-            onBack();
-          }}
-          className="text-theme-primary font-black px-2 text-xs uppercase tracking-widest"
+
+        {/* 右：手機設定抽屜按鈕 + Save */}
+        <div className="flex items-center gap-2">
+          {/* 手機設定抽屜（只在小螢幕顯示） */}
+          <button
+            onClick={() => setShowMobileSidebar(true)}
+            className="md:hidden p-2 rounded-full"
+            style={{ color: theme.text }}
+          >
+            <Menu size={20} />
+          </button>
+          {/* Save / Quick Save */}
+          <button
+            onClick={() => {
+              onUpdate(data);
+              onBack();
+            }}
+            className="flex items-center gap-1 md:gap-2 px-4 md:px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-[0.18em] shadow-md hover:scale-105 transition-all"
+            style={{ backgroundColor: theme.primary, color: '#ffffff' }}
+          >
+            <Check size={14} className="md:hidden" />
+            <span className="hidden md:inline">Save</span>
+            <span className="md:hidden">Done</span>
+          </button>
+        </div>
+      </header>
+
+      {/* ===== 2. 主區域：左側控制台 + 右側內容 ===== */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* ==== 左：設定 / 部位 / 備註 ====
+            - md 以上固定在左側
+            - 行動端走側邊抽屜（遮罩滑入）
+        */}
+        <aside
+          className={`
+            fixed inset-0 z-50 md:relative md:z-0 md:w-80
+            bg-white border-r border-gray-100
+            md:flex md:flex-col
+            transition-transform duration-300
+            ${
+              showMobileSidebar
+                ? 'translate-x-0'
+                : '-translate-x-full md:translate-x-0'
+            }
+          `}
         >
-          Save
-        </button>
-      </div>
-
-      <div className="flex-1 overflow-y-auto no-scrollbar pb-32">
-        <div className="p-10 bg-theme-bg/30 flex justify-between items-end gap-4 flex-wrap">
-          <div className="flex-1 mr-0 md:mr-6 min-w-[220px]">
-            <label className="text-[10px] font-black opacity-30 uppercase tracking-widest block mb-2 pl-1">
-              Pattern Design
-            </label>
-            <input
-              type="text"
-              value={data.name}
-              onChange={(e) => setData({ ...data, name: e.target.value })}
-              className="w-full text-3xl md:text-4xl font-black bg-transparent border-none p-0 focus:ring-0 tracking-tighter"
-              placeholder="設計標題..."
-            />
-            <div className="mt-3 flex gap-2 items-center">
-              <span className="text-[10px] font-black opacity-40 uppercase tracking-widest">
-                分類
-              </span>
-              <select
-                className="flex-1 bg-white/70 rounded-xl border-none px-3 py-1.5 text-[11px] font-bold text-theme-text focus:ring-2 ring-theme-primary/20"
-                value={data.category || '未分類'}
-                onChange={(e) =>
-                  setData((prev) => ({ ...prev, category: e.target.value }))
-                }
-              >
-                {categoryOptions.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
-            </div>
+          {/* 手機抽屜 header（關閉鈕） */}
+          <div className="md:hidden flex items-center justify-between px-4 py-3 border-b border-gray-100">
+            <span className="text-[11px] font-black tracking-[0.2em] uppercase opacity-60">
+              Pattern Settings
+            </span>
+            <button
+              onClick={() => setShowMobileSidebar(false)}
+              className="p-2 bg-gray-100 rounded-full"
+            >
+              <X size={18} />
+            </button>
           </div>
-          {data.type === 'TEXT' && (
-            <div className="text-right pb-1 min-w-[140px]">
-              <div className="text-[10px] font-black opacity-30 uppercase">
-                總排數計算
-              </div>
-              <div className="text-2xl font-black text-theme-primary tabular-nums tracking-tighter">
-                {totalRows} 排
-              </div>
-            </div>
-          )}
-        </div>
 
-        {/* 部位設定 Parts */}
-        <div className="p-6 md:p-10 space-y-8">
-          <div className="mt-6">
-            <div className="flex items-center justify-between mb-2">
+          <div className="p-6 flex-1 overflow-y-auto no-scrollbar space-y-8">
+            {/* 基礎資訊 */}
+            <section className="space-y-4">
+              <div className="flex items-center gap-2 mb-2 opacity-40">
+                <Settings2 size={14} />
+                <span className="text-[10px] font-black uppercase tracking-[0.22em]">
+                  Settings
+                </span>
+              </div>
+
               <div>
-                <div className="text-[9px] font-black opacity-30 uppercase tracking-[0.2em]">
-                  Parts / 部位
-                </div>
-                <div className="text-[11px] text-theme-text/60">
-                  例如：前片、後片、左袖、右袖…
-                </div>
+                <label className="text-[9px] font-black opacity-40 uppercase tracking-[0.25em] block mb-1">
+                  Pattern Design
+                </label>
+                <input
+                  type="text"
+                  value={data.name || ''}
+                  onChange={(e) =>
+                    setData((prev) => ({
+                      ...prev,
+                      name: e.target.value,
+                    }))
+                  }
+                  className="w-full text-lg md:text-xl font-black bg-transparent border-none p-0 focus:ring-0 tracking-tight"
+                  placeholder="設計標題..."
+                  style={{ color: theme.text }}
+                />
               </div>
-              <button
-                onClick={() => {
-                  const parts = data.parts && data.parts.length ? data.parts : [];
-                  const defaultName = `部位 ${parts.length + 1}`;
 
-                  const input = window.prompt('請輸入新的部位名稱：', defaultName);
-                  const name = (input ?? '').trim() || defaultName;
-
-                  const newPart = {
-                    id: crypto.randomUUID(),
-                    name,
-                    textSections: data.textSections || [],
-                    alerts: data.alerts || [],
-                  };
-
-                  setData((prev) => ({
-                    ...prev,
-                    parts: [...(prev.parts || []), newPart],
-                  }));
-                  setActivePartId(newPart.id); // 新增後直接切到新部位
-                }}
-                className="text-[10px] px-3 py-1 rounded-full bg-theme-primary text-white font-black tracking-[0.16em] uppercase"
-              >
-                + Add Part
-              </button>
-            </div>
-            <div className="flex gap-2 flex-wrap">
-              {(data.parts || []).map((part) => {
-                const isActive = currentPart && part.id === currentPart.id;
-                const totalParts = (data.parts || []).length;
-
-                return (
-                  <div
-                    key={part.id}
-                    className="flex items-center gap-1"
-                  >
-                    <button
-                      onClick={() => setActivePartId(part.id)}
-                      className={
-                        'px-4 py-1.5 rounded-full text-[10px] font-black tracking-[0.18em] uppercase transition ' +
-                        (isActive
-                          ? 'bg-theme-primary text-white shadow'
-                          : 'bg-theme-bg text-theme-text/60 hover:bg-theme-bg/80')
-                      }
-                    >
-                      {part.name}
-                    </button>
-
-                    {/* 至少要保留 1 個部位，只有在部位數 > 1 時才顯示刪除 */}
-                    {totalParts > 1 && (
-                      <button
-                        onClick={() => handleDeletePart(part.id)}
-                        className="text-[11px] text-red-300 hover:text-red-500 px-1 py-0.5 rounded-full transition"
-                        title="刪除此部位"
-                      >
-                        ✕
-                      </button>
-                    )}
-                  </div>
-                );
-            })}
-          </div>
-          {/* 目前部位名稱可即時修改 */}
-          {currentPart && (
-            <div className="mt-3 flex items-center gap-2">
-              <span className="text-[9px] font-black opacity-40 uppercase tracking-[0.2em]">
-                部位名稱
-              </span>
-              <input
-                className="flex-1 bg-theme-bg/40 rounded-full px-3 py-1.5 text-[11px] border-none focus:ring-2 ring-theme-primary/20"
-                value={currentPart.name || ''}
-                onChange={(e) => {
-                  const newName = e.target.value;
-                  setData((prev) => ({
-                    ...prev,
-                    parts: (prev.parts || []).map((p) =>
-                      p.id === currentPart.id ? { ...p, name: newName } : p
-                    ),
-                  }));
-                }}
-                placeholder="例如：前片／後片／左袖…"
-              />
-            </div>
-          )}
-          </div>
-        </div>
-
-        <div className="p-6 md:p-10 space-y-12">
-          {activeTab === 'CONTENT' && (
-            <div className="bg-white rounded-[2.5rem] p-6 md:p-7 shadow-cozy border border-theme-bg/60 space-y-3">
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <div className="text-[9px] font-black opacity-30 uppercase tracking-[0.2em] block mb-1">
-                    Pattern Notes
-                  </div>
-                  <div className="text-xs text-theme-text/70">
-                    其他尺寸加減針、注意事項、改版記錄…
-                  </div>
-                </div>
-              </div>
-              <textarea
-                className="w-full mt-2 bg-theme-bg/30 rounded-2xl p-4 text-sm leading-relaxed border-none focus:ring-2 ring-theme-primary/20 min-h-[100px] resize-none"
-                placeholder="例：M 號在第 18 排多加 2 針、袖子在麻花段前多編 6 排。"
-                value={data.notes || ''}
-                onChange={(e) =>
-                  setData((prev) => ({ ...prev, notes: e.target.value }))
-                }
-              />
-            </div>
-          )}
-
-          {activeTab === 'CONTENT' ? (
-            data.type === 'CHART' ? (
-              <div className="space-y-12">
-                <div className="flex gap-2 overflow-x-auto pb-4 sticky top-0 bg-white/90 backdrop-blur z-10 no-scrollbar py-4">
-                  {Object.values(SYMBOLS).map((t) => (
-                    <button
-                      key={t.id}
-                      onClick={() => setSelectedTool(t.id)}
-                      className={`flex-shrink-0 w-12 h-12 rounded-2xl border-2 flex flex-col items-center justify-center transition-all ${
-                        selectedTool === t.id
-                          ? 'border-theme-primary bg-theme-primary text-white scale-110 shadow-lg shadow-theme-primary/20'
-                          : 'border-theme-bg opacity-40'
-                      }`}
-                    >
-                      <span className="font-zen-mono font-black text-lg">
-                        {t.symbol}
-                      </span>
-                      <span className="text-[7px] font-black uppercase mt-0.5">
-                        {t.label}
-                      </span>
-                    </button>
+              <div>
+                <label className="text-[9px] font-black opacity-40 uppercase tracking-[0.25em] block mb-1">
+                  Category
+                </label>
+                <select
+                  className="w-full rounded-xl px-3 py-2 text-[11px] font-bold border-none focus:ring-2 text-sm"
+                  style={{
+                    backgroundColor: theme.bg,
+                    color: theme.text,
+                    boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.03)',
+                  }}
+                  value={data.category || '未分類'}
+                  onChange={(e) =>
+                    setData((prev) => ({
+                      ...prev,
+                      category: e.target.value,
+                    }))
+                  }
+                >
+                  {(categoryOptions || []).map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
                   ))}
-                </div>
-                {(data.sections || []).map((s) => (
-                  <div
-                    key={s.id}
-                    className="bg-theme-bg/20 p-10 rounded-[3rem] border-2 border-white shadow-soft"
-                  >
-                    <div className="flex justify-between items-center mb-8">
-                      <input
-                        value={s.name}
-                        onChange={(e) =>
-                          setData({
-                            ...data,
-                            sections: data.sections.map((sec) =>
-                              sec.id === s.id
-                                ? { ...sec, name: e.target.value }
-                                : sec
-                            ),
-                          })
-                        }
-                        className="bg-transparent font-black text-xl focus:ring-0 border-none p-0 w-1/2 tracking-tighter"
-                        placeholder="區段名稱"
-                      />
-                      <div className="flex gap-2 bg-white/50 p-2.5 rounded-xl border border-white">
-                        <input
-                          type="number"
-                          value={s.cols}
-                          onChange={(e) =>
-                            resizeGrid(s.id, 'cols', e.target.value)
-                          }
-                          className="w-12 text-center font-black text-xs bg-transparent"
-                        />
-                        <span className="opacity-20 font-black">×</span>
-                        <input
-                          type="number"
-                          value={s.rows}
-                          onChange={(e) =>
-                            resizeGrid(s.id, 'rows', e.target.value)
-                          }
-                          className="w-12 text-center font-black text-xs bg-transparent"
-                        />
-                      </div>
-                    </div>
-                    <div className="overflow-x-auto pb-4 scrollbar-hide">
-                      <div
-                        className="grid gap-[1px] bg-theme-accent border-4 border-theme-accent inline-block rounded-xl overflow-hidden shadow-2xl"
-                        style={{ gridTemplateColumns: `repeat(${s.cols}, 32px)` }}
-                      >
-                        {s.grid.map((row, r) =>
-                          row.map((cell, c) => (
-                            <div
-                              key={`${r}-${c}`}
-                              onClick={() => toggleCell(s.id, r, c)}
-                              className={`w-8 h-8 flex items-center justify-center text-xs font-zen-mono font-black cursor-pointer hover:opacity-50 transition-all ${
-                                SYMBOLS[cell].color
-                              }`}
-                            >
-                              {SYMBOLS[cell].symbol}
-                            </div>
-                          ))
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                </select>
               </div>
-            ) : (
-              <div className="space-y-8">
-                <div className="flex justify-between items-center px-4">
-                  <h3 className="font-black text-theme-text uppercase text-xs tracking-widest opacity-50">
-                    文字段落 Sections
-                  </h3>
-                  <button
-                    onClick={() => {
-                      if (!currentPart) return;
-                      const base = sectionsSource;
-                      const nextSections = [
-                        ...base,
-                        {
-                          id: crypto.randomUUID(),
-                          title: '新段落',
-                          content: '',
-                          repeats: 1,
-                          rowsPerLoop: 1,
-                        },
-                      ];
-                      updateActivePart((part) => ({
-                        ...part,
-                        textSections: nextSections,
-                      }));
-                    }}
-                    className="bg-theme-primary text-white p-2.5 rounded-full shadow-lg transition-transform hover:scale-110 shadow-theme-primary/20"
-                  >
-                    <Icons.Plus />
-                  </button>
-                </div>
-                {sectionsSource.map((sec) => (
+
+              {/* 總排數（僅文字織圖時顯示） */}
+              {data.type === 'TEXT' && (
+                <div className="pt-2">
+                  <div className="text-[9px] font-black opacity-30 uppercase tracking-[0.25em]">
+                    總排數計算
+                  </div>
                   <div
-                    key={sec.id}
-                    className="bg-white rounded-[3rem] border-2 border-theme-bg shadow-soft overflow-hidden group animate-fade-in"
+                    className="text-2xl font-black tabular-nums tracking-tight"
+                    style={{ color: theme.primary }}
                   >
-                    <div className="bg-theme-bg/40 p-8 space-y-6 border-b border-theme-bg">
-                      <div className="flex justify-between items-center">
-                        <input
-                          value={sec.title}
-                          onChange={(e) => {
-                            if (!currentPart) return;
-                            const value = e.target.value;
-                            updateActivePart((part) => ({
-                              ...part,
-                              textSections: (part.textSections || []).map(
-                                (s) =>
-                                  s.id === sec.id
-                                    ? { ...s, title: value }
-                                    : s
-                              ),
-                            }));
-                          }}
-                          className="bg-transparent font-black text-base uppercase focus:ring-0 border-none w-1/2 p-0 tracking-widest"
-                          placeholder="段落標題"
-                        />
+                    {totalRows} 排
+                  </div>
+                </div>
+              )}
+            </section>
+
+            {/* 部位列表 */}
+            <section className="space-y-4">
+              <div className="flex items-center justify-between mb-2">
+                <div>
+                  <div className="text-[9px] font-black opacity-30 uppercase tracking-[0.25em]">
+                    Parts / 部位
+                  </div>
+                  <div className="text-[11px] opacity-60">
+                    例如：前片、後片、左袖、右袖…
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    const parts = data.parts || [];
+                    const defaultName = `部位 ${parts.length + 1}`;
+                    const input = window.prompt(
+                      '請輸入新的部位名稱：',
+                      defaultName
+                    );
+                    const name = (input ?? '').trim() || defaultName;
+                    const newPart = {
+                      id: crypto.randomUUID(),
+                      name,
+                      textSections: [],
+                      alerts: [],
+                    };
+                    setData((prev) => ({
+                      ...prev,
+                      parts: [...(prev.parts || []), newPart],
+                    }));
+                    setActivePartId(newPart.id);
+                    setShowMobileSidebar(false);
+                  }}
+                  className="text-[10px] px-3 py-1 rounded-full font-black tracking-[0.16em] uppercase shadow-sm"
+                  style={{
+                    backgroundColor: theme.primary,
+                    color: '#ffffff',
+                  }}
+                >
+                  + Add Part
+                </button>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                {(data.parts || []).map((part) => {
+                  const isActive = activePartId === part.id;
+                  const totalParts = data.parts?.length || 0;
+                  return (
+                    <div
+                      key={part.id}
+                      className="flex items-center gap-1 group"
+                    >
+                      <button
+                        onClick={() => {
+                          setActivePartId(part.id);
+                          setShowMobileSidebar(false);
+                        }}
+                        className={`flex-1 px-4 py-2 rounded-full text-[10px] font-black tracking-[0.18em] uppercase transition-all ${
+                          isActive
+                            ? 'shadow-md'
+                            : 'opacity-60 hover:opacity-100'
+                        }`}
+                        style={{
+                          backgroundColor: isActive
+                            ? theme.primary
+                            : theme.bg,
+                          color: isActive ? '#ffffff' : theme.text,
+                        }}
+                      >
+                        {part.name}
+                      </button>
+                      {totalParts > 1 && (
                         <button
-                          onClick={() => {
-                            if (!currentPart) return;
-                            updateActivePart((part) => ({
-                              ...part,
-                              textSections: (part.textSections || []).filter(
-                                (s) => s.id !== sec.id
-                              ),
-                            }));
-                          }}
-                          className="text-red-400 opacity-20 group-hover:opacity-100 transition-opacity p-2"
+                          onClick={() => handleDeletePart(part.id)}
+                          className="text-[11px] text-red-300 hover:text-red-500 px-1 py-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                          title="刪除此部位"
                         >
                           ✕
                         </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* 目前部位名稱可即時修改 */}
+              {currentPart && (
+                <div className="mt-3 flex items-center gap-2">
+                  <span className="text-[9px] font-black opacity-40 uppercase tracking-[0.25em]">
+                    部位名稱
+                  </span>
+                  <input
+                    className="flex-1 rounded-full px-3 py-1.5 text-[11px] border-none focus:ring-2 text-sm"
+                    style={{
+                      backgroundColor: theme.bg,
+                      color: theme.text,
+                    }}
+                    value={currentPart.name || ''}
+                    onChange={(e) => {
+                      const newName = e.target.value;
+                      setData((prev) => ({
+                        ...prev,
+                        parts: (prev.parts || []).map((p) =>
+                          p.id === currentPart.id
+                            ? { ...p, name: newName }
+                            : p
+                        ),
+                      }));
+                    }}
+                    placeholder="例如：前片／後片／左袖…"
+                  />
+                </div>
+              )}
+            </section>
+
+            {/* 備註（可收闔） */}
+            <section
+              className="rounded-2xl p-4 border space-y-2"
+              style={{
+                backgroundColor: theme.bg,
+                borderColor: theme.accent,
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => setIsNotesOpen((v) => !v)}
+                className="w-full flex items-center justify-between"
+              >
+                <div className="flex items-center gap-2">
+                  <StickyNote size={14} style={{ color: theme.primary }} />
+                  <span
+                    className="text-[10px] font-black uppercase tracking-[0.22em]"
+                    style={{ color: theme.primary }}
+                  >
+                    Pattern Notes
+                  </span>
+                </div>
+                {isNotesOpen ? (
+                  <ChevronUp size={12} />
+                ) : (
+                  <ChevronDown size={12} />
+                )}
+              </button>
+              {isNotesOpen && (
+                <textarea
+                  className="w-full bg-transparent border-none p-0 text-[11px] leading-relaxed focus:ring-0 min-h-[100px] resize-none opacity-80 mt-2"
+                  placeholder="例：M 號在第 18 排多加 2 針、袖子在麻花段前多編 6 排。"
+                  value={data.notes || ''}
+                  onChange={(e) =>
+                    setData((prev) => ({
+                      ...prev,
+                      notes: e.target.value,
+                    }))
+                  }
+                  style={{ color: theme.text }}
+                />
+              )}
+            </section>
+          </div>
+        </aside>
+
+        {/* ==== 右：內容工作區 ==== */}
+        <main className="flex-1 flex flex-col overflow-hidden relative">
+          {/* 行動端：部位橫向選單（吸頂） */}
+          <div className="md:hidden sticky top-16 z-30 bg-white/95 backdrop-blur border-b border-gray-100">
+            <div className="flex overflow-x-auto no-scrollbar gap-2 p-3">
+              {(data.parts || []).map((part) => (
+                <button
+                  key={part.id}
+                  onClick={() => setActivePartId(part.id)}
+                  className={`flex-shrink-0 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.18em] transition-all ${
+                    activePartId === part.id
+                      ? 'shadow-md'
+                      : 'opacity-60 hover:opacity-100'
+                  }`}
+                  style={{
+                    backgroundColor:
+                      activePartId === part.id ? theme.primary : theme.bg,
+                    color:
+                      activePartId === part.id ? '#ffffff' : theme.text,
+                  }}
+                >
+                  {part.name}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* 內容捲動區 */}
+          <div
+            className="flex-1 overflow-y-auto no-scrollbar p-4 md:p-10 space-y-8"
+            ref={scrollContainerRef}
+          >
+            {/* 吸頂工作區標頭（目前部位 + 新增段落） */}
+            <div className="sticky top-0 z-20 -mx-4 md:mx-0 pb-3 mb-3 bg-gradient-to-b from-[rgba(255,255,255,0.96)] to-[rgba(255,255,255,0)] backdrop-blur">
+              <div className="px-4 md:px-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <div
+                    className="p-3 rounded-2xl shadow-sm border"
+                    style={{
+                      backgroundColor: '#ffffff',
+                      borderColor: theme.accent,
+                    }}
+                  >
+                    <Layers size={20} style={{ color: theme.primary }} />
+                  </div>
+                  <div>
+                    <span className="text-[9px] font-black opacity-40 uppercase tracking-[0.25em]">
+                      Currently Editing
+                    </span>
+                    <input
+                      className="text-xl md:text-2xl font-black bg-transparent border-none p-0 focus:ring-0 block tracking-tight"
+                      value={currentPart?.name || ''}
+                      onChange={(e) =>
+                        updateActivePart((p) => ({
+                          ...p,
+                          name: e.target.value,
+                        }))
+                      }
+                      style={{ color: theme.text }}
+                    />
+                  </div>
+                </div>
+                <button
+                  onClick={handleAddSection}
+                  className="flex items-center justify-center gap-2 px-5 md:px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-[0.18em] shadow-lg transition-all hover:scale-105"
+                  style={{
+                    backgroundColor: theme.primary,
+                    color: '#ffffff',
+                    boxShadow: `0 10px 25px -6px ${theme.primary}55`,
+                  }}
+                >
+                  <Plus size={16} />
+                  <span>新增段落</span>
+                </button>
+              </div>
+            </div>
+
+            {/* ===== 內容 / 提醒 切換 ===== */}
+            {activeTab === 'CONTENT' ? (
+              <div className="space-y-8">
+                {/* 各個段落卡片 */}
+                {sectionsSource.map((sec, idx) => (
+                  <div
+                    key={sec.id}
+                    className="bg-white rounded-[3rem] border shadow-cozy overflow-hidden group animate-fade-in"
+                    style={{ borderColor: theme.accent }}
+                  >
+                    {/* 卡片 header：序號 + 段落標題 + 刪除 */}
+                    <div
+                      className="px-6 md:px-8 py-4 md:py-5 border-b flex items-center justify-between gap-4"
+                      style={{
+                        backgroundColor: theme.bg,
+                        borderColor: theme.accent,
+                      }}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span
+                          className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black border"
+                          style={{
+                            backgroundColor: '#ffffff',
+                            borderColor: theme.accent,
+                            color: theme.text,
+                          }}
+                        >
+                          {idx + 1}
+                        </span>
+                        <input
+                          value={sec.title || ''}
+                          onChange={(e) =>
+                            updateActivePart((p) => ({
+                              ...p,
+                              textSections: (p.textSections || []).map(
+                                (s) =>
+                                  s.id === sec.id
+                                    ? { ...s, title: e.target.value }
+                                    : s
+                              ),
+                            }))
+                          }
+                          className="bg-transparent font-black text-sm md:text-base focus:ring-0 border-none p-0 tracking-tight uppercase"
+                          placeholder="段落標題"
+                          style={{ color: theme.text }}
+                        />
                       </div>
-                      <div className="grid grid-cols-2 gap-6">
-                        <div className="bg-white rounded-[1.25rem] p-5 shadow-sm space-y-1">
-                          <label className="text-[9px] font-black opacity-30 uppercase block mb-1">
+                      <button
+                        onClick={() =>
+                          updateActivePart((p) => ({
+                            ...p,
+                            textSections: (p.textSections || []).filter(
+                              (s) => s.id !== sec.id
+                            ),
+                          }))
+                        }
+                        className="text-red-300 hover:text-red-500 p-2 opacity-40 group-hover:opacity-100 transition-opacity"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+
+                    {/* 排數設定區 */}
+                    <div className="px-6 md:px-8 pt-5 pb-2 md:pb-4">
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
+                        <div
+                          className="rounded-2xl p-4 shadow-sm space-y-1"
+                          style={{
+                            backgroundColor: theme.bg,
+                            boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.02)',
+                          }}
+                        >
+                          <label className="text-[9px] font-black opacity-40 uppercase block mb-1">
                             循環排數 Rows/Loop
                           </label>
                           <input
                             type="number"
-                            value={sec.rowsPerLoop}
+                            value={sec.rowsPerLoop || 0}
                             onChange={(e) => {
-                              const v = parseInt(e.target.value) || 1;
-                              updateActivePart((part) => ({
-                                ...part,
-                                textSections: (part.textSections || []).map(
+                              const v = parseInt(e.target.value) || 0;
+                              updateActivePart((p) => ({
+                                ...p,
+                                textSections: (p.textSections || []).map(
                                   (s) =>
                                     s.id === sec.id
                                       ? { ...s, rowsPerLoop: v }
@@ -2712,21 +2840,28 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                                 ),
                               }));
                             }}
-                            className="w-full text-2xl font-black border-none p-0 focus:ring-0 tabular-nums"
+                            className="w-full text-xl md:text-2xl font-black border-none p-0 focus:ring-0 tabular-nums bg-transparent"
+                            style={{ color: theme.text }}
                           />
                         </div>
-                        <div className="bg-white rounded-[1.25rem] p-5 shadow-sm space-y-1">
-                          <label className="text-[9px] font-black opacity-30 uppercase block mb-1">
+                        <div
+                          className="rounded-2xl p-4 shadow-sm space-y-1"
+                          style={{
+                            backgroundColor: theme.bg,
+                            boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.02)',
+                          }}
+                        >
+                          <label className="text-[9px] font-black opacity-40 uppercase block mb-1">
                             重複次數 Repeats
                           </label>
                           <input
                             type="number"
-                            value={sec.repeats}
+                            value={sec.repeats || 0}
                             onChange={(e) => {
-                              const v = parseInt(e.target.value) || 1;
-                              updateActivePart((part) => ({
-                                ...part,
-                                textSections: (part.textSections || []).map(
+                              const v = parseInt(e.target.value) || 0;
+                              updateActivePart((p) => ({
+                                ...p,
+                                textSections: (p.textSections || []).map(
                                   (s) =>
                                     s.id === sec.id
                                       ? { ...s, repeats: v }
@@ -2734,217 +2869,352 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                                 ),
                               }));
                             }}
-                            className="w-full text-2xl font-black border-none p-0 focus:ring-0 tabular-nums"
+                            className="w-full text-xl md:text-2xl font-black border-none p-0 focus:ring-0 tabular-nums bg-transparent"
+                            style={{ color: theme.text }}
                           />
+                        </div>
+                        {/* 電腦端顯示單段落總排數 */}
+                        <div
+                          className="hidden md:flex flex-col justify-center rounded-2xl px-4 shadow-inner"
+                          style={{
+                            backgroundColor: '#ffffff',
+                            boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.02)',
+                          }}
+                        >
+                          <span className="text-[9px] font-black opacity-40 uppercase mb-1">
+                            Total
+                          </span>
+                          <div className="text-lg font-black opacity-60 tabular-nums">
+                            {Number(sec.rowsPerLoop || 0) *
+                              Number(sec.repeats || 0)}{' '}
+                            <span className="text-[10px]">Rows</span>
+                          </div>
                         </div>
                       </div>
                     </div>
-                    <textarea
-                      value={sec.content}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        updateActivePart((part) => ({
-                          ...part,
-                          textSections: (part.textSections || []).map((s) =>
-                            s.id === sec.id
-                              ? { ...s, content: value }
-                              : s
-                          ),
-                        }));
-                      }}
-                      className="w-full h-48 p-10 text-sm font-zen-mono focus:ring-0 border-none resize-none leading-relaxed text-theme-text bg-white"
-                      placeholder="輸入此階段編織說明..."
-                    />
+
+                    {/* 文字內容區 */}
+                    <div className="px-6 md:px-8 pb-6 md:pb-8">
+                      <textarea
+                        value={sec.content || ''}
+                        onChange={(e) =>
+                          updateActivePart((p) => ({
+                            ...p,
+                            textSections: (p.textSections || []).map((s) =>
+                              s.id === sec.id
+                                ? { ...s, content: e.target.value }
+                                : s
+                            ),
+                          }))
+                        }
+                        className="w-full min-h-[120px] md:min-h-[140px] rounded-3xl mt-2 px-4 py-3 text-sm leading-relaxed border-none focus:ring-2 resize-none font-mono"
+                        placeholder="輸入此段落的編織說明..."
+                        style={{
+                          backgroundColor: theme.bg,
+                          color: theme.text,
+                          boxShadow:
+                            'inset 0 0 0 1px rgba(0,0,0,0.02)',
+                        }}
+                      />
+                    </div>
                   </div>
                 ))}
-              </div>
-            )
-          ) : (
-            <div className="space-y-8">
-              <div className="flex justify-between items-center px-4">
-                <h3 className="font-black text-theme-text text-xl tracking-tighter uppercase tracking-widest opacity-60">
-                  Smart Notifications
-                </h3>
+
+                {/* 底部：快速新增下一段落（列表尾端入口） */}
                 <button
-                  onClick={() => {
-                    if (!currentPart) return;
-                    const base = alertsSource;
-                    const nextAlerts = [
-                      ...base,
-                      {
-                        id: crypto.randomUUID(),
-                        value: 1,
-                        mode: 'SPECIFIC',
-                        type: 'TOTAL',
-                        sectionId: 'ALL',
-                        startFrom: 1,
-                        message: '',
-                      },
-                    ];
-                    updateActivePart((part) => ({
-                      ...part,
-                      alerts: nextAlerts,
-                    }));
+                  onClick={handleAddSection}
+                  className="w-full py-8 border-2 border-dashed rounded-[2.5rem] flex flex-col items-center justify-center gap-2 group transition-all"
+                  style={{
+                    borderColor: theme.accent,
+                    color: theme.text,
+                    backgroundColor: 'rgba(255,255,255,0.6)',
                   }}
-                  className="bg-theme-primary text-white px-8 py-3 rounded-2xl font-black text-[10px] uppercase shadow-lg shadow-theme-primary/20 tracking-[0.1em] transition-all hover:scale-105"
                 >
-                  + Add New Rule
+                  <Plus
+                    size={24}
+                    className="opacity-60 group-hover:scale-110 transition-transform"
+                  />
+                  <span className="text-[11px] font-black uppercase tracking-[0.22em] opacity-70">
+                    Add Next Section
+                  </span>
                 </button>
               </div>
-              <div className="grid gap-6">
-                {alertsSource.map((a) => (
-                  <div
-                    key={a.id}
-                    className="bg-white p-10 rounded-[3rem] shadow-cozy border-2 border-theme-bg flex flex-col gap-6 animate-fade-in group hover:border-theme-primary/20 transition-all"
+            ) : (
+              /* ===== 提醒規則 TAB ===== */
+              <div className="space-y-8 animate-fade-in">
+                <div className="flex justify-between items-center px-1 md:px-0">
+                  <h3 className="font-black text-xl tracking-tight opacity-70">
+                    Smart Notifications
+                  </h3>
+                  <button
+                    onClick={() => {
+                      if (!currentPart) return;
+                      const base = alertsSource;
+                      const nextAlerts = [
+                        ...base,
+                        {
+                          id: crypto.randomUUID(),
+                          value: 1,
+                          mode: 'SPECIFIC',
+                          type: 'TOTAL',
+                          sectionId: 'ALL',
+                          startFrom: 1,
+                          message: '',
+                        },
+                      ];
+                      updateActivePart((p) => ({
+                        ...p,
+                        alerts: nextAlerts,
+                      }));
+                    }}
+                    className="px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-[0.16em] shadow-lg transition-all hover:scale-105"
+                    style={{
+                      backgroundColor: theme.primary,
+                      color: '#ffffff',
+                      boxShadow: `0 10px 24px -6px ${theme.primary}55`,
+                    }}
                   >
-                    <div className="flex flex-wrap gap-6 items-center">
-                      <select
-                        value={a.mode}
-                        onChange={(e) => {
-                          const mode = e.target.value;
-                          updateActivePart((part) => ({
-                            ...part,
-                            alerts: (part.alerts || []).map((rule) =>
-                              rule.id === a.id ? { ...rule, mode } : rule
-                            ),
-                          }));
-                        }}
-                        className="text-[10px] font-black bg-theme-bg p-3.5 rounded-xl border-none uppercase tracking-widest"
-                      >
-                        <option value="SPECIFIC">第幾排提醒 (Once)</option>
-                        <option value="EVERY">每幾排提醒 (Interval)</option>
-                      </select>
+                    + Add New Rule
+                  </button>
+                </div>
 
-                      <div className="flex items-center gap-2">
-                        {a.mode === 'EVERY' && (
-                          <>
-                            <span className="text-[10px] font-black opacity-30 uppercase tracking-widest">
-                              從第
-                            </span>
-                            <input
-                              type="number"
-                              value={
-                                typeof a.startFrom === 'number'
-                                  ? a.startFrom
-                                  : a.value || 1
-                              }
-                              onChange={(e) => {
-                                const v = parseInt(e.target.value) || 1;
-                                updateActivePart((part) => ({
-                                  ...part,
-                                  alerts: (part.alerts || []).map((rule) =>
+                <div className="grid gap-6">
+                  {alertsSource.map((a) => (
+                    <div
+                      key={a.id}
+                      className="bg-white p-7 md:p-9 rounded-[3rem] shadow-cozy border-2 flex flex-col gap-6 group transition-all"
+                      style={{ borderColor: theme.accent }}
+                    >
+                      <div className="flex flex-wrap gap-4 items-center">
+                        {/* 模式：一次性 / 循環 */}
+                        <select
+                          value={a.mode || 'SPECIFIC'}
+                          onChange={(e) => {
+                            const mode = e.target.value;
+                            updateActivePart((p) => ({
+                              ...p,
+                              alerts: (p.alerts || []).map((rule) =>
+                                rule.id === a.id
+                                  ? { ...rule, mode }
+                                  : rule
+                              ),
+                            }));
+                          }}
+                          className="text-[10px] font-black px-3.5 py-3 rounded-xl border-none uppercase tracking-[0.16em]"
+                          style={{
+                            backgroundColor: theme.bg,
+                            color: theme.text,
+                          }}
+                        >
+                          <option value="SPECIFIC">
+                            第幾排提醒 (Once)
+                          </option>
+                          <option value="EVERY">
+                            每幾排提醒 (Interval)
+                          </option>
+                        </select>
+
+                        {/* 起始排（EVERY 才顯示） */}
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {a.mode === 'EVERY' && (
+                            <>
+                              <span className="text-[10px] font-black opacity-40 uppercase tracking-[0.16em]">
+                                從第
+                              </span>
+                              <input
+                                type="number"
+                                value={
+                                  typeof a.startFrom === 'number'
+                                    ? a.startFrom
+                                    : a.value || 1
+                                }
+                                onChange={(e) => {
+                                  const v =
+                                    parseInt(e.target.value) || 1;
+                                  updateActivePart((p) => ({
+                                    ...p,
+                                    alerts: (p.alerts || []).map(
+                                      (rule) =>
+                                        rule.id === a.id
+                                          ? { ...rule, startFrom: v }
+                                          : rule
+                                    ),
+                                  }));
+                                }}
+                                className="w-16 text-center font-black border-none tabular-nums rounded-xl px-2 py-1.5 focus:ring-2"
+                                style={{
+                                  backgroundColor: theme.bg,
+                                  color: theme.text,
+                                }}
+                              />
+                              <span className="text-[10px] font-black opacity-40 uppercase tracking-[0.16em]">
+                                排開始，
+                              </span>
+                            </>
+                          )}
+
+                          {/* 每幾排 / 第幾排 */}
+                          <input
+                            type="number"
+                            value={a.value || 1}
+                            onChange={(e) => {
+                              const v =
+                                parseInt(e.target.value) || 1;
+                              updateActivePart((p) => ({
+                                ...p,
+                                alerts: (p.alerts || []).map(
+                                  (rule) =>
                                     rule.id === a.id
-                                      ? { ...rule, startFrom: v }
+                                      ? { ...rule, value: v }
                                       : rule
-                                  ),
-                                }));
-                              }}
-                              className="w-20 text-center font-black bg-theme-bg border-none tabular-nums focus:ring-2 ring-theme-primary/20"
-                            />
-                            <span className="text-[10px] font-black opacity-30 uppercase tracking-widest">
-                              排開始，
-                            </span>
-                          </>
+                                ),
+                              }));
+                            }}
+                            className="w-20 text-center font-black border-none tabular-nums rounded-xl px-2 py-1.5 focus:ring-2"
+                            style={{
+                              backgroundColor: theme.bg,
+                              color: theme.text,
+                            }}
+                          />
+                          <span className="text-[10px] font-black opacity-40 uppercase tracking-[0.16em]">
+                            {a.mode === 'EVERY' ? '排為間隔' : '排'}
+                          </span>
+                        </div>
+
+                        {/* 文字區段限制（僅 TEXT 顯示） */}
+                        {data.type === 'TEXT' && (
+                          <select
+                            value={a.sectionId || 'ALL'}
+                            onChange={(e) => {
+                              const sectionId = e.target.value;
+                              updateActivePart((p) => ({
+                                ...p,
+                                alerts: (p.alerts || []).map(
+                                  (rule) =>
+                                    rule.id === a.id
+                                      ? { ...rule, sectionId }
+                                      : rule
+                                ),
+                              }));
+                            }}
+                            className="text-[10px] font-black px-3.5 py-3 rounded-xl border-none uppercase tracking-[0.16em] ml-auto min-w-[140px]"
+                            style={{
+                              backgroundColor: theme.primary + '1a',
+                              color: theme.primary,
+                            }}
+                          >
+                            <option value="ALL">
+                              適用所有區段
+                            </option>
+                            {sectionsSource.map((sec) => (
+                              <option key={sec.id} value={sec.id}>
+                                限：{sec.title || '未命名段落'}
+                              </option>
+                            ))}
+                          </select>
                         )}
 
-                        <input
-                          type="number"
-                          value={a.value}
+                        {/* 類型：總排數 / 區段 */}
+                        <select
+                          value={a.type || 'TOTAL'}
                           onChange={(e) => {
-                            const v = parseInt(e.target.value) || 1;
-                            updateActivePart((part) => ({
-                              ...part,
-                              alerts: (part.alerts || []).map((rule) =>
-                                rule.id === a.id
-                                  ? { ...rule, value: v }
-                                  : rule
+                            const type = e.target.value;
+                            updateActivePart((p) => ({
+                              ...p,
+                              alerts: (p.alerts || []).map(
+                                (rule) =>
+                                  rule.id === a.id
+                                    ? { ...rule, type }
+                                    : rule
                               ),
                             }));
                           }}
-                          className="w-24 text-center font-black bg-theme-bg border-none tabular-nums focus:ring-2 ring-theme-primary/20"
-                        />
-                        <span className="text-[10px] font-black opacity-30 uppercase tracking-widest">
-                          {a.mode === 'EVERY' ? '排為間隔' : '排'}
-                        </span>
+                          className="text-[10px] font-black px-3.5 py-3 rounded-xl border-none uppercase tracking-[0.16em]"
+                          style={{
+                            backgroundColor: theme.bg,
+                            color: theme.text,
+                          }}
+                        >
+                          <option value="TOTAL">累計總排數</option>
+                          <option value="SECTION">區段/花樣段</option>
+                        </select>
+
+                        {/* 刪除提醒 */}
+                        <button
+                          onClick={() =>
+                            updateActivePart((p) => ({
+                              ...p,
+                              alerts: (p.alerts || []).filter(
+                                (rule) => rule.id !== a.id
+                              ),
+                            }))
+                          }
+                          className="text-red-300 p-2 opacity-30 group-hover:opacity-100 transition-opacity"
+                        >
+                          <Trash2 size={16} />
+                        </button>
                       </div>
 
-                      {data.type === 'TEXT' && (
-                        <select
-                          value={a.sectionId || 'ALL'}
+                      {/* 提醒訊息輸入框（左邊加一個 Bell icon） */}
+                      <div className="relative">
+                        <div className="absolute left-4 top-1/2 -translate-y-1/2 opacity-40">
+                          <Bell size={18} style={{ color: theme.primary }} />
+                        </div>
+                        <input
+                          value={a.message || ''}
                           onChange={(e) => {
-                            const sectionId = e.target.value;
-                            updateActivePart((part) => ({
-                              ...part,
-                              alerts: (part.alerts || []).map((rule) =>
+                            const msg = e.target.value;
+                            updateActivePart((p) => ({
+                              ...p,
+                              alerts: (p.alerts || []).map((rule) =>
                                 rule.id === a.id
-                                  ? { ...rule, sectionId }
+                                  ? { ...rule, message: msg }
                                   : rule
                               ),
                             }));
                           }}
-                          className="text-[10px] font-black bg-theme-primary/10 text-theme-primary p-3.5 rounded-xl border-none uppercase tracking-widest ml-auto min-w-[140px]"
-                        >
-                          <option value="ALL">適用所有區段</option>
-                          {sectionsSource.map((sec) => (
-                            <option key={sec.id} value={sec.id}>
-                              限：{sec.title}
-                            </option>
-                          ))}
-                        </select>
-                      )}
-
-                      <select
-                        value={a.type}
-                        onChange={(e) => {
-                          const type = e.target.value;
-                          updateActivePart((part) => ({
-                            ...part,
-                            alerts: (part.alerts || []).map((rule) =>
-                              rule.id === a.id ? { ...rule, type } : rule
-                            ),
-                          }));
-                        }}
-                        className={`text-[10px] font-black bg-theme-bg p-3.5 rounded-xl border-none uppercase tracking-widest ${
-                          data.type !== 'TEXT' ? 'ml-auto' : ''
-                        }`}
-                      >
-                        <option value="TOTAL">累計總排數</option>
-                        <option value="SECTION">區段/花樣段</option>
-                      </select>
-                      <button
-                        onClick={() => {
-                          updateActivePart((part) => ({
-                            ...part,
-                            alerts: (part.alerts || []).filter(
-                              (rule) => rule.id !== a.id
-                            ),
-                          }));
-                        }}
-                        className="text-red-400 p-2 opacity-20 group-hover:opacity-100 transition-opacity"
-                      >
-                        ✕
-                      </button>
+                          className="w-full pl-12 pr-5 py-4 rounded-[2rem] border-none focus:ring-2 text-sm font-bold"
+                          placeholder="提醒內容（例如：該扭麻花了、該加一針了…）"
+                          style={{
+                            backgroundColor: theme.bg,
+                            color: theme.text,
+                          }}
+                        />
+                      </div>
                     </div>
-                    <input
-                      value={a.message}
-                      onChange={(e) => {
-                        const msg = e.target.value;
-                        updateActivePart((part) => ({
-                          ...part,
-                          alerts: (part.alerts || []).map((rule) =>
-                            rule.id === a.id ? { ...rule, message: msg } : rule
-                          ),
-                        }));
-                      }}
-                      className="w-full text-lg font-bold bg-theme-bg/30 p-6 rounded-[2rem] border-none focus:ring-2 ring-theme-primary/20 text-theme-text"
-                      placeholder="提醒內容 (例如: 該扭麻花了!、該加一針了...)"
-                    />
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            )}
+
+            <div ref={listEndRef} className="h-20" />
+          </div>
+        </main>
+      </div>
+
+      {/* ===== 3. 行動端底部：進度 & Quick Save ===== */}
+      <div className="md:hidden h-14 bg-white border-t border-gray-100 flex items-center justify-between px-6 z-30">
+        <div className="flex items-center gap-2">
+          <span className="text-[9px] font-black opacity-40 uppercase tracking-[0.16em]">
+            Progress
+          </span>
+          <span
+            className="text-sm font-black tabular-nums"
+            style={{ color: theme.primary }}
+          >
+            {totalRows} 排
+          </span>
         </div>
+        <button
+          onClick={() => {
+            onUpdate(data);
+            onBack();
+          }}
+          className="text-[10px] font-black uppercase tracking-[0.18em] px-4 py-2 rounded-lg shadow-sm"
+          style={{ backgroundColor: theme.primary, color: '#ffffff' }}
+        >
+          Quick Save
+        </button>
       </div>
     </div>
   );
@@ -3051,7 +3321,7 @@ function LibraryView({
               "
             >
               {/* 編輯 */}
-              <button
+              {/* <button
                 onClick={(e) => {
                   e.stopPropagation();
                   onEditPattern(ptn);
@@ -3065,7 +3335,7 @@ function LibraryView({
                 "
               >
                 <Icons.Library className="w-4 h-4" />
-              </button>
+              </button> */}
 
               {/* 刪除 */}
               <button
