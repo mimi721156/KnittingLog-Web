@@ -557,7 +557,7 @@ const DefaultCover = ({ name }) => {
 
       {/* 中央組合圖示 */}
       <div className="relative flex flex-col items-center gap-4">
-        <div className="p-6 bg-white/60 backdrop-blur-md rounded-[2rem] shadow-sm border border-white/50 transform -rotate-3 group-hover:rotate-0 transition-transform duration-500">
+        <div className="p-2 bg-white/60 backdrop-blur-md rounded-[2rem] shadow-sm border border-white/50 transform -rotate-3 group-hover:rotate-0 transition-transform duration-500">
           <KnittingIcon />
         </div>
         <div className="flex flex-col items-center">
@@ -2752,7 +2752,7 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                           ),
                         }));
                       }}
-                      className="w-full h-48 p-10 text-lg font-zen-mono focus:ring-0 border-none resize-none leading-relaxed text-theme-text bg-white"
+                      className="w-full h-48 p-10 text-sm font-zen-mono focus:ring-0 border-none resize-none leading-relaxed text-theme-text bg-white"
                       placeholder="輸入此階段編織說明..."
                     />
                   </div>
@@ -3018,7 +3018,7 @@ function LibraryView({
                     e.stopPropagation();
                     onEditPattern(ptn);
                   }}
-                  className="w-9 h-9 rounded-full bg-white/90 backdrop-blur-md flex items-center justify-center text-theme-primary shadow-sm hover:bg-white transition-all"
+                  className="w-6 h-6 rounded-full bg-white/90 backdrop-blur-md flex items-center justify-center text-theme-primary shadow-sm hover:bg-white transition-all"
                   title="編輯織圖"
                 >
                   <Icons.Library className="w-4 h-4" />
@@ -3032,7 +3032,7 @@ function LibraryView({
                       return;
                     onDeletePattern(ptn.id);
                   }}
-                  className="w-9 h-9 rounded-full bg-white/80 backdrop-blur-md flex items-center justify-center text-gray-300 hover:text-red-400 hover:bg-white transition-all"
+                  className="w-6 h-6 rounded-full bg-white/80 backdrop-blur-md flex items-center justify-center text-gray-300 hover:text-red-400 hover:bg-white transition-all"
                   title="刪除織圖"
                 >
                   <Icons.Trash className="w-4 h-4" />
@@ -3040,11 +3040,11 @@ function LibraryView({
               </div>
 
               {/* 左下角：類型 Badge */}
-              <div className="absolute bottom-4 left-4">
+              {/* <div className="absolute bottom-4 left-4">
                 <span className="px-4 py-2 bg-[#344E41]/90 backdrop-blur-md text-[10px] font-black text-white rounded-2xl tracking-[0.2em] uppercase">
                   {ptn.type === 'CHART' ? 'Chart' : 'Pattern'}
                 </span>
-              </div>
+              </div> */}
             </div>
 
             {/* 內容區 */}
@@ -3078,7 +3078,7 @@ function LibraryView({
                 }}
                 className="mt-auto w-full py-4 bg-theme-primary text-white rounded-[1.8rem] font-black text-[11px] uppercase tracking-[0.3em] shadow-xl shadow-theme-primary/20 hover:shadow-2xl hover:shadow-theme-primary/30 transition-all"
               >
-                Start Knitting
+                Start
               </button>
             </div>
           </div>
