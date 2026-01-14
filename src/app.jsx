@@ -1494,8 +1494,8 @@ function ProjectView({
     currentProject.projectName || currentProject.patternName;
 
   return (
-      <div className="min-h-screen flex flex-col bg-theme-bg relative overflow-hidden">
-        {/* 上方標題列 */}
+      <div className="h-screen flex flex-col bg-theme-bg relative overflow-hidden">
+          {/* 上方標題列 */}
         <div className="flex-none bg-white/80 backdrop-blur p-4 border-b flex items-center justify-between z-30 shadow-sm">
           {/* Left：返回 */}
           <button
@@ -1551,7 +1551,7 @@ function ProjectView({
         <div className="flex-1 px-4 py-4 md:px-10 flex flex-col overflow-hidden">
           {/* 部位切換按鈕列 */}
           {currentProject.partsProgress && currentProject.partsProgress.length > 0 && (
-            <div className="flex flex-wrap gap-2 mb-3">
+            <div className="flex-none flex flex-wrap gap-2 mb-3">
               {currentProject.partsProgress.map((part) => {
                 const isActive =
                   currentPartProgress && part.partId === currentPartProgress.partId;
@@ -1582,56 +1582,57 @@ function ProjectView({
           )}
 
           {/* 🆕 提醒區：固定高度，覆蓋於中間，不撐開主要版面 */}
-          <div className="relative h-4 mb-1">
             {showAlertOverlay && currentAlerts.length > 0 && (
-              <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
-                <div className="max-w-xl w-full px-1 sm:px-0">
-                  <div className="bg-theme-primary text-white rounded-[1.5rem] shadow-2xl border border-white/30 px-3 py-2 flex items-start gap-2 pointer-events-auto">
-                    <div className="w-7 h-7 bg-white/15 rounded-2xl flex items-center justify-center text-base flex-shrink-0">
-                      🔔
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-[9px] font-black uppercase tracking-[0.18em] opacity-70 mb-0.5 truncate">
-                        Row Alert · {currentAlerts.length} rule
-                        {currentAlerts.length > 1 ? 's' : ''} on this row
+              <div className="fixed top-20 left-4 right-4 z-40 pointer-events-none">
+                <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
+                  <div className="max-w-xl w-full px-1 sm:px-0">
+                    <div className="bg-theme-primary text-white rounded-[1.5rem] shadow-2xl border border-white/30 px-3 py-2 flex items-start gap-2 pointer-events-auto">
+                      <div className="w-7 h-7 bg-white/15 rounded-2xl flex items-center justify-center text-base flex-shrink-0">
+                        🔔
                       </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-[9px] font-black uppercase tracking-[0.18em] opacity-70 mb-0.5 truncate">
+                          Row Alert · {currentAlerts.length} rule
+                          {currentAlerts.length > 1 ? 's' : ''} on this row
+                        </div>
 
-                      {/* 內容：如果太多就截斷，不增加版面高度 */}
-                      <div className="mt-0.5 space-y-1 max-h-9 overflow-hidden">
-                        {currentAlerts.map((alert, idx) => (
-                          <div
-                            key={alert.id || idx}
-                            className="flex items-start gap-1 text-[11px] leading-snug"
-                          >
-                            <span className="mt-[1px] text-[10px]">•</span>
-                            <div className="min-w-0">
-                              <div className="text-[9px] opacity-80 uppercase tracking-[0.12em] mb-0.5 truncate">
-                                {alert.type === 'SECTION' ? 'Section' : 'Total'} ·{' '}
-                                {alert.mode === 'EVERY' ? 'Every' : 'At'}{' '}
-                                {alert.value}
-                              </div>
-                              <div className="text-[11px] font-bold truncate">
-                                {alert.message || '下一段變化來了～'}
+                        {/* 內容：如果太多就截斷，不增加版面高度 */}
+                        <div className="mt-0.5 space-y-1 max-h-9 overflow-hidden">
+                          {currentAlerts.map((alert, idx) => (
+                            <div
+                              key={alert.id || idx}
+                              className="flex items-start gap-1 text-[11px] leading-snug"
+                            >
+                              <span className="mt-[1px] text-[10px]">•</span>
+                              <div className="min-w-0">
+                                <div className="text-[9px] opacity-80 uppercase tracking-[0.12em] mb-0.5 truncate">
+                                  {alert.type === 'SECTION' ? 'Section' : 'Total'} ·{' '}
+                                  {alert.mode === 'EVERY' ? 'Every' : 'At'}{' '}
+                                  {alert.value}
+                                </div>
+                                <div className="text-[11px] font-bold truncate">
+                                  {alert.message || '下一段變化來了～'}
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                       </div>
+                      <button
+                        onClick={() => setShowAlertOverlay(false)}
+                        className="ml-1 text-[9px] font-black uppercase tracking-[0.15em] px-2 py-1 rounded-full bg-white/15 hover:bg-white/25 transition flex-shrink-0"
+                      >
+                        關閉
+                      </button>
                     </div>
-                    <button
-                      onClick={() => setShowAlertOverlay(false)}
-                      className="ml-1 text-[9px] font-black uppercase tracking-[0.15em] px-2 py-1 rounded-full bg-white/15 hover:bg-white/25 transition flex-shrink-0"
-                    >
-                      關閉
-                    </button>
                   </div>
                 </div>
               </div>
             )}
-          </div>
+
 
           {/* 讓下面 Panel 靠近畫面底部 */}
-          <div className="flex-none mt-1">
+          <div className="flex-1 flex flex-col justify-end overflow-hidden">
             {/* 底部 Panel 等一下放進來（第 3 段） */}
                 {/* 底部常駐：Section Loop + Currently + Counter */}
                 {currentPartProgress && (
