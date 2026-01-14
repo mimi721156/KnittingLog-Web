@@ -50,7 +50,7 @@ const THEMES = {
     id: 'PINK',
     primary: '#c48e8e',
     bg: '#faf3f3',
-    text: '#735252',
+    text: '#735252', 
     accent: '#ebcfcf',
   },
   DARK: {
