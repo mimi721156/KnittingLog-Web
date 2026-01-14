@@ -2992,94 +2992,153 @@ function LibraryView({
         </div>
       </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-8">
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-8">
         {savedPatterns.map((ptn) => (
+        <div
+          key={ptn.id}
+          onClick={() => onEditPattern(ptn)}
+          className="group flex flex-col cursor-pointer"
+        >
+          {/* 封面：4:5 */}
           <div
-            key={ptn.id}
-            onClick={() => onEditPattern(ptn)}
-            className="group flex flex-col cursor-pointer"
+            className="
+              relative aspect-[4/5]
+              rounded-[2rem] overflow-hidden
+              bg-theme-accent
+              shadow-sm
+              transition-all duration-500
+              group-hover:shadow-xl
+            "
           >
-            {/* 1. 封面區：4:5 比例 + DefaultCover */}
-            <div className="relative aspect-[4/5] rounded-[2rem] overflow-hidden bg-[#F1F3EE] shadow-sm group-hover:shadow-[0_20px_50px_-15px_rgba(0,0,0,0.1)] transition-all duration-500">
-              {ptn.coverImage ? (
-                <img
-                  src={ptn.coverImage}
-                  alt={ptn.name}
-                  className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
-                />
-              ) : (
-                <DefaultCover name={ptn.name} />
-              )}
+            {ptn.coverImage ? (
+              <img
+                src={ptn.coverImage}
+                alt={ptn.name}
+                className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
+              />
+            ) : (
+              <DefaultCover name={ptn.name} />
+            )}
 
-              {/* 2. 圖片左上角：Category & Type 內部標籤 */}
-              <div className="absolute top-4 left-4 flex flex-col gap-1.5">
-                <span className="w-fit px-3 py-1 bg-white/80 backdrop-blur-md rounded-full text-[9px] font-black uppercase tracking-widest text-[#344E41] shadow-sm">
-                  {ptn.category || '未分類'}
-                </span>
-                <span className="w-fit px-3 py-1 bg-theme-primary/90 backdrop-blur-md rounded-full text-[9px] font-black uppercase tracking-widest text-white shadow-sm">
-                  {ptn.type === 'CHART' ? 'CHART' : 'TEXT'}
-                </span>
-              </div>
+            {/* 左上角：Category / Type */}
+            <div className="absolute top-4 left-4 flex flex-col gap-1.5">
+              <span
+                className="
+                  px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest
+                  bg-theme-bg text-theme-text backdrop-blur
+                "
+              >
+                {ptn.category || '未分類'}
+              </span>
 
-              {/* 5. 工具鈕隱身術：hover 才出現的 編輯 / 刪除 */}
-              <div className="absolute top-4 right-4 flex gap-2 translate-y-[-10px] opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onEditPattern(ptn);
-                  }}
-                  className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-theme-primary hover:bg-theme-primary hover:text-white shadow-sm transition-colors"
-                  title="編輯織圖"
-                >
-                  <Icons.Library className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (
-                      !window.confirm('確定要刪除這個織圖嗎？\n此動作無法復原。')
-                    )
-                      return;
-                    onDeletePattern(ptn.id);
-                  }}
-                  className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-gray-300 hover:text-red-400 hover:bg-white shadow-sm transition-colors"
-                  title="刪除織圖"
-                >
-                  <Icons.Trash className="w-4 h-4" />
-                </button>
-              </div>
+              <span
+                className="
+                  px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest
+                  bg-theme-primary text-white backdrop-blur
+                "
+              >
+                {ptn.type}
+              </span>
             </div>
 
-            {/* 3 & 4. 下方內容：只留標題 + 右側小 Play 按鈕 */}
-            <div className="mt-5 px-1 flex justify-between items-center">
-              <div className="flex-1 min-w-0">
-                <h3 className="text-lg md:text-xl font-black text-theme-text tracking-tight truncate group-hover:text-theme-primary transition-colors">
-                  {ptn.name}
-                </h3>
-              </div>
-
-              {/* 可愛角落 Play 按鈕（啟動小開關） */}
+            {/* 右上角：工具鈕（hover 才出現） */}
+            <div
+              className="
+                absolute top-4 right-4 flex gap-2
+                translate-y-[-8px] opacity-0
+                group-hover:translate-y-0 group-hover:opacity-100
+                transition-all duration-300
+              "
+            >
+              {/* 編輯 */}
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  onCreateProject(ptn);
+                  onEditPattern(ptn);
                 }}
-                className="flex-shrink-0 ml-4 group/play relative"
+                className="
+                  w-8 h-8 rounded-full
+                  bg-theme-bg text-theme-primary
+                  flex items-center justify-center shadow-sm
+                  hover:bg-theme-primary hover:text-white
+                  transition-colors
+                "
               >
-                <div className="w-10 h-10 rounded-full bg-[#FEFAE0] text-theme-accent flex items-center justify-center shadow-inner group-hover/play:bg-theme-text group-hover/play:text-white transition-all duration-300 transform group-hover/play:scale-110 active:scale-95">
-                  <Icons.Play
-                    size={16}
-                    className="ml-0.5"
-                    strokeWidth={0}
-                    fill="currentColor"
-                  />
-                </div>
-                <span className="absolute -top-7 left-1/2 -translate-x-1/2 bg-theme-text text-white text-[8px] px-2 py-1 rounded opacity-0 group-hover/play:opacity-100 transition-opacity pointer-events-none uppercase tracking-widest">
-                  Start
-                </span>
+                <Icons.Library className="w-4 h-4" />
+              </button>
+
+              {/* 刪除 */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (!window.confirm('確定要刪除這個織圖嗎？')) return;
+                  onDeletePattern(ptn.id);
+                }}
+                className="
+                  w-8 h-8 rounded-full
+                  bg-theme-bg text-theme-text/50
+                  flex items-center justify-center shadow-sm
+                  hover:text-red-500
+                  transition-colors
+                "
+              >
+                <Icons.Trash className="w-4 h-4" />
               </button>
             </div>
           </div>
+
+          {/* 下方：標題 + 小 Play 按鈕 */}
+          <div className="mt-5 px-1 flex justify-between items-center">
+            <h3
+              className="
+                text-lg md:text-xl font-black truncate tracking-tight
+                text-theme-text transition-colors
+                group-hover:text-theme-primary
+              "
+            >
+              {ptn.name}
+            </h3>
+
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onCreateProject(ptn);
+              }}
+              className="group/play relative ml-4"
+            >
+              <div
+                className="
+                  w-10 h-10 rounded-full
+                  bg-theme-accent text-theme-primary
+                  flex items-center justify-center
+                  shadow-inner
+                  transition-all duration-300
+                  group-hover/play:scale-110 active:scale-95
+                "
+              >
+                <Icons.Play
+                  size={16}
+                  className="ml-0.5"
+                  strokeWidth={0}
+                  fill="currentColor"
+                />
+              </div>
+
+              <span
+                className="
+                  absolute -top-7 left-1/2 -translate-x-1/2
+                  bg-theme-text text-theme-bg
+                  text-[8px] px-2 py-1 rounded
+                  uppercase tracking-widest opacity-0
+                  group-hover/play:opacity-100
+                  transition-opacity pointer-events-none
+                "
+              >
+                Start
+              </span>
+            </button>
+          </div>
+        </div>
         ))}
 
         {savedPatterns.length === 0 && (
