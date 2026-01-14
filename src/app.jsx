@@ -1178,6 +1178,34 @@ function ProjectView({
   const activeInstruction = projectStats.activeSection; // 目前段落
   const activeInstructionText = activeInstruction?.content || '';
 
+  const Modal = ({ title, onClose, children, icon: Icon }) => (
+    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-4 bg-theme-text/30 backdrop-blur-sm">
+      <div className="bg-white w-full max-w-xl rounded-[2.5rem] shadow-2xl overflow-hidden relative">
+        <div className="flex justify-between items-center px-5 py-4 border-b border-theme-bg/40">
+          <div className="flex items-center gap-2">
+            {Icon && (
+              <div className="w-8 h-8 rounded-xl bg-theme-bg flex items-center justify-center text-theme-text">
+                <Icon size={18} />
+              </div>
+            )}
+            <h3 className="font-black text-theme-text text-base tracking-tight">
+              {title}
+            </h3>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-2 rounded-full hover:bg-theme-bg/70 transition-colors"
+          >
+            <Icons.X size={18} className="text-theme-text/40" />
+          </button>
+        </div>
+        <div className="p-5 max-h-[70vh] overflow-y-auto">
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+
 
   if (!selectedId) {
     return (
@@ -1399,564 +1427,591 @@ function ProjectView({
 
   return (
       <div className="h-screen flex flex-col bg-theme-bg relative overflow-hidden">
-        {showAlertOverlay && currentAlerts.length > 0 && (
-          <div className="absolute inset-x-0 top-20 z-40 px-4 md:px-0">
-            <div className="max-w-xl mx-auto bg-theme-primary text-white rounded-[2.25rem] shadow-2xl border border-white/30 px-6 py-4 flex items-start gap-3">
-              <div className="w-10 h-10 bg-white/15 rounded-2xl flex items-center justify-center text-2xl">
-                🔔
-              </div>
-              <div className="flex-1">
-                <div className="text-[10px] font-black uppercase tracking-[0.18em] opacity-70 mb-1">
-                  Row Alert · {currentAlerts.length} rule
-                  {currentAlerts.length > 1 ? 's' : ''} on this row
-                </div>
-
-                <div className="mt-1 space-y-2">
-                  {currentAlerts.map((alert, idx) => (
-                    <div
-                      key={alert.id || idx}
-                      className="flex items-start gap-2"
-                    >
-                      <span className="mt-[2px] text-xs">•</span>
-                      <div>
-                        <div className="text-[10px] opacity-80 uppercase tracking-[0.12em] mb-0.5">
-                          {alert.type === 'SECTION' ? 'Section' : 'Total'} ·{' '}
-                          {alert.mode === 'EVERY' ? 'Every' : 'At'}{' '}
-                          {alert.value}
-                        </div>
-                        <div className="text-sm font-bold leading-snug">
-                          {alert.message || '下一段變化來了～'}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <button
-                onClick={() => setShowAlertOverlay(false)}
-                className="text-xs font-black uppercase tracking-[0.15em] px-3 py-1 rounded-full bg-white/15 hover:bg-white/25 transition flex-shrink-0"
-              >
-                關閉
-              </button>
-            </div>
-          </div>
-        )}
-
         {/* 上方標題列 */}
-          <div className="flex-none bg-white/80 backdrop-blur p-4 border-b flex justify-between items-center z-30 shadow-sm">
-            <button
-              onClick={() => setSelectedId(null)}
-              className="text-gray-400 font-bold px-2 uppercase text-[10px] tracking-widest"
-            >
-              ← Back
-            </button>
-            <h2 className="font-black text-theme-text truncate text-sm tracking-tight px-4">
+        <div className="flex-none bg-white/80 backdrop-blur p-4 border-b flex items-center justify-between z-30 shadow-sm">
+          {/* Left：返回 */}
+          <button
+            onClick={() => setSelectedId(null)}
+            className="text-gray-400 font-bold px-2 uppercase text-[10px] tracking-[0.18em]"
+          >
+            ← Back
+          </button>
+
+          {/* Middle：織品標題（點擊打開 project info modal） */}
+          <button
+            onClick={() => setActiveModal('project')}
+            className="flex flex-col items-center justify-center max-w-xs px-2 group"
+          >
+            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text/40 flex items-center gap-1">
+              Project Info
+              <span className="text-[10px] group-hover:text-theme-primary transition-colors">
+                ⓘ
+              </span>
+            </span>
+            <h2 className="font-black text-theme-text truncate text-sm tracking-tight group-hover:text-theme-primary transition-colors">
               {projectTitle}
             </h2>
-            <div className="w-10" />
-          </div>
+          </button>
 
-        {/* 中間可捲動內容 */}
-        <div className="flex-1 overflow-y-auto px-4 py-8 md:px-10 space-y-8">
-          
+          {/* Right：右上角功能按鈕 */}
+          <div className="flex items-center gap-2">
+            {/* Instruction 按鈕 */}
+            <button
+              onClick={() => setActiveModal('instruction')}
+              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-theme-primary text-white text-[10px] font-black uppercase tracking-[0.2em] shadow-md shadow-theme-primary/20 hover:brightness-110 transition-all"
+            >
+              <Icons.ScrollText size={14} />
+              織圖
+            </button>
 
-            <div className="bg-white p-6 rounded-[2rem] shadow-cozy border border-white flex flex-col gap-2">
-              <div className="flex justify-between items-end gap-3">
-                <div className="flex-1">
-                  <div className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text/50 mb-1">
-                    Project Name
-                  </div>
-                  <input
-                    type="text"
-                    value={projectTitle}
-                    onChange={(e) =>
-                      onUpdateProject({
-                        ...currentProject,
-                        projectName: e.target.value,
-                      })
-                    }
-                    className="w-full bg-transparent border-none text-lg md:text-xl font-black tracking-tight p-0 focus:ring-0"
-                    placeholder="給這個作品取一個名字…"
-                  />
-                </div>
-                {currentProject.startAt && (
-                  <div className="text-right text-[9px] text-theme-text/50 uppercase tracking-[0.18em]">
-                    Started
-                    <br />
-                    <span className="font-black text-theme-text/80">
-                      {new Date(currentProject.startAt).toLocaleDateString()}
-                    </span>
-                  </div>
-                )}
-              </div>
-              <div className="mt-3 flex flex-wrap items-center gap-2">
-                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text/50">
-                  Category
-                </span>
-                <select
-                  className="bg-theme-bg/70 rounded-full px-3 py-1.5 border-none text-[10px]"
-                  value={currentProject.category || '未分類'}
-                  onChange={(e) =>
-                    onUpdateProject({
-                      ...currentProject,
-                      category: e.target.value,
-                    })
-                  }
-                >
-                  {(categories || ['未分類']).map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="flex flex-wrap items-center gap-3 text-[10px] text-theme-text/70">
-                <div className="flex items-center gap-1">
-                  <span className="font-black uppercase tracking-[0.2em]">
-                    Yarn
-                  </span>
-                  <select
-                    className="bg-theme-bg/60 rounded-full px-3 py-1 border-none text-[10px]"
-                    value={currentProject.yarnId || ''}
-                    onChange={(e) =>
-                      onUpdateProject({
-                        ...currentProject,
-                        yarnId: e.target.value || null,
-                      })
-                    }
-                  >
-                    <option value="">未選擇</option>
-                    {yarns.map((y) => (
-                      <option key={y.id} value={y.id}>
-                        {[y.brand, y.name].filter(Boolean).join(' ') ||
-                          '未命名線材'}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="flex items-center gap-1">
-                  <span className="uppercase tracking-[0.2em] font-black opacity-60">
-                    Needle
-                  </span>
-                  <input
-                    className="bg-theme-bg/60 rounded-full px-3 py-1 border-none text-[10px] w-20"
-                    placeholder="4.0mm"
-                    value={currentProject.needle || ''}
-                    onChange={(e) =>
-                      onUpdateProject({
-                        ...currentProject,
-                        needle: e.target.value,
-                      })
-                    }
-                  />
-                </div>
-
-                <div className="flex items-center gap-1">
-                  <span className="uppercase tracking-[0.2em] font-black opacity-60">
-                    Cast on
-                  </span>
-                  <input
-                    className="bg-theme-bg/60 rounded-full px-3 py-1 border-none text-[10px] w-20"
-                    placeholder="例如 112"
-                    value={currentProject.castOn || ''}
-                    onChange={(e) =>
-                      onUpdateProject({
-                        ...currentProject,
-                        castOn: e.target.value,
-                      })
-                    }
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* {currentPattern.type === 'TEXT' && projectStats.targetTotal > 0 && (
-              <div className="bg-white p-6 rounded-[2rem] shadow-cozy border border-white space-y-3">
-                <div className="flex justify-between items-end">
-                  <div>
-                    <span className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text/50 mb-1 block">
-                      目前階段 Currently
-                    </span>
-                    <span className="font-black text-theme-text text-base tracking-tight">
-                      {projectStats.activeSection?.title || 'Unknown'}
-                    </span>
-                  </div>
-                  <span className="font-black text-theme-primary tabular-nums text-lg">
-                    {currentTotalRow}
-                    <span className="opacity-20 mx-1">/</span>
-                    {projectStats.targetTotal}
-                    <span className="text-[9px] opacity-40 uppercase ml-1">
-                      Rows
-                    </span>
-                  </span>
-                </div>
-                <div className="w-full h-2.5 bg-theme-bg rounded-full overflow-hidden shadow-inner">
-                  <div
-                    className="h-full bg-theme-primary transition-all duration-700"
-                    style={{
-                      width: `${Math.min(
-                        100,
-                        (currentTotalRow / projectStats.targetTotal) * 100
-                      )}%`,
-                    }}
-                  />
-                </div>
-              </div>
-            )} */}
-
-            {currentProject.partsProgress &&
-              currentProject.partsProgress.length > 0 && (
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {currentProject.partsProgress.map((part) => {
-                    const isActive =
-                      currentPartProgress &&
-                      part.partId === currentPartProgress.partId;
-
-                    return (
-                      <button
-                        key={part.partId}
-                        onClick={() =>
-                          onUpdateProject({
-                            ...currentProject,
-                            currentPartId: part.partId,
-                            totalRow: part.totalRow || 1,
-                            sectionRow: part.sectionRow || 1,
-                          })
-                        }
-                        className={
-                          'px-4 py-1.5 rounded-full text-[10px] font-black tracking-[0.18em] uppercase transition ' +
-                          (isActive
-                            ? 'bg-theme-primary text-white shadow'
-                            : 'bg-theme-bg text-theme-text/60 hover:bg-theme-bg/80')
-                        }
-                      >
-                        {part.name || '主體'}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mt-4">
-              <div className="lg:col-span-5 space-y-6">
-                {currentPattern.notes && (
-                  <div className="bg-theme-bg/40 p-5 rounded-[2rem] border border-theme-bg/60">
-                    <div className="text-[9px] font-black uppercase tracking-[0.2em] opacity-50 mb-2">
-                      Pattern Notes
-                    </div>
-                    <div className="text-sm text-theme-text whitespace-pre-wrap leading-relaxed">
-                      {currentPattern.notes}
-                    </div>
-                  </div>
-                )}
-                
-              </div>
-
-              <div className="lg:col-span-7 space-y-6">
-                <div className="bg-white p-8 rounded-[3rem] shadow-cozy border border-white min-h-[380px]">
-                  <h4 className="font-black text-theme-text border-b border-theme-bg pb-5 mb-8 flex items-center gap-3 tracking-widest uppercase text-[10px]">
-                    <Icons.Library /> Instruction
-                  </h4>
-                  {currentPattern.type === 'TEXT' ? (
-                    <div className="space-y-10">
-                      {(projectStats.sectionsSummary || []).map((sec) => {
-                        const isActive =
-                          projectStats.activeSection?.id === sec.id;
-                        return (
-                          <div
-                            key={sec.id}
-                            className={`relative pl-6 border-l-4 transition-all group ${
-                              isActive
-                                ? 'border-theme-primary scale-[1.02]'
-                                : 'border-theme-bg opacity-40 grayscale'
-                            }`}
-                          >
-                            <div className="flex flex-wrap items-center gap-3 mb-3">
-                              <span
-                                className={`text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full ${
-                                  isActive
-                                    ? 'bg-theme-primary text-white shadow-md'
-                                    : 'bg-theme-bg'
-                                }`}
-                              >
-                                {sec.title}
-                              </span>
-                              <span className="text-[8px] font-bold opacity-30 uppercase tracking-tighter">
-                                {sec.rowsPerLoop} rows × {sec.repeats} times
-                              </span>
-                            </div>
-                            <div
-                              className={`font-zen-mono text-base leading-relaxed whitespace-pre-wrap ${
-                                isActive
-                                  ? 'text-theme-text font-bold'
-                                  : 'text-gray-400'
-                              }`}
-                            >
-                              {sec.content}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center">
-                      {currentPattern.sections?.[0] && (
-                        <div className="inline-block bg-white border-4 border-theme-bg rounded-2xl p-2 shadow-inner overflow-x-auto max-w-full">
-                          <div
-                            className="grid gap-[1px] bg-theme-accent/30"
-                            style={{
-                              gridTemplateColumns: `repeat(${currentPattern.sections[0].cols}, 24px)`,
-                            }}
-                          >
-                            {currentPattern.sections[0].grid.map((row, r) =>
-                              row.map((cell, c) => {
-                                const localIdx =
-                                  (currentProject.sectionRow - 1) %
-                                  currentPattern.sections[0].rows;
-                                const isHighlight =
-                                  r ===
-                                  currentPattern.sections[0].rows - 1 - localIdx;
-                                return (
-                                  <div
-                                    key={`${r}-${c}`}
-                                    className={`w-6 h-6 flex items-center justify-center text-[10px] font-zen-mono select-none ${
-                                      SYMBOLS[cell]?.color || 'bg-white'
-                                    } ${
-                                      isHighlight
-                                        ? 'ring-2 ring-theme-primary z-10 scale-110 shadow-lg'
-                                        : 'opacity-40 grayscale'
-                                    }`}
-                                  >
-                                    {SYMBOLS[cell]?.symbol}
-                                  </div>
-                                );
-                              })
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-                {/* 左側改成只放 Project Notes */}
-                <div className="bg-white p-6 rounded-[2rem] shadow-cozy border border-white space-y-3">
-                  <div className="flex items-center justify-between gap-2">
-                    <div>
-                      <div className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text/60 mb-1">
-                        Project Notes
-                      </div>
-                      <div className="text-xs text-theme-text/60">
-                        織到一半的狀況、試穿感想、改版紀錄…
-                      </div>
-                    </div>
-                  </div>
-                  <textarea
-                    className="w-full mt-2 bg-theme-bg/40 rounded-2xl p-3.5 text-sm leading-relaxed border-none focus:ring-2 ring-theme-primary/20 min-h-[100px] resize-none"
-                    placeholder="例：第 35 排發現麻花偏緊，下次改 4.5mm 棒針；袖長預計多織 5cm。"
-                    value={currentProject.notes || ''}
-                    onChange={(e) =>
-                      onUpdateProject({
-                        ...currentProject,
-                        notes: e.target.value,
-                      })
-                    }
-                  />
-                </div>
-                <div className="h-72" />
-              </div>
+            {/* Notes 按鈕 */}
+            <button
+              onClick={() => setActiveModal('notes')}
+              className="inline-flex items-center justify-center w-9 h-9 rounded-2xl bg-white border border-theme-bg/60 shadow-sm hover:bg-theme-bg transition-colors"
+            >
+              <Icons.StickyNote size={18} className="text-theme-text/80" />
+            </button>
           </div>
         </div>
-        
-      {/* 底部常駐：Section Loop + Currently + Counter */}
-      {currentPartProgress && (
-        <div className="fixed bottom-0 left-0 right-0 z-40 pointer-events-none">
-          <div className="max-w-5xl mx-auto px-4 md:px-8 pb-[calc(1rem+env(safe-area-inset-bottom))]">
 
-            {/* 浮動當前指令：固定在計數器上方（這段你原本的可以保留） */}
-            {activeInstructionText && (
-              <div
-                className="animate-float-subtle mb-3 pointer-events-auto bg-white/95 backdrop-blur rounded-[2rem] shadow-lg border border-theme-bg/60 px-5 py-4 cursor-pointer"
-                onClick={() => setShowFullInstruction(!showFullInstruction)}
-              >
-                <div className="flex items-start gap-3">
-                  <div className="mt-1 w-6 h-6 rounded-full bg-theme-primary/10 flex items-center justify-center text-[11px] font-black text-theme-primary">
-                    Now
-                  </div>
-                  <div className="flex-1 overflow-hidden">
-                    {activeInstruction?.title && (
-                      <div className="text-[11px] font-semibold text-theme-text/70 mb-1">
-                        {activeInstruction.title}
-                      </div>
-                    )}
-                    <div
-                      className={
-                        'text-xs md:text-sm text-theme-text/90 whitespace-pre-wrap leading-relaxed ' +
-                        (showFullInstruction ? 'max-h-64 overflow-y-auto' : 'max-h-12 overflow-hidden')
-                      }
-                    >
-                      {activeInstructionText}
+        {/* 中間可捲動內容 */}
+        {/* 中間主要內容：只保留部位切換 + 底部 Panel 區域 */}
+        <div className="flex-1 px-4 py-4 md:px-10 flex flex-col">
+          {/* 部位切換按鈕列 */}
+          {currentProject.partsProgress && currentProject.partsProgress.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-3">
+              {currentProject.partsProgress.map((part) => {
+                const isActive =
+                  currentPartProgress && part.partId === currentPartProgress.partId;
+
+                return (
+                  <button
+                    key={part.partId}
+                    onClick={() =>
+                      onUpdateProject({
+                        ...currentProject,
+                        currentPartId: part.partId,
+                        totalRow: part.totalRow || 1,
+                        sectionRow: part.sectionRow || 1,
+                      })
+                    }
+                    className={
+                      'px-4 py-1.5 rounded-full text-[10px] font-black tracking-[0.18em] uppercase transition ' +
+                      (isActive
+                        ? 'bg-theme-primary text-white shadow'
+                        : 'bg-theme-bg text-theme-text/60 hover:bg-theme-bg/80')
+                    }
+                  >
+                    {part.name || '主體'}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {/* 🆕 提醒區：固定高度，覆蓋於中間，不撐開主要版面 */}
+          <div className="relative h-16 md:h-18 mb-2">
+            {showAlertOverlay && currentAlerts.length > 0 && (
+              <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
+                <div className="max-w-xl w-full px-1 sm:px-0">
+                  <div className="bg-theme-primary text-white rounded-[1.75rem] shadow-2xl border border-white/30 px-4 py-2.5 flex items-start gap-2 pointer-events-auto">
+                    <div className="w-8 h-8 bg-white/15 rounded-2xl flex items-center justify-center text-lg flex-shrink-0">
+                      🔔
                     </div>
-                    {!showFullInstruction && (
-                      <div className="mt-1 text-[10px] text-theme-text/40">
-                        點擊展開完整指令…
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[9px] font-black uppercase tracking-[0.18em] opacity-70 mb-0.5 truncate">
+                        Row Alert · {currentAlerts.length} rule
+                        {currentAlerts.length > 1 ? 's' : ''} on this row
                       </div>
-                    )}
+
+                      {/* 內容：如果太多就截斷，不增加版面高度 */}
+                      <div className="mt-0.5 space-y-1 max-h-9 overflow-hidden">
+                        {currentAlerts.map((alert, idx) => (
+                          <div
+                            key={alert.id || idx}
+                            className="flex items-start gap-1 text-[11px] leading-snug"
+                          >
+                            <span className="mt-[1px] text-[10px]">•</span>
+                            <div className="min-w-0">
+                              <div className="text-[9px] opacity-80 uppercase tracking-[0.12em] mb-0.5 truncate">
+                                {alert.type === 'SECTION' ? 'Section' : 'Total'} ·{' '}
+                                {alert.mode === 'EVERY' ? 'Every' : 'At'}{' '}
+                                {alert.value}
+                              </div>
+                              <div className="text-[11px] font-bold truncate">
+                                {alert.message || '下一段變化來了～'}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setShowAlertOverlay(false)}
+                      className="ml-1 text-[9px] font-black uppercase tracking-[0.15em] px-2 py-1 rounded-full bg-white/15 hover:bg-white/25 transition flex-shrink-0"
+                    >
+                      關閉
+                    </button>
                   </div>
                 </div>
               </div>
             )}
+          </div>
 
-            {/* ✅ 這一層是新的外框：負責白底 + pointer-events-auto + 進度條 */}
-            <div className="pointer-events-auto bg-white/98 backdrop-blur rounded-[2.5rem] border border-theme-accent/10 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] overflow-hidden">
-              {/* 頂部進度條 */}
-              <div className="h-1.5 w-full bg-theme-bg overflow-hidden">
-                <div
-                  className="h-full bg-theme-primary transition-all duration-700 ease-out"
-                  style={{ width: `${progressPercent}%` }}
+          {/* 讓下面 Panel 靠近畫面底部 */}
+          <div className="flex-1 flex flex-col justify-end">
+            {/* 底部 Panel 等一下放進來（第 3 段） */}
+            {currentPartProgress && (
+              <div className="mt-2">
+                {/* 底部常駐：Section Loop + Currently + Counter */}
+                {currentPartProgress && (
+                    <div className="max-w-5xl mx-auto px-4 md:px-8 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+
+                      {/* 浮動當前指令：固定在計數器上方（這段你原本的可以保留） */}
+                      {activeInstructionText && (
+                        <div
+                          className="animate-float-subtle mb-3 bg-white/95 backdrop-blur rounded-[2rem] shadow-lg border border-theme-bg/60 px-5 py-4 cursor-pointer"
+                          onClick={() => setShowFullInstruction(!showFullInstruction)}
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="mt-1 w-6 h-6 rounded-full bg-theme-primary/10 flex items-center justify-center text-[11px] font-black text-theme-primary">
+                              Now
+                            </div>
+                            <div className="flex-1 overflow-hidden">
+                              {activeInstruction?.title && (
+                                <div className="text-[11px] font-semibold text-theme-text/70 mb-1">
+                                  {activeInstruction.title}
+                                </div>
+                              )}
+                              <div
+                                className={
+                                  'text-xs md:text-sm text-theme-text/90 whitespace-pre-wrap leading-relaxed ' +
+                                  (showFullInstruction ? 'max-h-64 overflow-y-auto' : 'max-h-12 overflow-hidden')
+                                }
+                              >
+                                {activeInstructionText}
+                              </div>
+                              {!showFullInstruction && (
+                                <div className="mt-1 text-[10px] text-theme-text/40">
+                                  點擊展開完整指令…
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* ✅ 這一層是新的外框：負責白底 + pointer-events-auto + 進度條 */}
+                      <div className="bg-white/98 backdrop-blur rounded-[2.5rem] border border-theme-accent/10 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] overflow-hidden">
+                        {/* 頂部進度條 */}
+                        <div className="h-1.5 w-full bg-theme-bg overflow-hidden">
+                          <div
+                            className="h-full bg-theme-primary transition-all duration-700 ease-out"
+                            style={{ width: `${progressPercent}%` }}
+                          />
+                        </div>
+
+                        {/* 內層內容：Section Loop / Currently / Row Counter */}
+                        <div className="p-4 md:px-8">
+                          {/* 手機：上下（左區在上、Row Counter 在下）
+                              桌機：左右（左區在左、Row Counter 在右） */}
+                          <div className="flex flex-col md:flex-row items-stretch gap-4">
+                            {/* 左半：Section Loop + Currently */}
+                            <div className="flex-1 border-b md:border-b-0 md:border-r border-theme-bg/60 pb-3 md:pb-0 md:pr-4">
+                              {/* 手機：Section Loop 左、Currently 右
+                                  桌機：Section Loop 在上、Currently 在下 */}
+                              <div className="flex flex-row md:flex-col items-start justify-between gap-4">
+                                {/* Section Loop */}
+                                <div className="text-theme-text/70">
+                                  <div className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text/40 mb-1">
+                                    Section Loop
+                                  </div>
+                                  {sectionLoopInfo ? (
+                                    <div className="border-l-2 border-theme-primary/20 pl-2">
+                                      {sectionLoopInfo.title && (
+                                        <div className="text-xs font-bold text-theme-text truncate max-w-[120px] md:max-w-none">
+                                          {sectionLoopInfo.title}
+                                        </div>
+                                      )}
+                                      <div className="text-[11px] md:text-xs text-theme-text/60 tabular-nums">
+                                        第{' '}
+                                        <span className="font-semibold text-theme-text/90">
+                                          {sectionLoopInfo.loopRow}
+                                        </span>{' '}
+                                        / {sectionLoopInfo.rowsPerLoop} 排
+                                        <span className="mx-1 text-theme-text/30">|</span>
+                                        第{' '}
+                                        <span className="font-semibold text-theme-text/90">
+                                          {sectionLoopInfo.loopIndex}
+                                        </span>{' '}
+                                        輪
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <div className="text-[10px] opacity-50">
+                                      尚未有 Section Loop 資訊
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* Currently：手機跟桌機都顯示 */}
+                                <div className="text-right md:text-left md:pl-2">
+                                  <span className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text/40 mb-1 block">
+                                    Currently
+                                  </span>
+                                  <div className="text-[10px] font-bold text-theme-text tabular-nums">
+                                    {currentPartTitle && (
+                                      <span className="font-semibold mr-2">
+                                        {currentPartTitle}
+                                      </span>
+                                    )}
+                                    {typeof currentRow === 'number' &&
+                                      typeof totalRows === 'number' && (
+                                        <div className="text-[10px] text-theme-text/50">
+                                          第 <span className="font-bold">{currentRow}</span>{' '}
+                                          / {totalRows} 排
+                                          <span className="mx-1 text-theme-text/30">•</span>
+                                          進度 {progressPercent}%
+                                        </div>
+                                      )}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* 右半：Row Counter + +n Go */}
+                            <div className="w-full md:w-auto flex items-center justify-end">
+                              <div className="w-full md:w-auto flex flex-col items-center md:items-end gap-2">
+                                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-theme-text/40 self-start md:self-end">
+                                  Row Counter
+                                </span>
+
+                                <div className="flex items-center gap-2 w-full">
+                                  {/* - 按鈕 */}
+                                  <button
+                                    onClick={() => {
+                                      update(-1);
+                                      setShowAlertOverlay(false);
+                                    }}
+                                    className="w-12 h-12 rounded-full bg-theme-bg text-theme-primary font-black text-xl flex items-center justify-center active:scale-90 transition-transform shadow-inner"
+                                  >
+                                    −
+                                  </button>
+
+                                  {/* 當前排數 */}
+                                  <div className="flex-1 min-w-[70px] text-center">
+                                    <div className="text-5xl md:text-6xl font-black text-theme-text tabular-nums leading-none tracking-tighter">
+                                      {currentTotalRow}
+                                    </div>
+                                    <div className="text-[9px] font-bold text-theme-text/30 uppercase mt-1">
+                                      Rows
+                                    </div>
+                                  </div>
+
+                                  {/* + 按鈕 */}
+                                  <button
+                                    onClick={() => {
+                                      update(1);
+                                      setShowAlertOverlay(false);
+                                    }}
+                                    className="w-20 h-20 md:w-20 md:h-20 rounded-full bg-theme-primary text-white font-black text-3xl flex items-center justify-center active:scale-95 transition-all shadow-lg shadow-theme-primary/30"
+                                  >
+                                    +
+                                  </button>
+
+                                  {/* +n Go */}
+                                  <div className="flex flex-col items-stretch gap-1 bg-theme-bg/60 rounded-2xl p-1 ml-1">
+                                    <input
+                                      type="number"
+                                      value={plusN}
+                                      onChange={(e) => setPlusN(e.target.value)}
+                                      placeholder="+n"
+                                      className="w-14 bg-transparent border-none text-center font-bold text-sm focus:ring-0 focus:outline-none tabular-nums placeholder:text-theme-text/20 p-1"
+                                    />
+                                    <button
+                                      onClick={() => {
+                                        const n = parseInt(plusN);
+                                        if (!isNaN(n)) {
+                                          update(n);
+                                          setShowAlertOverlay(false);
+                                        }
+                                        setPlusN('');
+                                      }}
+                                      className="px-2 py-1.5 rounded-xl font-black text-[9px] tracking-wider uppercase bg-theme-text text-white active:scale-95 transition-transform"
+                                    >
+                                      Go
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>{/* /p-4 */}
+                      </div>{/* /pointer-events-auto + bg-white */}
+                    </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
+
+        {activeModal === 'project' && (
+        <Modal
+          title="織品資訊"
+          onClose={() => setActiveModal(null)}
+          icon={Icons.Sparkles}
+        >
+          <div className="space-y-4">
+            {/* 名稱 + 開始日期 */}
+            <div className="flex justify-between items-end gap-3">
+              <div className="flex-1">
+                <div className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text/50 mb-1">
+                  Project Name
+                </div>
+                <input
+                  type="text"
+                  value={currentProject.projectName || ''}
+                  onChange={(e) =>
+                    onUpdateProject({
+                      ...currentProject,
+                      projectName: e.target.value,
+                    })
+                  }
+                  className="w-full bg-theme-bg/40 rounded-xl border-none text-base font-black tracking-tight px-3 py-2 focus:ring-2 ring-theme-primary/30"
+                  placeholder="給這個作品取一個名字…"
+                />
+              </div>
+              {currentProject.startAt && (
+                <div className="text-right text-[9px] text-theme-text/50 uppercase tracking-[0.18em]">
+                  Started
+                  <br />
+                  <span className="font-black text-theme-text/80">
+                    {new Date(currentProject.startAt).toLocaleDateString()}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Category */}
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text/50">
+                Category
+              </span>
+              <select
+                className="bg-theme-bg/70 rounded-full px-3 py-1.5 border-none text-[10px]"
+                value={currentProject.category || '未分類'}
+                onChange={(e) =>
+                  onUpdateProject({
+                    ...currentProject,
+                    category: e.target.value,
+                  })
+                }
+              >
+                {(categories || ['未分類']).map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Yarn / Needle / Cast On */}
+            <div className="flex flex-wrap items-center gap-3 text-[10px] text-theme-text/70">
+              <div className="flex items-center gap-1">
+                <span className="font-black uppercase tracking-[0.2em]">
+                  Yarn
+                </span>
+                <select
+                  className="bg-theme-bg/60 rounded-full px-3 py-1 border-none text-[10px]"
+                  value={currentProject.yarnId || ''}
+                  onChange={(e) =>
+                    onUpdateProject({
+                      ...currentProject,
+                      yarnId: e.target.value || null,
+                    })
+                  }
+                >
+                  <option value="">未選擇</option>
+                  {yarns.map((y) => (
+                    <option key={y.id} value={y.id}>
+                      {[y.brand, y.name].filter(Boolean).join(' ') || '未命名線材'}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex items-center gap-1">
+                <span className="uppercase tracking-[0.2em] font-black opacity-60">
+                  Needle
+                </span>
+                <input
+                  className="bg-theme-bg/60 rounded-full px-3 py-1 border-none text-[10px] w-24"
+                  placeholder="4.0mm"
+                  value={currentProject.needle || ''}
+                  onChange={(e) =>
+                    onUpdateProject({
+                      ...currentProject,
+                      needle: e.target.value,
+                    })
+                  }
                 />
               </div>
 
-              {/* 內層內容：Section Loop / Currently / Row Counter */}
-              <div className="p-4 md:px-8">
-                {/* 手機：上下（左區在上、Row Counter 在下）
-                    桌機：左右（左區在左、Row Counter 在右） */}
-                <div className="flex flex-col md:flex-row items-stretch gap-4">
-                  {/* 左半：Section Loop + Currently */}
-                  <div className="flex-1 border-b md:border-b-0 md:border-r border-theme-bg/60 pb-3 md:pb-0 md:pr-4">
-                    {/* 手機：Section Loop 左、Currently 右
-                        桌機：Section Loop 在上、Currently 在下 */}
-                    <div className="flex flex-row md:flex-col items-start justify-between gap-4">
-                      {/* Section Loop */}
-                      <div className="text-theme-text/70">
-                        <div className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text/40 mb-1">
-                          Section Loop
+              <div className="flex items-center gap-1">
+                <span className="uppercase tracking-[0.2em] font-black opacity-60">
+                  Cast on
+                </span>
+                <input
+                  className="bg-theme-bg/60 rounded-full px-3 py-1 border-none text-[10px] w-24"
+                  placeholder="例如 112"
+                  value={currentProject.castOn || ''}
+                  onChange={(e) =>
+                    onUpdateProject({
+                      ...currentProject,
+                      castOn: e.target.value,
+                    })
+                  }
+                />
+              </div>
+            </div>
+          </div>
+        </Modal>
+        )}
+
+        {activeModal === 'instruction' && (
+        <Modal
+          title="織圖說明"
+          onClose={() => setActiveModal(null)}
+          icon={Icons.Library}
+        >
+          <div className="space-y-4">
+            {/* Pattern Notes */}
+            {currentPattern.notes && (
+              <div className="bg-theme-bg/40 p-4 rounded-[1.5rem] border border-theme-bg/60">
+                <div className="text-[9px] font-black uppercase tracking-[0.2em] opacity-50 mb-2">
+                  Pattern Notes
+                </div>
+                <div className="text-sm text-theme-text whitespace-pre-wrap leading-relaxed">
+                  {currentPattern.notes}
+                </div>
+              </div>
+            )}
+
+            {/* Instruction 內容（沿用你原本的邏輯） */}
+            <div className="bg-white p-6 rounded-[2rem] shadow-cozy border border-white min-h-[260px]">
+              <h4 className="font-black text-theme-text border-b border-theme-bg pb-3 mb-4 flex items-center gap-3 tracking-widest uppercase text-[10px]">
+                <Icons.Library /> Instruction
+              </h4>
+              {currentPattern.type === 'TEXT' ? (
+                <div className="space-y-8">
+                  {(projectStats.sectionsSummary || []).map((sec) => {
+                    const isActive = projectStats.activeSection?.id === sec.id;
+                    return (
+                      <div
+                        key={sec.id}
+                        className={`relative pl-6 border-l-4 transition-all group ${
+                          isActive
+                            ? 'border-theme-primary scale-[1.02]'
+                            : 'border-theme-bg opacity-40 grayscale'
+                        }`}
+                      >
+                        <div className="flex flex-wrap items-center gap-3 mb-3">
+                          <span
+                            className={`text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full ${
+                              isActive
+                                ? 'bg-theme-primary text-white shadow-md'
+                                : 'bg-theme-bg'
+                            }`}
+                          >
+                            {sec.title}
+                          </span>
+                          <span className="text-[8px] font-bold opacity-30 uppercase tracking-tighter">
+                            {sec.rowsPerLoop} rows × {sec.repeats} times
+                          </span>
                         </div>
-                        {sectionLoopInfo ? (
-                          <div className="border-l-2 border-theme-primary/20 pl-2">
-                            {sectionLoopInfo.title && (
-                              <div className="text-xs font-bold text-theme-text truncate max-w-[120px] md:max-w-none">
-                                {sectionLoopInfo.title}
+                        <div
+                          className={`font-zen-mono text-sm leading-relaxed whitespace-pre-wrap ${
+                            isActive
+                              ? 'text-theme-text font-bold'
+                              : 'text-gray-400'
+                          }`}
+                        >
+                          {sec.content}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center">
+                  {currentPattern.sections?.[0] && (
+                    <div className="inline-block bg-white border-4 border-theme-bg rounded-2xl p-2 shadow-inner overflow-x-auto max-w-full">
+                      <div
+                        className="grid gap-[1px] bg-theme-accent/30"
+                        style={{
+                          gridTemplateColumns: `repeat(${currentPattern.sections[0].cols}, 24px)`,
+                        }}
+                      >
+                        {currentPattern.sections[0].grid.map((row, r) =>
+                          row.map((cell, c) => {
+                            const localIdx =
+                              (currentProject.sectionRow - 1) %
+                              currentPattern.sections[0].rows;
+                            const isHighlight =
+                              r ===
+                              currentPattern.sections[0].rows - 1 - localIdx;
+                            return (
+                              <div
+                                key={`${r}-${c}`}
+                                className={`w-6 h-6 flex items-center justify-center text-[10px] font-zen-mono select-none ${
+                                  SYMBOLS[cell]?.color || 'bg-white'
+                                } ${
+                                  isHighlight
+                                    ? 'ring-2 ring-theme-primary z-10 scale-110 shadow-lg'
+                                    : 'opacity-40 grayscale'
+                                }`}
+                              >
+                                {SYMBOLS[cell]?.symbol}
                               </div>
-                            )}
-                            <div className="text-[11px] md:text-xs text-theme-text/60 tabular-nums">
-                              第{' '}
-                              <span className="font-semibold text-theme-text/90">
-                                {sectionLoopInfo.loopRow}
-                              </span>{' '}
-                              / {sectionLoopInfo.rowsPerLoop} 排
-                              <span className="mx-1 text-theme-text/30">|</span>
-                              第{' '}
-                              <span className="font-semibold text-theme-text/90">
-                                {sectionLoopInfo.loopIndex}
-                              </span>{' '}
-                              輪
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="text-[10px] opacity-50">
-                            尚未有 Section Loop 資訊
-                          </div>
+                            );
+                          })
                         )}
                       </div>
-
-                      {/* Currently：手機跟桌機都顯示 */}
-                      <div className="text-right md:text-left md:pl-2">
-                        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text/40 mb-1 block">
-                          Currently
-                        </span>
-                        <div className="text-[10px] font-bold text-theme-text tabular-nums">
-                          {currentPartTitle && (
-                            <span className="font-semibold mr-2">
-                              {currentPartTitle}
-                            </span>
-                          )}
-                          {typeof currentRow === 'number' &&
-                            typeof totalRows === 'number' && (
-                              <div className="text-[10px] text-theme-text/50">
-                                第 <span className="font-bold">{currentRow}</span>{' '}
-                                / {totalRows} 排
-                                <span className="mx-1 text-theme-text/30">•</span>
-                                進度 {progressPercent}%
-                              </div>
-                            )}
-                        </div>
-                      </div>
                     </div>
-                  </div>
-
-                  {/* 右半：Row Counter + +n Go */}
-                  <div className="w-full md:w-auto flex items-center justify-end">
-                    <div className="w-full md:w-auto flex flex-col items-center md:items-end gap-2">
-                      <span className="text-[10px] font-black uppercase tracking-[0.2em] text-theme-text/40 self-start md:self-end">
-                        Row Counter
-                      </span>
-
-                      <div className="flex items-center gap-2 w-full">
-                        {/* - 按鈕 */}
-                        <button
-                          onClick={() => {
-                            update(-1);
-                            setShowAlertOverlay(false);
-                          }}
-                          className="w-12 h-12 rounded-full bg-theme-bg text-theme-primary font-black text-xl flex items-center justify-center active:scale-90 transition-transform shadow-inner"
-                        >
-                          −
-                        </button>
-
-                        {/* 當前排數 */}
-                        <div className="flex-1 min-w-[70px] text-center">
-                          <div className="text-5xl md:text-6xl font-black text-theme-text tabular-nums leading-none tracking-tighter">
-                            {currentTotalRow}
-                          </div>
-                          <div className="text-[9px] font-bold text-theme-text/30 uppercase mt-1">
-                            Rows
-                          </div>
-                        </div>
-
-                        {/* + 按鈕 */}
-                        <button
-                          onClick={() => {
-                            update(1);
-                            setShowAlertOverlay(false);
-                          }}
-                          className="w-20 h-20 md:w-20 md:h-20 rounded-full bg-theme-primary text-white font-black text-3xl flex items-center justify-center active:scale-95 transition-all shadow-lg shadow-theme-primary/30"
-                        >
-                          +
-                        </button>
-
-                        {/* +n Go */}
-                        <div className="flex flex-col items-stretch gap-1 bg-theme-bg/60 rounded-2xl p-1 ml-1">
-                          <input
-                            type="number"
-                            value={plusN}
-                            onChange={(e) => setPlusN(e.target.value)}
-                            placeholder="+n"
-                            className="w-14 bg-transparent border-none text-center font-bold text-sm focus:ring-0 focus:outline-none tabular-nums placeholder:text-theme-text/20 p-1"
-                          />
-                          <button
-                            onClick={() => {
-                              const n = parseInt(plusN);
-                              if (!isNaN(n)) {
-                                update(n);
-                                setShowAlertOverlay(false);
-                              }
-                              setPlusN('');
-                            }}
-                            className="px-2 py-1.5 rounded-xl font-black text-[9px] tracking-wider uppercase bg-theme-text text-white active:scale-95 transition-transform"
-                          >
-                            Go
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                  )}
                 </div>
-              </div>{/* /p-4 */}
-            </div>{/* /pointer-events-auto + bg-white */}
+              )}
+            </div>
           </div>
-        </div>
+        </Modal>
+        )}
+
+        {activeModal === 'notes' && (
+        <Modal
+          title="Project Notes"
+          onClose={() => setActiveModal(null)}
+          icon={Icons.StickyNote}
+        >
+          <div className="space-y-2">
+            <div className="text-xs text-theme-text/60">
+              織到一半的狀況、試穿感想、改版紀錄…
+            </div>
+            <textarea
+              className="w-full mt-2 bg-theme-bg/40 rounded-2xl p-3.5 text-sm leading-relaxed border-none focus:ring-2 ring-theme-primary/20 min-h-[180px] resize-none"
+              placeholder="例：第 35 排發現麻花偏緊，下次改 4.5mm 棒針；袖長預計多織 5cm。"
+              value={currentProject.notes || ''}
+              onChange={(e) =>
+                onUpdateProject({
+                  ...currentProject,
+                  notes: e.target.value,
+                })
+              }
+            />
+          </div>
+        </Modal>
       )}
+
     </div>
   );
 }
