@@ -1841,7 +1841,7 @@ function ProjectView({
                     </div>
 
                     {/* 裡面文字高度限制，避免整張卡過高 */}
-                    <div className="mt-0.5 space-y-1 max-h-10 overflow-hidden">
+                    <div className="mt-0.5 space-y-1 max-h-24 overflow-y-auto pr-1">
                       {currentAlerts.map((alert, idx) => (
                         <div
                           key={alert.id || idx}
@@ -1849,11 +1849,11 @@ function ProjectView({
                         >
                           <span className="mt-[1px] text-[10px]">•</span>
                           <div className="min-w-0">
-                            <div className="text-[9px] opacity-80 uppercase tracking-[0.12em] mb-0.5 truncate">
+                            <div className="text-[9px] opacity-80 uppercase tracking-[0.12em] mb-0.5">
                               {alert.type === 'SECTION' ? 'Section' : 'Total'} ·{' '}
                               {alert.mode === 'EVERY' ? 'Every' : 'At'} {alert.value}
                             </div>
-                            <div className="text-[11px] font-bold truncate">
+                            <div className="text-[11px] font-bold">
                               {alert.message || '下一段變化來了～'}
                             </div>
                           </div>
