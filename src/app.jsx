@@ -2992,15 +2992,15 @@ function LibraryView({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-8">
+            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-8">
         {savedPatterns.map((ptn) => (
           <div
             key={ptn.id}
             onClick={() => onEditPattern(ptn)}
-            className="group bg-white rounded-[2.8rem] overflow-hidden border border-gray-100 shadow-[0_15px_40px_-20px_rgba(0,0,0,0.06)] hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.12)] transition-all duration-700 flex flex-col cursor-pointer"
+            className="group flex flex-col cursor-pointer"
           >
-            {/* 封面區：圖片／預設封面 */}
-            <div className="relative aspect-square overflow-hidden bg-[#F1F3EE]">
+            {/* 1. 封面區：4:5 比例 + DefaultCover */}
+            <div className="relative aspect-[4/5] rounded-[2rem] overflow-hidden bg-[#F1F3EE] shadow-sm group-hover:shadow-[0_20px_50px_-15px_rgba(0,0,0,0.1)] transition-all duration-500">
               {ptn.coverImage ? (
                 <img
                   src={ptn.coverImage}
@@ -3011,14 +3011,24 @@ function LibraryView({
                 <DefaultCover name={ptn.name} />
               )}
 
-              {/* 右上角：編輯／刪除 */}
-              <div className="absolute top-4 right-4 flex gap-2">
+              {/* 2. 圖片左上角：Category & Type 內部標籤 */}
+              <div className="absolute top-4 left-4 flex flex-col gap-1.5">
+                <span className="w-fit px-3 py-1 bg-white/80 backdrop-blur-md rounded-full text-[9px] font-black uppercase tracking-widest text-[#344E41] shadow-sm">
+                  {ptn.category || '未分類'}
+                </span>
+                <span className="w-fit px-3 py-1 bg-theme-primary/90 backdrop-blur-md rounded-full text-[9px] font-black uppercase tracking-widest text-white shadow-sm">
+                  {ptn.type === 'CHART' ? 'CHART' : 'TEXT'}
+                </span>
+              </div>
+
+              {/* 5. 工具鈕隱身術：hover 才出現的 編輯 / 刪除 */}
+              <div className="absolute top-4 right-4 flex gap-2 translate-y-[-10px] opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     onEditPattern(ptn);
                   }}
-                  className="w-6 h-6 rounded-full bg-white/90 backdrop-blur-md flex items-center justify-center text-theme-primary shadow-sm hover:bg-white transition-all"
+                  className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-theme-primary hover:bg-theme-primary hover:text-white shadow-sm transition-colors"
                   title="編輯織圖"
                 >
                   <Icons.Library className="w-4 h-4" />
@@ -3032,53 +3042,41 @@ function LibraryView({
                       return;
                     onDeletePattern(ptn.id);
                   }}
-                  className="w-6 h-6 rounded-full bg-white/80 backdrop-blur-md flex items-center justify-center text-gray-300 hover:text-red-400 hover:bg-white transition-all"
+                  className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-gray-300 hover:text-red-400 hover:bg-white shadow-sm transition-colors"
                   title="刪除織圖"
                 >
                   <Icons.Trash className="w-4 h-4" />
                 </button>
               </div>
-
-              {/* 左下角：類型 Badge */}
-              {/* <div className="absolute bottom-4 left-4">
-                <span className="px-4 py-2 bg-[#344E41]/90 backdrop-blur-md text-[10px] font-black text-white rounded-2xl tracking-[0.2em] uppercase">
-                  {ptn.type === 'CHART' ? 'Chart' : 'Pattern'}
-                </span>
-              </div> */}
             </div>
 
-            {/* 內容區 */}
-            <div className="p-6 md:p-7 flex-1 flex flex-col relative">
-              {/* 類別＋日期
-              <div className="mb-4">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-[10px] font-black opacity-30 uppercase tracking-[0.2em]">
-                    {ptn.category || '未分類'}
-                  </span>
-                  <div className="w-1 h-1 rounded-full bg-black/10" />
-                  <span className="text-[10px] font-black text-theme-primary/70 uppercase tracking-[0.2em]">
-                    {ptn.type === 'CHART' ? 'Chart' : 'Text'}
-                  </span>
-                </div>
-                <div className="text-[10px] font-black opacity-30 uppercase tracking-[0.18em]">
-                  {new Date(ptn.updatedAt).toLocaleDateString()}
-                </div>
-              </div> */}
+            {/* 3 & 4. 下方內容：只留標題 + 右側小 Play 按鈕 */}
+            <div className="mt-5 px-1 flex justify-between items-center">
+              <div className="flex-1 min-w-0">
+                <h3 className="text-lg md:text-xl font-black text-theme-text tracking-tight truncate group-hover:text-theme-primary transition-colors">
+                  {ptn.name}
+                </h3>
+              </div>
 
-              {/* 標題 */}
-              <h3 className="text-xl md:text-2xl font-black text-theme-text tracking-tight leading-tight mb-4 group-hover:translate-x-[1px] transition-transform">
-                {ptn.name}
-              </h3>
-
-              {/* 底部：Start Knitting 按鈕 */}
+              {/* 可愛角落 Play 按鈕（啟動小開關） */}
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   onCreateProject(ptn);
                 }}
-                className="mt-auto w-full py-4 bg-theme-primary text-white rounded-[1.8rem] font-black text-[11px] uppercase tracking-[0.3em] shadow-xl shadow-theme-primary/20 hover:shadow-2xl hover:shadow-theme-primary/30 transition-all"
+                className="flex-shrink-0 ml-4 group/play relative"
               >
-                Start
+                <div className="w-10 h-10 rounded-full bg-[#FEFAE0] text-theme-accent flex items-center justify-center shadow-inner group-hover/play:bg-theme-text group-hover/play:text-white transition-all duration-300 transform group-hover/play:scale-110 active:scale-95">
+                  <Icons.Play
+                    size={16}
+                    className="ml-0.5"
+                    strokeWidth={0}
+                    fill="currentColor"
+                  />
+                </div>
+                <span className="absolute -top-7 left-1/2 -translate-x-1/2 bg-theme-text text-white text-[8px] px-2 py-1 rounded opacity-0 group-hover/play:opacity-100 transition-opacity pointer-events-none uppercase tracking-widest">
+                  Start
+                </span>
               </button>
             </div>
           </div>
@@ -3090,6 +3088,8 @@ function LibraryView({
           </div>
         )}
       </div>
+
+
     </div>
   );
 }
