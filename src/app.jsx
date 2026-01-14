@@ -1494,7 +1494,7 @@ function ProjectView({
     currentProject.projectName || currentProject.patternName;
 
   return (
-      <div className="h-screen flex flex-col bg-theme-bg relative overflow-hidden">
+      <div className="min-h-screen flex flex-col bg-theme-bg relative overflow-hidden">
         {/* 上方標題列 */}
         <div className="flex-none bg-white/80 backdrop-blur p-4 border-b flex items-center justify-between z-30 shadow-sm">
           {/* Left：返回 */}
