@@ -67,245 +67,101 @@ const THEMES = {
 // === Icons ===
 
 const Icons = {
-  Play: ({ size = 24, ...props }) => (
+  Play: () => (
     <svg
-      width={size}
-      height={size}
+      width="24"
+      height="24"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
       strokeWidth="2.5"
       strokeLinecap="round"
       strokeLinejoin="round"
-      {...props}
     >
       <polygon points="5 3 19 12 5 21 5 3" />
     </svg>
   ),
-  Library: ({ size = 24, ...props }) => (
+  Library: () => (
     <svg
-      width={size}
-      height={size}
+      width="24"
+      height="24"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
       strokeWidth="2.5"
       strokeLinecap="round"
       strokeLinejoin="round"
-      {...props}
     >
       <path d="M4 19.5V5a2 2 0 0 1 2-2h3" />
       <path d="M10 3h6a2 2 0 0 1 2 2v14.5" />
-      <path d="M8 3v18" />
+      <path d="M8 21h8" />
     </svg>
   ),
-  Grid: ({ size = 24, ...props }) => (
+  Grid: () => (
     <svg
-      width={size}
-      height={size}
+      width="24"
+      height="24"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth="2.2"
+      strokeWidth="2.4"
       strokeLinecap="round"
       strokeLinejoin="round"
-      {...props}
     >
-      <rect x="3" y="3" width="7" height="7" rx="1.5" />
-      <rect x="14" y="3" width="7" height="7" rx="1.5" />
-      <rect x="3" y="14" width="7" height="7" rx="1.5" />
-      <rect x="14" y="14" width="7" height="7" rx="1.5" />
+      <rect x="3" y="3" width="7" height="7" rx="2" />
+      <rect x="14" y="3" width="7" height="7" rx="2" />
+      <rect x="3" y="14" width="7" height="7" rx="2" />
+      <rect x="14" y="14" width="7" height="7" rx="2" />
     </svg>
   ),
-  Yarn: ({ size = 24, ...props }) => (
+  Yarn: () => (
     <svg
-      width={size}
-      height={size}
+      width="24"
+      height="24"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth="2.2"
+      strokeWidth="2.5"
       strokeLinecap="round"
       strokeLinejoin="round"
-      {...props}
     >
-      <circle cx="12" cy="12" r="9" />
-      <path d="M5 5c3 1.5 7 5 9 9s3 6 5 7" />
-      <path d="M5 12c2 0 5 1 7 3s3.5 5 3.5 5" />
-      <path d="M4 16c2 .5 3 .5 5 2" />
+      <circle cx="12" cy="12" r="10" />
+      <path d="M2 12h20" />
+      <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
     </svg>
   ),
-  Info: ({ size = 18, ...props }) => (
+  Info: () => (
     <svg
-      width={size}
-      height={size}
+      width="24"
+      height="24"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth="2.2"
+      strokeWidth="2.5"
       strokeLinecap="round"
       strokeLinejoin="round"
-      {...props}
     >
       <circle cx="12" cy="12" r="10" />
       <path d="M12 16v-4" />
       <path d="M12 8h.01" />
     </svg>
   ),
-  Trash: ({ size = 18, ...props }) => (
+  Trash: () => (
     <svg
-      width={size}
-      height={size}
+      width="18"
+      height="18"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth="2.2"
+      strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
-      {...props}
     >
-      <path d="M3 6h18" />
-      <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-      <path d="M10 11v6" />
-      <path d="M14 11v6" />
+      <polyline points="3 6 5 6 21 6" />
+      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
     </svg>
   ),
-  Cloud: ({ size = 18, ...props }) => (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.1"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      {...props}
-    >
-      <path d="M4 15a4 4 0 0 1 3-3.87A4.5 4.5 0 0 1 16.5 9 3.5 3.5 0 0 1 20 12.5 3.5 3.5 0 0 1 16.5 16H7a3 3 0 0 1-3-3z" />
-    </svg>
-  ),
-  Sparkles: ({ size = 18, ...props }) => (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.1"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      {...props}
-    >
-      <path d="M12 3 13.5 8.5 19 10 13.5 11.5 12 17 10.5 11.5 5 10 10.5 8.5 12 3z" />
-      <path d="M5 4l1 2" />
-      <path d="M19 4l-1 2" />
-      <path d="M4 20l2-1" />
-      <path d="M20 20l-2-1" />
-    </svg>
-  ),
-  ScrollText: ({ size = 20, ...props }) => (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.1"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      {...props}
-    >
-      <path d="M7 3h11a2 2 0 0 1 2 2v10" />
-      <path d="M7 20h10a2 2 0 0 0 2-2v-1" />
-      <path d="M7 3a2 2 0 0 0-2 2v10" />
-      <path d="M11 7h4" />
-      <path d="M9 11h6" />
-      <path d="M9 15h3" />
-    </svg>
-  ),
-  X: ({ size = 20, ...props }) => (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.4"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      {...props}
-    >
-      <line x1="5" y1="5" x2="19" y2="19" />
-      <line x1="19" y1="5" x2="5" y2="19" />
-    </svg>
-  ),
-  Menu: ({ size = 20, ...props }) => (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.4"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      {...props}
-    >
-      <line x1="4" y1="7" x2="20" y2="7" />
-      <line x1="4" y1="12" x2="20" y2="12" />
-      <line x1="4" y1="17" x2="20" y2="17" />
-    </svg>
-  ),
-  Check: ({ size = 18, ...props }) => (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.4"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      {...props}
-    >
-      <polyline points="5 13 9 17 19 7" />
-    </svg>
-  ),
-  Layers: ({ size = 20, ...props }) => (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.1"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      {...props}
-    >
-      <polygon points="12 3 3 9 12 15 21 9 12 3" />
-      <polyline points="3 14 12 20 21 14" />
-    </svg>
-  ),
-  Plus: ({ size = 20, ...props }) => (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.4"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      {...props}
-    >
-      <line x1="12" y1="5" x2="12" y2="19" />
-      <line x1="5" y1="12" x2="19" y2="12" />
-    </svg>
-  ),
-  Trash2: ({ size = 16, ...props }) => (
+Trash2: ({ size = 16, ...props }) => (
     <svg
       width={size}
       height={size}
@@ -324,7 +180,134 @@ const Icons = {
       <path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" />
     </svg>
   ),
-  StickyNote: ({ size = 18, ...props }) => (
+  Plus: () => (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="3"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <line x1="12" y1="5" x2="12" y2="19" />
+      <line x1="5" y1="12" x2="19" y2="12" />
+    </svg>
+  ),
+  Cloud: () => (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M18 10a4 4 0 0 0-7.9-1A4 4 0 0 0 6 17h11a3 3 0 0 0 1-5.83" />
+    </svg>
+  ),
+  X: () => (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <line x1="18" y1="6" x2="6" y2="18" />
+      <line x1="6" y1="6" x2="18" y2="18" />
+    </svg>
+  ),
+  StickyNote: () => (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M6 3h9l5 5v13H6z" />
+      <path d="M15 3v5h5" />
+    </svg>
+  ),
+  ScrollText: () => (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M7 4h11a2 2 0 0 1 2 2v10" />
+      <path d="M7 20h10a2 2 0 0 0 2-2v-1" />
+      <path d="M7 4a2 2 0 0 0-2 2v10" />
+      <path d="M11 7h4" />
+      <path d="M9 11h6" />
+      <path d="M9 15h3" />
+    </svg>
+  ),
+   X: ({ size = 20, ...props }) => (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.4"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...props}
+    >
+      <line x1="5" y1="5" x2="19" y2="19" />
+      <line x1="19" y1="5" x2="5" y2="19" />
+    </svg>
+  ),
+       Menu: ({ size = 20, ...props }) => (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.4"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...props}
+    >
+      <line x1="4" y1="7" x2="20" y2="7" />
+      <line x1="4" y1="12" x2="20" y2="12" />
+      <line x1="4" y1="17" x2="20" y2="17" />
+    </svg>
+  ),
+
+  Check: ({ size = 18, ...props }) => (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.4"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...props}
+    >
+      <polyline points="5 13 9 17 19 7" />
+    </svg>
+  ),
+Layers: ({ size = 20, ...props }) => (
     <svg
       width={size}
       height={size}
@@ -336,11 +319,12 @@ const Icons = {
       strokeLinejoin="round"
       {...props}
     >
-      <path d="M5 3h11a2 2 0 0 1 2 2v9.5L14.5 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" />
-      <path d="M14 21v-3a2 2 0 0 1 2-2h3" />
+      <polygon points="12 3 3 9 12 15 21 9 12 3" />
+      <polyline points="3 14 12 20 21 14" />
     </svg>
   ),
-  ChevronUp: ({ size = 12, ...props }) => (
+    
+   ChevronUp: ({ size = 12, ...props }) => (
     <svg
       width={size}
       height={size}
@@ -384,6 +368,23 @@ const Icons = {
     >
       <path d="M18 8a6 6 0 0 0-12 0c0 7-2 9-2 9h16s-2-2-2-9" />
       <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+    </svg>
+  ),
+
+  Sparkles: () => (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M12 3 9.5 9.5 3 12l6.5 2.5L12 21l2.5-6.5L21 12l-6.5-2.5z" />
+      <path d="M5 3l1 2 2 1-2 1-1 2-1-2-2-1 2-1z" />
+      <path d="M19 16l.5 1 .9.5-.9.5-.5 1-.5-1-.9-.5.9-.5z" />
     </svg>
   ),
 };
@@ -2670,7 +2671,7 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
             onClick={onBack}
             className="p-2 hover:bg-gray-50 rounded-full text-gray-400"
           >
-            <X size={20} />
+            <Icons.X size={20} />
           </button>
           <div className="hidden md:block h-4 w-[1px] bg-gray-200" />
           <h2 className="text-sm font-black tracking-tight truncate max-w-[120px] md:max-w-[220px]">
@@ -2724,7 +2725,7 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
             className="md:hidden p-2 rounded-full"
             style={{ color: 'var(--text-color)' }}
           >
-            <Menu size={20} />
+            <Icons.Menu size={20} />
           </button>
           <button
             onClick={handleSaveAndBack}
@@ -2734,7 +2735,7 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
               color: '#ffffff',
             }}
           >
-            <Check size={14} className="md:hidden" />
+            <Icons.Check size={14} className="md:hidden" />
             <span className="hidden md:inline">Save</span>
             <span className="md:hidden">Done</span>
           </button>
@@ -2766,7 +2767,7 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
               onClick={() => setShowMobileSidebar(false)}
               className="p-2 bg-gray-100 rounded-full"
             >
-              <X size={18} />
+              <Icons.X size={18} />
             </button>
           </div>
 
@@ -2774,7 +2775,7 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
             {/* 基礎資訊 */}
             <section className="space-y-4">
               <div className="flex items-center gap-2 mb-2 opacity-40">
-                <Settings2 size={14} />
+                <Icons.Sparkles size={14} />
                 <span className="text-[10px] font-black uppercase tracking-[0.22em]">
                   Settings
                 </span>
@@ -3028,7 +3029,7 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                 className="w-full flex items-center justify-between"
               >
                 <div className="flex items-center gap-2">
-                  <StickyNote
+                  <Icons.StickyNote
                     size={14}
                     style={{ color: 'var(--primary-color)' }}
                   />
@@ -3039,7 +3040,7 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                     Pattern Notes
                   </span>
                 </div>
-                {isNotesOpen ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                {isNotesOpen ? <Icons.ChevronUp size={12} /> : <Icons.ChevronDown size={12} />}
               </button>
               {isNotesOpen && (
                 <textarea
@@ -3106,7 +3107,7 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                       borderColor: 'var(--accent-color)',
                     }}
                   >
-                    <Layers
+                    <Icons.Layers
                       size={20}
                       style={{ color: 'var(--primary-color)' }}
                     />
@@ -3137,7 +3138,7 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                     boxShadow: '0 10px 25px -6px var(--primary-color)',
                   }}
                 >
-                  <Plus size={16} />
+                  <Icons.Plus size={16} />
                   <span>新增段落</span>
                 </button>
               </div>
@@ -3197,7 +3198,7 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                         }
                         className="text-red-300 hover:text-red-500 p-2 opacity-40 group-hover:opacity-100 transition-opacity"
                       >
-                        <Trash2 size={16} />
+                        <Icons.Trash2 size={16} />
                       </button>
                     </div>
 
@@ -3316,7 +3317,7 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                     backgroundColor: 'rgba(255,255,255,0.6)',
                   }}
                 >
-                  <Plus
+                  <Icons.Plus
                     size={24}
                     className="opacity-60 group-hover:scale-110 transition-transform"
                   />
@@ -3498,14 +3499,14 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                           }
                           className="text-red-300 p-2 opacity-30 group-hover:opacity-100 transition-opacity"
                         >
-                          <Trash2 size={16} />
+                          <Icons.Trash2 size={16} />
                         </button>
                       </div>
 
                       {/* 提醒訊息輸入框 */}
                       <div className="relative">
                         <div className="absolute left-4 top-1/2 -translate-y-1/2 opacity-40">
-                          <Bell
+                          <Icons.Bell
                             size={18}
                             style={{ color: 'var(--primary-color)' }}
                           />
