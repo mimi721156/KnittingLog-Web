@@ -9,7 +9,7 @@ import {
 } from './src/storage.js';
 import { loadFromGitHub, saveToGitHub } from './src/githubContentsApi.js';
 
-const { useState, useEffect, useMemo } = React;
+const { useState, useEffect, useMemo, useRef } = React;
 
 // === 基礎設定 ===
 
