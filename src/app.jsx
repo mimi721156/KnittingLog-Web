@@ -1526,10 +1526,14 @@ function ProjectView({
             {/* Instruction 按鈕 */}
             <button
               onClick={() => setActiveModal('instruction')}
-              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-theme-primary text-white text-[10px] font-black uppercase tracking-[0.2em] shadow-md shadow-theme-primary/20 hover:brightness-110 transition-all"
+              className="inline-flex items-center justify-center gap-1 px-2 sm:px-3 py-1.5 rounded-full bg-theme-primary text-white text-[10px] font-black uppercase tracking-[0.2em] shadow-md shadow-theme-primary/20 hover:brightness-110 transition-all"
             >
               <Icons.ScrollText size={14} />
-              織圖
+
+              {/* 手機隱藏文字，sm 以上才顯示 */}
+              <span className="hidden sm:inline">
+                織圖
+              </span>
             </button>
 
             {/* Notes 按鈕 */}
@@ -1578,12 +1582,12 @@ function ProjectView({
           )}
 
           {/* 🆕 提醒區：固定高度，覆蓋於中間，不撐開主要版面 */}
-          <div className="relative h-16 md:h-18 mb-2">
+          <div className="relative h-12 md:h-14 mb-1">
             {showAlertOverlay && currentAlerts.length > 0 && (
               <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
                 <div className="max-w-xl w-full px-1 sm:px-0">
-                  <div className="bg-theme-primary text-white rounded-[1.75rem] shadow-2xl border border-white/30 px-4 py-2.5 flex items-start gap-2 pointer-events-auto">
-                    <div className="w-8 h-8 bg-white/15 rounded-2xl flex items-center justify-center text-lg flex-shrink-0">
+                  <div className="bg-theme-primary text-white rounded-[1.5rem] shadow-2xl border border-white/30 px-3 py-2 flex items-start gap-2 pointer-events-auto">
+                    <div className="w-7 h-7 bg-white/15 rounded-2xl flex items-center justify-center text-base flex-shrink-0">
                       🔔
                     </div>
                     <div className="flex-1 min-w-0">
@@ -1630,7 +1634,7 @@ function ProjectView({
           <div className="flex-1 flex flex-col justify-end">
             {/* 底部 Panel 等一下放進來（第 3 段） */}
             {currentPartProgress && (
-              <div className="mt-2">
+              <div className="mt-1">
                 {/* 底部常駐：Section Loop + Currently + Counter */}
                 {currentPartProgress && (
                     <div className="max-w-5xl mx-auto px-4 md:px-8 pb-[calc(1rem+env(safe-area-inset-bottom))]">
@@ -3669,3 +3673,4 @@ function App() {
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(<App />);
+
