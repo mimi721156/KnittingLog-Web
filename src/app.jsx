@@ -395,6 +395,36 @@ const normalizeProject = (p) => {
   };
 };
 
+  const Modal = ({ title, onClose, children, icon: Icon }) => (
+    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-4 bg-theme-text/30 backdrop-blur-sm">
+      <div className="bg-white w-full max-w-xl rounded-[2.5rem] shadow-2xl overflow-hidden relative">
+        <div className="flex justify-between items-center px-5 py-4 border-b border-theme-bg/40">
+          <div className="flex items-center gap-2">
+            {Icon && (
+              <div className="w-8 h-8 rounded-xl bg-theme-bg flex items-center justify-center text-theme-text">
+                <Icon size={18} />
+              </div>
+            )}
+            <h3 className="font-black text-theme-text text-base tracking-tight">
+              {title}
+            </h3>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-2 rounded-full hover:bg-theme-bg/70 transition-colors"
+          >
+            <Icons.X size={18} className="text-theme-text/40" />
+          </button>
+        </div>
+        <div className="p-5 max-h-[70vh] overflow-y-auto">
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+
+
+
 // === GitHub Sync Dialog ===
 
 const PATH_PRESETS = ['data/knitting.json', 'data/xiangdata.json'];
@@ -1177,35 +1207,6 @@ function ProjectView({
 
   const activeInstruction = projectStats.activeSection; // 目前段落
   const activeInstructionText = activeInstruction?.content || '';
-
-  const Modal = ({ title, onClose, children, icon: Icon }) => (
-    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-4 bg-theme-text/30 backdrop-blur-sm">
-      <div className="bg-white w-full max-w-xl rounded-[2.5rem] shadow-2xl overflow-hidden relative">
-        <div className="flex justify-between items-center px-5 py-4 border-b border-theme-bg/40">
-          <div className="flex items-center gap-2">
-            {Icon && (
-              <div className="w-8 h-8 rounded-xl bg-theme-bg flex items-center justify-center text-theme-text">
-                <Icon size={18} />
-              </div>
-            )}
-            <h3 className="font-black text-theme-text text-base tracking-tight">
-              {title}
-            </h3>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-2 rounded-full hover:bg-theme-bg/70 transition-colors"
-          >
-            <Icons.X size={18} className="text-theme-text/40" />
-          </button>
-        </div>
-        <div className="p-5 max-h-[70vh] overflow-y-auto">
-          {children}
-        </div>
-      </div>
-    </div>
-  );
-
 
   if (!selectedId) {
     return (
@@ -3302,6 +3303,7 @@ function App() {
           (p) => (p.category || '未分類') === categoryFilter
         );
 
+
   return (
     <div className="flex h-screen overflow-hidden">
       <div className="hidden md:flex w-24 bg-white border-r border-theme-accent/20 flex-col items-center py-12 space-y-12 z-30 shadow-sm relative">
@@ -3600,3 +3602,4 @@ function App() {
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(<App />);
+
