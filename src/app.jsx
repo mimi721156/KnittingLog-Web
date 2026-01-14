@@ -1674,7 +1674,7 @@ function ProjectView({
           {showAlertOverlay && currentAlerts.length > 0 && (
             <div className="absolute inset-0 z-20 pointer-events-none flex items-center justify-center">
               <div className="max-w-xl w-full px-1 sm:px-0 pointer-events-auto">
-                <div className="bg-theme-primary text-white rounded-[1.5rem] shadow-2xl border border-white/30 px-3 py-2 flex items-start gap-2">
+                <div className="animate-float-subtle bg-theme-primary text-white rounded-[1.5rem] shadow-2xl border border-white/30 px-3 py-2 flex items-start gap-2">
                   <div className="w-7 h-7 bg-white/15 rounded-2xl flex items-center justify-center text-base flex-shrink-0">
                     🔔
                   </div>
@@ -1724,7 +1724,7 @@ function ProjectView({
               {/* 浮動當前指令（可選） */}
               {activeInstructionText && (
                 <div
-                  className="animate-float-subtle mb-2 bg-white/95 backdrop-blur rounded-[2rem] shadow-lg border border-theme-bg/60 px-4 py-3 cursor-pointer"
+                  className="mb-2 bg-white/95 backdrop-blur rounded-[2rem] shadow-lg border border-theme-bg/60 px-4 py-3 cursor-pointer"
                   onClick={() => setShowFullInstruction(!showFullInstruction)}
                 >
                   <div className="flex items-start gap-3">
