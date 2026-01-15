@@ -1468,23 +1468,43 @@ function ProjectView({
       
       // --- 核心邏輯修改處 ---
       // 優先使用自定義的花樣循環 patternRows，若沒設定則 fallback 到區段的 rowsPerLoop
-      const rowsPerLoop = sec.patternRows || sec.rowsPerLoop || 1;
+      const patternRows = sec.patternRows || sec.rowsPerLoop || 1;
+      const sectionTotalRows = sec.totalRows; // 該區段總長度（例如 44）
       // ----------------------
 
       const offsetFromStart = currentTotalRow - sec.startRow;
       if (offsetFromStart < 0) return null;
 
-      const loopRow = (offsetFromStart % rowsPerLoop) + 1;
-      const loopIndex = Math.floor(offsetFromStart / rowsPerLoop) + 1;
+      // 計算目前的輪數與排數
+      const loopIndex = Math.floor(offsetFromStart / patternRows) + 1;
+      const loopRow = (offsetFromStart % patternRows) + 1;
+
+      // --- 動態計算目前這輪的總排數 ---
+      let displayRowsPerLoop = patternRows;
+      
+      // 計算這區段總共有幾輪（含不完整的小數輪）
+      const totalLoops = Math.ceil(sectionTotalRows / patternRows);
+
+      // 如果目前就是最後一輪
+      if (loopIndex === totalLoops) {
+        // 剩餘排數 = 總排數 - (前面的完整輪數 * 每輪排數)
+        // 例如：44 - (3 * 12) = 8
+        const remainingRows = sectionTotalRows - (Math.floor(sectionTotalRows / patternRows) * patternRows);
+        
+        // 如果餘數為 0，代表剛好整除，最後一輪也是滿的；如果有餘數，則顯示餘數
+        if (remainingRows > 0) {
+          displayRowsPerLoop = remainingRows;
+        }
+      }
 
       return {
         mode: 'TEXT',
         title: sec.title,
         loopRow,
         loopIndex,
-        rowsPerLoop,
-        // 額外標記這是否為「花樣模式」，方便 UI 切換顏色或標題
-        isPatternMode: !!sec.patternRows 
+        rowsPerLoop: displayRowsPerLoop, // 這裡會動態變動
+        isPatternMode: !!sec.patternRows,
+        isLastLoop: loopIndex === totalLoops // 標記是否為最後一輪，可用於 UI 提示
       };
     }
 
@@ -2027,7 +2047,7 @@ function ProjectView({
                         {/* Section Loop */}
                         <div className="text-theme-text/70">
                           <div className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text/40 mb-1">
-                            {sectionLoopInfo?.isPatternLoop ? 'Pattern Loop' : 'Section Loop'}
+                            {sectionLoopInfo.isPatternLoop ? 'Pattern Loop' : 'Section Loop'}
                           </div>
                           {sectionLoopInfo ? (
                             <div className={`border-l-2 pl-2 ${sectionLoopInfo.isPatternLoop ? 'border-theme-accent' : 'border-theme-primary/20'}`}>
@@ -2037,9 +2057,10 @@ function ProjectView({
                                 </div>
                               )}
                               <div className="text-[11px] md:text-xs text-theme-text/60 tabular-nums">
-                                  第 <span className={`font-semibold ${sectionLoopInfo.isPatternLoop ? 'text-theme-accent' : 'text-theme-text/90'}`}>
-                                    {sectionLoopInfo.loopRow}
-                                  </span> / {sectionLoopInfo.rowsPerLoop} 排
+                                  第 <span className="font-semibold text-theme-text/90">{sectionLoopInfo.loopRow}</span> / 
+                                  <span className={sectionLoopInfo.isLastLoop ? "text-orange-500 font-bold" : ""}>
+                                    {sectionLoopInfo.rowsPerLoop}
+                                  </span> 排
                                   <span className="mx-1 text-theme-text/30">|</span>
                                   第 <span className="font-semibold text-theme-text/90">{sectionLoopInfo.loopIndex}</span> 輪
                                 </div>
