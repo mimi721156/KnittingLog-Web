@@ -2046,10 +2046,11 @@ function ProjectView({
                       <div className="flex flex-row md:flex-col items-start justify-between gap-4">
                         {/* Section Loop */}
                         <div className="text-theme-text/70">
-                          <div className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text/40 mb-1">
-                            {sectionLoopInfo.isPatternMode ? 'Pattern Loop' : 'Section Loop'}
-                          </div>
                           {sectionLoopInfo ? (
+                          <>
+                            <div className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text/40 mb-1">
+                              {sectionLoopInfo.isPatternMode ? 'Pattern Loop' : 'Section Loop'}
+                            </div>
                             <div className={`border-l-2 pl-2 ${sectionLoopInfo.isPatternMode ? 'border-theme-accent' : 'border-theme-primary/20'}`}>
                               {sectionLoopInfo.title && (
                                 <div className="text-xs font-bold text-theme-text truncate max-w-[120px] md:max-w-none">
@@ -2065,11 +2066,12 @@ function ProjectView({
                                   第 <span className="font-semibold text-theme-text/90">{sectionLoopInfo.loopIndex}</span> 輪
                                 </div>
                             </div>
-                          ) : (
-                            <div className="text-[10px] opacity-50">
-                              尚未有 Section Loop 資訊
-                            </div>
-                          )}
+                          </>
+                        ) : (
+                          <div className="text-[10px] opacity-50">
+                            尚未有 Section Loop 資訊
+                          </div>
+                        )}
                         </div>
 
                         {/* Currently */}
