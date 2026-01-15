@@ -645,7 +645,7 @@ const normalizeProject = (p) => {
   );
 
   // --- 棒針 + 勾針 組合圖示 ---
-  const KnittingIcon = ({ size = 30, color = 'var(--primary-color)' }) => (
+  const KnittingIcon = ({ size = 64, color = 'var(--primary-color)' }) => (
     <svg
       width="64"
       height="64"
@@ -653,37 +653,40 @@ const normalizeProject = (p) => {
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
-    {/* 使用 currentColor 或直接讀取變數 */}
-      {/* 棒針 1 */}
-      <line
-        x1="15" y1="15" x2="49" y2="49"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-      />
-      <circle cx="13" cy="13" r="3" />
+      {/* 使用 currentColor 或直接讀取變數 */}
+      {/* ✅ 關鍵修正：將 color 套用至群組的 stroke 與 fill */}
+      <g stroke={color} fill={color}>
+        {/* 棒針 1 */}
+        <line
+          x1="15" y1="15" x2="49" y2="49"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+        />
+        <circle cx="13" cy="13" r="3" />
 
-      {/* 棒針 2 */}
-      <line
-        x1="49" y1="15" x2="15" y2="49"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-      />
-      <circle cx="51" cy="13" r="3" />
+        {/* 棒針 2 */}
+        <line
+          x1="49" y1="15" x2="15" y2="49"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+        />
+        <circle cx="51" cy="13" r="3" />
 
-      {/* 勾針 */}
-      <path
-        d="M32 10V50M32 50C32 50 32 54 28 54"
-        strokeWidth="3"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        fill="none" /* 勾針主體不填滿 */
-      />
-      <path
-        d="M32 50.5C33.5 49 35 48 37 49"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        fill="none"
-      />
+        {/* 勾針 */}
+        <path
+          d="M32 10V50M32 50C32 50 32 54 28 54"
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          fill="none" /* 勾針主體不填滿 */
+        />
+        <path
+          d="M32 50.5C33.5 49 35 48 37 49"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          fill="none"
+        />
+      </g>
     </svg>
   );
 
