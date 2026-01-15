@@ -645,7 +645,7 @@ const normalizeProject = (p) => {
   );
 
   // --- 棒針 + 勾針 組合圖示 ---
-  const KnittingIcon = () => (
+  const KnittingIcon = ({ size = 30, color = 'var(--accent-color)' }) => (
     <svg
       width="64"
       height="64"
@@ -654,7 +654,7 @@ const normalizeProject = (p) => {
       xmlns="http://www.w3.org/2000/svg"
     >
       {/* 使用 currentColor 或直接讀取變數 */}
-      <g stroke="var(--primary-color)" fill="var(--primary-color)">
+      <g stroke="var(--accent-color)" fill="var(--accent-color)">
         {/* 棒針 1 */}
         <line
           x1="15" y1="15" x2="49" y2="49"
@@ -4388,7 +4388,7 @@ function App() {
         <div className="md:hidden p-5 bg-white/60 backdrop-blur sticky top-0 z-20 border-b border-theme-accent/20 flex justify-between items-center">
           <div className="flex items-center gap-2">
             <div className="w-10 h-10 bg-theme-primary rounded-xl flex items-center justify-center text-white font-black text-[10px]">
-              <KnittingIcon color="#FFFFFF"/>
+              <KnittingIcon size={30} color="var(--accent-color)"/>
             </div>
             <span className="font-black text-theme-text tracking-tighter text-xl uppercase">
               Cozy Knit
