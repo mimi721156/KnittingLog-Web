@@ -4387,7 +4387,9 @@ function App() {
       <div className="flex-1 flex flex-col h-full overflow-hidden relative">
         <div className="md:hidden p-5 bg-white/60 backdrop-blur sticky top-0 z-20 border-b border-theme-accent/20 flex justify-between items-center">
           <div className="flex items-center gap-2">
-            <KnittingIcon/>
+            <div className="w-10 h-10 bg-theme-primary rounded-xl flex items-center justify-center text-white font-black text-[10px]">
+              <KnittingIcon color="#FFFFFF"/>
+            </div>
             <span className="font-black text-theme-text tracking-tighter text-xl uppercase">
               Cozy Knit
             </span>
