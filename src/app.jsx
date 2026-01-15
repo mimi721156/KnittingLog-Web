@@ -2843,7 +2843,7 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
               )}
 
               {/* 起針 / 針號 / 線材 */}
-              <div className="grid grid-cols-1 gap-3 pt-2">
+              {/* <div className="grid grid-cols-1 gap-3 pt-2">
                 <div>
                   <label className="text-[9px] font-black opacity-40 uppercase tracking-[0.25em] block mb-1">
                     Cast On 起針數
@@ -2919,7 +2919,7 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                     ))}
                   </select>
                 </div>
-              </div>
+              </div> */}
             </section>
 
             {/* 部位列表 */}
@@ -2952,7 +2952,7 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                   return (
                     <div
                       key={part.id}
-                      className="flex items-center gap-1 group"
+                      className="flex items-center gap-1 mt-1 group"
                     >
                       <button
                         onClick={() => {
@@ -3097,9 +3097,9 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
               </div>
             </div>
             {/* 吸頂工作區標頭 */}
-            <div className="sticky top-[56px] md:top-0 z-20 -mx-4 md:mx-0 pt-4 md:pt-10 pb-3 mb-3 bg-gradient-to-b from-[rgba(255,255,255,0.96)] to-[rgba(255,255,255,0)] backdrop-blur">
+            <div className="sticky top-[56px] md:top-0 z-20 -mx-4 md:mx-0 pt-2 md:pt-10 pb-3 mb-3 bg-gradient-to-b from-[rgba(255,255,255,0.96)] to-[rgba(255,255,255,0)] backdrop-blur">
               <div className="px-4 md:px-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div className="flex items-center gap-4">
+                <div className="hidden md:flex items-center gap-4">
                   <div
                     className="p-3 rounded-2xl shadow-sm border"
                     style={{
@@ -4184,7 +4184,7 @@ function App() {
   // 先算出：現在是不是「專案詳細頁（選了某個 project）」
   // 看你的邏輯，選了 project 才會出現那個 counter 畫面
   const isProjectDetail =
-    view === 'PROJECTS' && !!selectedProjectId; // 如果 detail 只在沒有 currentPattern 時出現，也可以再加 && !currentPattern
+    (view === 'PROJECTS' && !!selectedProjectId) || (view === 'EDITOR'); // 如果 detail 只在沒有 currentPattern 時出現，也可以再加 && !currentPattern
 
 
   return (
