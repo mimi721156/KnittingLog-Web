@@ -2758,305 +2758,307 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
             }
           `}
         >
-          {/* 手機抽屜 header */}
-          <div className="md:hidden flex items-center justify-between px-4 py-3 border-b border-gray-100">
-            <span className="text-[11px] font-black tracking-[0.2em] uppercase opacity-60">
-              Pattern Settings
-            </span>
-            <button
-              onClick={() => setShowMobileSidebar(false)}
-              className="p-2 bg-gray-100 rounded-full"
-            >
-              <Icons.X size={18} />
-            </button>
-          </div>
+          <div className="flex-1 flex flex-col h-full overflow-hidden">
+            {/* 手機抽屜 header */}
+            <div className="md:hidden flex items-center justify-between px-4 py-3 border-b border-gray-100 flex-shrink-0">
+              <span className="text-[11px] font-black tracking-[0.2em] uppercase opacity-60">
+                Pattern Settings
+              </span>
+              <button
+                onClick={() => setShowMobileSidebar(false)}
+                className="p-2 bg-gray-100 rounded-full"
+              >
+                <Icons.X size={18} />
+              </button>
+            </div>
 
-          <div className="p-6 flex-1 overflow-y-auto no-scrollbar space-y-8">
-            {/* 基礎資訊 */}
-            <section className="space-y-4">
-              <div className="flex items-center gap-2 mb-2 opacity-40">
-                <Icons.Sparkles size={14} />
-                <span className="text-[10px] font-black uppercase tracking-[0.22em]">
-                  Settings
-                </span>
-              </div>
-
-              <div>
-                <label className="text-[9px] font-black opacity-40 uppercase tracking-[0.25em] block mb-1">
-                  Pattern Design
-                </label>
-                <input
-                  type="text"
-                  value={data.name || ''}
-                  onChange={(e) =>
-                    setData((prev) => ({
-                      ...prev,
-                      name: e.target.value,
-                    }))
-                  }
-                  className="w-full text-lg md:text-xl font-black bg-transparent border-none p-0 focus:ring-0 tracking-tight"
-                  placeholder="設計標題..."
-                  style={{ color: 'var(--text-color)' }}
-                />
-              </div>
-
-              <div>
-                <label className="text-[9px] font-black opacity-40 uppercase tracking-[0.25em] block mb-1">
-                  Category
-                </label>
-                <select
-                  className="w-full rounded-xl px-3 py-2 text-[11px] font-bold border-none focus:ring-2 text-sm"
-                  style={{
-                    backgroundColor: 'var(--bg-color)',
-                    color: 'var(--text-color)',
-                    boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.03)',
-                  }}
-                  value={data.category || '未分類'}
-                  onChange={(e) =>
-                    setData((prev) => ({
-                      ...prev,
-                      category: e.target.value,
-                    }))
-                  }
-                >
-                  {categoryOptions.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* 總排數（文字織圖時顯示） */}
-              {data.type === 'TEXT' && (
-                <div className="pt-2">
-                  <div className="text-[9px] font-black opacity-30 uppercase tracking-[0.25em]">
-                    總排數計算
-                  </div>
-                  <div
-                    className="text-2xl font-black tabular-nums tracking-tight"
-                    style={{ color: 'var(--primary-color)' }}
-                  >
-                    {totalRows} 排
-                  </div>
+            <div className="p-6 flex-1 overflow-y-auto no-scrollbar space-y-8">
+              {/* 基礎資訊 */}
+              <section className="space-y-4">
+                <div className="flex items-center gap-2 mb-2 opacity-40">
+                  <Icons.Sparkles size={14} />
+                  <span className="text-[10px] font-black uppercase tracking-[0.22em]">
+                    Settings
+                  </span>
                 </div>
-              )}
 
-              {/* 起針 / 針號 / 線材 */}
-              {/* <div className="grid grid-cols-1 gap-3 pt-2">
                 <div>
                   <label className="text-[9px] font-black opacity-40 uppercase tracking-[0.25em] block mb-1">
-                    Cast On 起針數
-                  </label>
-                  <input
-                    type="number"
-                    className="w-full rounded-xl px-3 py-2 text-[11px] border-none focus:ring-2"
-                    style={{
-                      backgroundColor: 'var(--bg-color)',
-                      color: 'var(--text-color)',
-                    }}
-                    value={data.meta.castOn || ''}
-                    onChange={(e) =>
-                      setData((prev) => ({
-                        ...prev,
-                        meta: {
-                          ...prev.meta,
-                          castOn: e.target.value,
-                        },
-                      }))
-                    }
-                  />
-                </div>
-                <div>
-                  <label className="text-[9px] font-black opacity-40 uppercase tracking-[0.25em] block mb-1">
-                    Needle 針號
+                    Pattern Design
                   </label>
                   <input
                     type="text"
-                    className="w-full rounded-xl px-3 py-2 text-[11px] border-none focus:ring-2"
-                    style={{
-                      backgroundColor: 'var(--bg-color)',
-                      color: 'var(--text-color)',
-                    }}
-                    value={data.meta.needle || ''}
+                    value={data.name || ''}
                     onChange={(e) =>
                       setData((prev) => ({
                         ...prev,
-                        meta: {
-                          ...prev.meta,
-                          needle: e.target.value,
-                        },
+                        name: e.target.value,
                       }))
                     }
+                    className="w-full text-lg md:text-xl font-black bg-transparent border-none p-0 focus:ring-0 tracking-tight"
+                    placeholder="設計標題..."
+                    style={{ color: 'var(--text-color)' }}
                   />
                 </div>
+
                 <div>
                   <label className="text-[9px] font-black opacity-40 uppercase tracking-[0.25em] block mb-1">
-                    Yarn 線材
+                    Category
                   </label>
                   <select
-                    className="w-full rounded-xl px-3 py-2 text-[11px] border-none focus:ring-2"
+                    className="w-full rounded-xl px-3 py-2 text-[11px] font-bold border-none focus:ring-2 text-sm"
                     style={{
                       backgroundColor: 'var(--bg-color)',
                       color: 'var(--text-color)',
+                      boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.03)',
                     }}
-                    value={data.meta.yarnId || ''}
+                    value={data.category || '未分類'}
                     onChange={(e) =>
                       setData((prev) => ({
                         ...prev,
-                        meta: {
-                          ...prev.meta,
-                          yarnId: e.target.value || null,
-                        },
+                        category: e.target.value,
                       }))
                     }
                   >
-                    <option value="">未指定</option>
-                    {yarnOptions.map((y) => (
-                      <option key={y.id} value={y.id}>
-                        {y.label}
+                    {categoryOptions.map((c) => (
+                      <option key={c} value={c}>
+                        {c}
                       </option>
                     ))}
                   </select>
                 </div>
-              </div> */}
-            </section>
 
-            {/* 部位列表 */}
-            <section className="space-y-4">
-              <div className="flex items-center justify-between mb-2">
-                <div>
-                  <div className="text-[9px] font-black opacity-30 uppercase tracking-[0.25em]">
-                    Parts / 部位
-                  </div>
-                  <div className="text-[11px] text-theme-text/60">
-                    例如：前片、後片、左袖、右袖…
-                  </div>
-                </div>
-                <button
-                  onClick={handleAddPart}
-                  className="text-[10px] px-3 py-1 rounded-full font-black tracking-[0.16em] uppercase shadow-sm"
-                  style={{
-                    backgroundColor: 'var(--primary-color)',
-                    color: '#ffffff',
-                  }}
-                >
-                  + Add Part
-                </button>
-              </div>
-
-              <div className="flex flex-col gap-1">
-                {(data.parts || []).map((part) => {
-                  const isActive = activePartId === part.id;
-                  const totalParts = data.parts?.length || 0;
-                  return (
-                    <div
-                      key={part.id}
-                      className="flex items-center gap-1 mt-1 group"
-                    >
-                      <button
-                        onClick={() => {
-                          setActivePartId(part.id);
-                          setShowMobileSidebar(false);
-                        }}
-                        className={`flex-1 px-4 py-2 rounded-full text-[10px] font-black tracking-[0.18em] uppercase transition-all ${
-                          isActive
-                            ? 'shadow-md'
-                            : 'opacity-60 hover:opacity-100'
-                        }`}
-                        style={{
-                          backgroundColor: isActive
-                            ? 'var(--primary-color)'
-                            : 'var(--bg-color)',
-                          color: isActive ? '#ffffff' : 'var(--text-color)',
-                        }}
-                      >
-                        {part.name}
-                      </button>
-                      {totalParts > 1 && (
-                        <button
-                          onClick={() => handleDeletePart(part.id)}
-                          className="text-[11px] text-red-300 hover:text-red-500 px-1 py-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                          title="刪除此部位"
-                        >
-                          ✕
-                        </button>
-                      )}
+                {/* 總排數（文字織圖時顯示） */}
+                {data.type === 'TEXT' && (
+                  <div className="pt-2">
+                    <div className="text-[9px] font-black opacity-30 uppercase tracking-[0.25em]">
+                      總排數計算
                     </div>
-                  );
-                })}
-              </div>
+                    <div
+                      className="text-2xl font-black tabular-nums tracking-tight"
+                      style={{ color: 'var(--primary-color)' }}
+                    >
+                      {totalRows} 排
+                    </div>
+                  </div>
+                )}
 
-              {/* 目前部位名稱可即時修改 */}
-              {currentPart && (
-                <div className="mt-3 flex items-center gap-2">
-                  <span className="text-[9px] font-black opacity-40 uppercase tracking-[0.25em]">
-                    部位名稱
-                  </span>
-                  <input
-                    className="flex-1 rounded-full px-3 py-1.5 text-[11px] border-none focus:ring-2 text-sm"
+                {/* 起針 / 針號 / 線材 */}
+                {/* <div className="grid grid-cols-1 gap-3 pt-2">
+                  <div>
+                    <label className="text-[9px] font-black opacity-40 uppercase tracking-[0.25em] block mb-1">
+                      Cast On 起針數
+                    </label>
+                    <input
+                      type="number"
+                      className="w-full rounded-xl px-3 py-2 text-[11px] border-none focus:ring-2"
+                      style={{
+                        backgroundColor: 'var(--bg-color)',
+                        color: 'var(--text-color)',
+                      }}
+                      value={data.meta.castOn || ''}
+                      onChange={(e) =>
+                        setData((prev) => ({
+                          ...prev,
+                          meta: {
+                            ...prev.meta,
+                            castOn: e.target.value,
+                          },
+                        }))
+                      }
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[9px] font-black opacity-40 uppercase tracking-[0.25em] block mb-1">
+                      Needle 針號
+                    </label>
+                    <input
+                      type="text"
+                      className="w-full rounded-xl px-3 py-2 text-[11px] border-none focus:ring-2"
+                      style={{
+                        backgroundColor: 'var(--bg-color)',
+                        color: 'var(--text-color)',
+                      }}
+                      value={data.meta.needle || ''}
+                      onChange={(e) =>
+                        setData((prev) => ({
+                          ...prev,
+                          meta: {
+                            ...prev.meta,
+                            needle: e.target.value,
+                          },
+                        }))
+                      }
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[9px] font-black opacity-40 uppercase tracking-[0.25em] block mb-1">
+                      Yarn 線材
+                    </label>
+                    <select
+                      className="w-full rounded-xl px-3 py-2 text-[11px] border-none focus:ring-2"
+                      style={{
+                        backgroundColor: 'var(--bg-color)',
+                        color: 'var(--text-color)',
+                      }}
+                      value={data.meta.yarnId || ''}
+                      onChange={(e) =>
+                        setData((prev) => ({
+                          ...prev,
+                          meta: {
+                            ...prev.meta,
+                            yarnId: e.target.value || null,
+                          },
+                        }))
+                      }
+                    >
+                      <option value="">未指定</option>
+                      {yarnOptions.map((y) => (
+                        <option key={y.id} value={y.id}>
+                          {y.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div> */}
+              </section>
+
+              {/* 部位列表 */}
+              <section className="space-y-4">
+                <div className="flex items-center justify-between mb-2">
+                  <div>
+                    <div className="text-[9px] font-black opacity-30 uppercase tracking-[0.25em]">
+                      Parts / 部位
+                    </div>
+                    <div className="text-[11px] text-theme-text/60">
+                      例如：前片、後片、左袖、右袖…
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleAddPart}
+                    className="text-[10px] px-3 py-1 rounded-full font-black tracking-[0.16em] uppercase shadow-sm"
                     style={{
-                      backgroundColor: 'var(--bg-color)',
-                      color: 'var(--text-color)',
+                      backgroundColor: 'var(--primary-color)',
+                      color: '#ffffff',
                     }}
-                    value={currentPart.name || ''}
-                    onChange={(e) => {
-                      const newName = e.target.value;
+                  >
+                    + Add Part
+                  </button>
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  {(data.parts || []).map((part) => {
+                    const isActive = activePartId === part.id;
+                    const totalParts = data.parts?.length || 0;
+                    return (
+                      <div
+                        key={part.id}
+                        className="flex items-center gap-1 mt-1 group"
+                      >
+                        <button
+                          onClick={() => {
+                            setActivePartId(part.id);
+                            setShowMobileSidebar(false);
+                          }}
+                          className={`flex-1 px-4 py-2 rounded-full text-[10px] font-black tracking-[0.18em] uppercase transition-all ${
+                            isActive
+                              ? 'shadow-md'
+                              : 'opacity-60 hover:opacity-100'
+                          }`}
+                          style={{
+                            backgroundColor: isActive
+                              ? 'var(--primary-color)'
+                              : 'var(--bg-color)',
+                            color: isActive ? '#ffffff' : 'var(--text-color)',
+                          }}
+                        >
+                          {part.name}
+                        </button>
+                        {totalParts > 1 && (
+                          <button
+                            onClick={() => handleDeletePart(part.id)}
+                            className="text-[11px] text-red-300 hover:text-red-500 px-1 py-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                            title="刪除此部位"
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* 目前部位名稱可即時修改 */}
+                {currentPart && (
+                  <div className="mt-3 flex items-center gap-2">
+                    <span className="text-[9px] font-black opacity-40 uppercase tracking-[0.25em]">
+                      部位名稱
+                    </span>
+                    <input
+                      className="flex-1 rounded-full px-3 py-1.5 text-[11px] border-none focus:ring-2 text-sm"
+                      style={{
+                        backgroundColor: 'var(--bg-color)',
+                        color: 'var(--text-color)',
+                      }}
+                      value={currentPart.name || ''}
+                      onChange={(e) => {
+                        const newName = e.target.value;
+                        setData((prev) => ({
+                          ...prev,
+                          parts: (prev.parts || []).map((p) =>
+                            p.id === currentPart.id ? { ...p, name: newName } : p
+                          ),
+                        }));
+                      }}
+                      placeholder="例如：前片／後片／左袖…"
+                    />
+                  </div>
+                )}
+              </section>
+
+              {/* 備註（可收闔） */}
+              <section
+                className="rounded-2xl p-4 border space-y-2"
+                style={{
+                  backgroundColor: 'var(--bg-color)',
+                  borderColor: 'var(--accent-color)',
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={() => setIsNotesOpen((v) => !v)}
+                  className="w-full flex items-center justify-between"
+                >
+                  <div className="flex items-center gap-2">
+                    <Icons.StickyNote
+                      size={14}
+                      style={{ color: 'var(--primary-color)' }}
+                    />
+                    <span
+                      className="text-[10px] font-black uppercase tracking-[0.22em]"
+                      style={{ color: 'var(--primary-color)' }}
+                    >
+                      Pattern Notes
+                    </span>
+                  </div>
+                  {isNotesOpen ? <Icons.ChevronUp size={12} /> : <Icons.ChevronDown size={12} />}
+                </button>
+                {isNotesOpen && (
+                  <textarea
+                    className="w-full bg-transparent border-none p-0 text-[11px] leading-relaxed focus:ring-0 min-h-[100px] resize-none opacity-80 mt-2"
+                    placeholder="例：M 號在第 18 排多加 2 針、袖子在麻花段前多編 6 排。"
+                    value={data.notes || ''}
+                    onChange={(e) =>
                       setData((prev) => ({
                         ...prev,
-                        parts: (prev.parts || []).map((p) =>
-                          p.id === currentPart.id ? { ...p, name: newName } : p
-                        ),
-                      }));
-                    }}
-                    placeholder="例如：前片／後片／左袖…"
+                        notes: e.target.value,
+                      }))
+                    }
+                    style={{ color: 'var(--text-color)' }}
                   />
-                </div>
-              )}
-            </section>
-
-            {/* 備註（可收闔） */}
-            <section
-              className="rounded-2xl p-4 border space-y-2"
-              style={{
-                backgroundColor: 'var(--bg-color)',
-                borderColor: 'var(--accent-color)',
-              }}
-            >
-              <button
-                type="button"
-                onClick={() => setIsNotesOpen((v) => !v)}
-                className="w-full flex items-center justify-between"
-              >
-                <div className="flex items-center gap-2">
-                  <Icons.StickyNote
-                    size={14}
-                    style={{ color: 'var(--primary-color)' }}
-                  />
-                  <span
-                    className="text-[10px] font-black uppercase tracking-[0.22em]"
-                    style={{ color: 'var(--primary-color)' }}
-                  >
-                    Pattern Notes
-                  </span>
-                </div>
-                {isNotesOpen ? <Icons.ChevronUp size={12} /> : <Icons.ChevronDown size={12} />}
-              </button>
-              {isNotesOpen && (
-                <textarea
-                  className="w-full bg-transparent border-none p-0 text-[11px] leading-relaxed focus:ring-0 min-h-[100px] resize-none opacity-80 mt-2"
-                  placeholder="例：M 號在第 18 排多加 2 針、袖子在麻花段前多編 6 排。"
-                  value={data.notes || ''}
-                  onChange={(e) =>
-                    setData((prev) => ({
-                      ...prev,
-                      notes: e.target.value,
-                    }))
-                  }
-                  style={{ color: 'var(--text-color)' }}
-                />
-              )}
-            </section>
+                )}
+              </section>
+            </div>
           </div>
         </aside>
 
@@ -3097,7 +3099,7 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
               </div>
             </div>
             {/* 吸頂工作區標頭 */}
-            <div className="sticky top-[56px] md:top-0 z-20 -mx-4 md:mx-0 pt-2 md:pt-10 pb-3 mb-3 bg-gradient-to-b from-[rgba(255,255,255,0.96)] to-[rgba(255,255,255,0)] backdrop-blur">
+            {/* <div className="sticky top-[56px] md:top-0 z-20 -mx-4 md:mx-0 pt-2 md:pt-10 pb-3 mb-3 bg-gradient-to-b from-[rgba(255,255,255,0.96)] to-[rgba(255,255,255,0)] backdrop-blur">
               <div className="px-4 md:px-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="hidden md:flex items-center gap-4">
                   <div
@@ -3129,7 +3131,7 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                     />
                   </div>
                 </div>
-                {/*<button
+                <button
                   onClick={handleAddSection}
                   className="flex items-center justify-center gap-2 px-5 md:px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-[0.18em] shadow-lg transition-all hover:scale-105"
                   style={{
@@ -3140,9 +3142,9 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                 >
                   <Icons.Plus size={16} />
                   <span>新增段落</span>
-                </button> */}
+                </button> 
               </div>
-            </div>
+            </div> */}
 
             {/* 內容 / 提醒 Tab */}
             {activeTab === 'CONTENT' ? (
