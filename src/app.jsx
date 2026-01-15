@@ -3129,7 +3129,7 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                     />
                   </div>
                 </div>
-                <button
+                {/*<button
                   onClick={handleAddSection}
                   className="flex items-center justify-center gap-2 px-5 md:px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-[0.18em] shadow-lg transition-all hover:scale-105"
                   style={{
@@ -3140,7 +3140,7 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                 >
                   <Icons.Plus size={16} />
                   <span>新增段落</span>
-                </button>
+                </button> */}
               </div>
             </div>
 
@@ -3329,7 +3329,7 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
             ) : (
               /* 提醒規則 TAB */
               <div className="space-y-8 animate-fade-in">
-                <div className="flex justify-between items-center px-1 md:px-0">
+                {/*<div className="flex justify-between items-center px-1 md:px-0">
                   <h3 className="font-black text-xl tracking-tight opacity-70">
                     Smart Notifications
                   </h3>
@@ -3344,8 +3344,7 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                   >
                     + Add New Rule
                   </button>
-                </div>
-
+                </div>*/}
                 <div className="grid gap-6">
                   {alertsSource.map((a) => (
                     <div
@@ -3532,6 +3531,24 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                       </div>
                     </div>
                   ))}
+                  {/* 底部：快速新增下一段落 */}
+                  <button
+                    onClick={addAlertRule}
+                    className="w-full py-8 border-2 border-dashed rounded-[2.5rem] flex flex-col items-center justify-center gap-2 group transition-all"
+                    style={{
+                      borderColor: 'var(--accent-color)',
+                      color: 'var(--text-color)',
+                      backgroundColor: 'rgba(255,255,255,0.6)',
+                    }}
+                  >
+                    <Icons.Plus
+                      size={24}
+                      className="opacity-60 group-hover:scale-110 transition-transform"
+                    />
+                    <span className="text-[11px] font-black uppercase tracking-[0.22em] opacity-70">
+                      Add Next Rule
+                    </span>
+                  </button>
                 </div>
               </div>
             )}
@@ -3542,7 +3559,7 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
       </div>
 
       {/* 行動端底部：進度 & Quick Save */}
-      <div className="md:hidden h-14 bg-white border-t border-gray-100 flex items-center justify-between px-6 z-30">
+      {/*<div className="md:hidden h-14 bg-white border-t border-gray-100 flex items-center justify-between px-6 z-30">
         <div className="flex items-center gap-2">
           <span className="text-[9px] font-black opacity-40 uppercase tracking-[0.16em]">
             Progress
@@ -3561,7 +3578,7 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
         >
           Quick Save
         </button>
-      </div>
+      </div>*/}
     </div>
   );
 }
