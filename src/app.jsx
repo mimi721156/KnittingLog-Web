@@ -3018,7 +3018,7 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
 
               {/* 備註（可收闔） */}
               <section
-                className="flex-shrink-0 rounded-2xl p-4 border space-y-2"
+                className="flex-shrink-0 rounded-2xl p-4 border space-y-2 "
                 style={{
                   backgroundColor: 'var(--bg-color)',
                   borderColor: 'var(--accent-color)',
@@ -3058,10 +3058,9 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                   />
                 )}
               </section>
-
-              <section className="rounded-2xl p-4 border space-y-2 mb-4">
-                {/* ... */}
-              </section>
+              
+              {/* ✅ 專門給手機版捲動用的透明墊片，電腦版 (md:) 隱藏 */}
+              <div className="h-20 md:hidden" />
             </div>
           </div>
         </aside>
