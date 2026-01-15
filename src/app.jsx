@@ -3062,42 +3062,42 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
 
         {/* 右：內容工作區 */}
         <main className="flex-1 flex flex-col overflow-hidden relative">
-          {/* 行動端：部位橫向選單 */}
-          <div className="md:hidden sticky top-16 z-30 bg-white/95 backdrop-blur border-b border-gray-100">
-            <div className="flex overflow-x-auto no-scrollbar gap-2 p-3">
-              {(data.parts || []).map((part) => (
-                <button
-                  key={part.id}
-                  onClick={() => setActivePartId(part.id)}
-                  className={`flex-shrink-0 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.18em] transition-all ${
-                    activePartId === part.id
-                      ? 'shadow-md'
-                      : 'opacity-60 hover:opacity-100'
-                  }`}
-                  style={{
-                    backgroundColor:
-                      activePartId === part.id
-                        ? 'var(--primary-color)'
-                        : 'var(--bg-color)',
-                    color:
-                      activePartId === part.id
-                        ? '#ffffff'
-                        : 'var(--text-color)',
-                  }}
-                >
-                  {part.name}
-                </button>
-              ))}
-            </div>
-          </div>
 
           {/* 內容捲動區 */}
           <div
-            className="flex-1 overflow-y-auto no-scrollbar p-4 md:p-10 space-y-8"
+            className="flex-1 overflow-y-auto no-scrollbar px-4 pb-4 md:px-10 md:pb-10 space-y-8"
             ref={scrollContainerRef}
           >
+            {/* 行動端：部位橫向選單 */}
+            <div className="md:hidden sticky top-0 z-30 -mx-4 bg-white/95 backdrop-blur border-b border-gray-100">
+              <div className="flex overflow-x-auto no-scrollbar gap-2 p-3">
+                {(data.parts || []).map((part) => (
+                  <button
+                    key={part.id}
+                    onClick={() => setActivePartId(part.id)}
+                    className={`flex-shrink-0 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.18em] transition-all ${
+                      activePartId === part.id
+                        ? 'shadow-md'
+                        : 'opacity-60 hover:opacity-100'
+                    }`}
+                    style={{
+                      backgroundColor:
+                        activePartId === part.id
+                          ? 'var(--primary-color)'
+                          : 'var(--bg-color)',
+                      color:
+                        activePartId === part.id
+                          ? '#ffffff'
+                          : 'var(--text-color)',
+                    }}
+                  >
+                    {part.name}
+                  </button>
+                ))}
+              </div>
+            </div>
             {/* 吸頂工作區標頭 */}
-            <div className="sticky top-0 z-20 -mx-4 md:mx-0 pb-3 mb-3 bg-gradient-to-b from-[rgba(255,255,255,0.96)] to-[rgba(255,255,255,0)] backdrop-blur">
+            <div className="sticky top-[56px] md:top-0 z-20 -mx-4 md:mx-0 pt-4 md:pt-10 pb-3 mb-3 bg-gradient-to-b from-[rgba(255,255,255,0.96)] to-[rgba(255,255,255,0)] backdrop-blur">
               <div className="px-4 md:px-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
                   <div
