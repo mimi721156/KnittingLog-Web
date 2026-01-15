@@ -2047,10 +2047,10 @@ function ProjectView({
                         {/* Section Loop */}
                         <div className="text-theme-text/70">
                           <div className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text/40 mb-1">
-                            {sectionLoopInfo.isPatternLoop ? 'Pattern Loop' : 'Section Loop'}
+                            {sectionLoopInfo.isPatternMode ? 'Pattern Loop' : 'Section Loop'}
                           </div>
                           {sectionLoopInfo ? (
-                            <div className={`border-l-2 pl-2 ${sectionLoopInfo.isPatternLoop ? 'border-theme-accent' : 'border-theme-primary/20'}`}>
+                            <div className={`border-l-2 pl-2 ${sectionLoopInfo.isPatternMode ? 'border-theme-accent' : 'border-theme-primary/20'}`}>
                               {sectionLoopInfo.title && (
                                 <div className="text-xs font-bold text-theme-text truncate max-w-[120px] md:max-w-none">
                                   {sectionLoopInfo.title}
@@ -2058,7 +2058,7 @@ function ProjectView({
                               )}
                               <div className="text-[11px] md:text-xs text-theme-text/60 tabular-nums">
                                   第 <span className="font-semibold text-theme-text/90">{sectionLoopInfo.loopRow}</span> / 
-                                  <span className={sectionLoopInfo.isLastLoop ? "text-orange-500 font-bold" : ""}>
+                                  <span className={sectionLoopInfo.isLastLoop ? "font-bold" : ""}>
                                     {sectionLoopInfo.rowsPerLoop}
                                   </span> 排
                                   <span className="mx-1 text-theme-text/30">|</span>
