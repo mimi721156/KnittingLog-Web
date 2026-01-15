@@ -1822,7 +1822,7 @@ function ProjectView({
                       })
                     }
                     className={
-                      'px-4 py-1.5 rounded-full text-[10px] font-black tracking-[0.18em] uppercase transition ' +
+                      'flex-none flex-shrink-0 whitespace-nowrap px-4 py-1.5 rounded-full text-[10px] font-black tracking-[0.18em] uppercase transition ' +
                       (isActive
                         ? 'bg-theme-primary text-white shadow'
                         : 'bg-theme-bg text-theme-text/60 hover:bg-theme-bg/80')
@@ -2684,6 +2684,37 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
     }));
   };
 
+  const compressImage = (file) => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target.result;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 800; // 限制最大寬度以節省空間
+          let width = img.width;
+          let height = img.height;
+
+          if (width > MAX_WIDTH) {
+            height = (MAX_WIDTH / width) * height;
+            width = MAX_WIDTH;
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+
+          // 使用 jpeg 格式並設置 0.7 的品質來大幅壓縮體積
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+          resolve(compressedDataUrl);
+        };
+      };
+    });
+  };
+
   return (
     <div
       style={containerStyle}
@@ -3040,6 +3071,64 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                     />
                   </div>
                 )}
+              </section>
+
+              {/* 在 Aside 的 Settings 區段內，Pattern Design 輸入框上方或下方加入 */}
+              <section className="space-y-4">
+                <div className="flex items-center gap-2 mb-2 opacity-40">
+                  <Icons.Sparkles size={14} />
+                  <span className="text-[10px] font-black uppercase tracking-[0.22em]">Cover Image</span>
+                </div>
+
+                <div className="relative group/cover aspect-[4/5] w-full rounded-3xl overflow-hidden bg-gray-100 border-2 border-dashed border-gray-200 flex items-center justify-center">
+                  {data.coverImage ? (
+                    <>
+                      <img src={data.coverImage} className="w-full h-full object-cover" alt="Cover" />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/cover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                        <button 
+                          onClick={() => document.getElementById('cover-upload').click()}
+                          className="p-2 bg-white rounded-full text-gray-700 hover:text-theme-primary"
+                        >
+                          <Icons.Library size={18} />
+                        </button>
+                        <button 
+                          onClick={() => setData(prev => ({ ...prev, coverImage: null }))}
+                          className="p-2 bg-white rounded-full text-red-500"
+                        >
+                          <Icons.Trash size={18} />
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <button 
+                      onClick={() => document.getElementById('cover-upload').click()}
+                      className="flex flex-col items-center gap-2 text-gray-400 hover:text-theme-primary transition-colors"
+                    >
+                      <Icons.Plus size={24} />
+                      <span className="text-[10px] font-black uppercase tracking-widest">Upload Cover</span>
+                    </button>
+                  )}
+                  <input 
+                    id="cover-upload"
+                    type="file" 
+                    accept="image/*"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files[0];
+                      if (file) {
+                        try {
+                          // 現在可以安全地使用 await 了
+                          const compressedBase64 = await compressImage(file);
+                          setData(prev => ({ ...prev, coverImage: compressedBase64 }));
+                        } catch (error) {
+                          console.error("圖片壓縮失敗:", error);
+                        }
+                      }
+                    }}
+                  />
+                </div>
+                
+                {/* 原有的 Pattern Design Input ... */}
               </section>
 
               {/* 備註（可收闔） */}
