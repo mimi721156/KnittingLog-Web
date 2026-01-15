@@ -1804,33 +1804,35 @@ function ProjectView({
       <div className="flex-1 flex flex-col px-4 md:px-10 pt-3 pb-2 gap-3 overflow-hidden">
         {/* 部位切換按鈕列 */}
         {currentProject.partsProgress && currentProject.partsProgress.length > 0 && (
-          <div className="flex-none flex flex-wrap gap-2">
-            {currentProject.partsProgress.map((part) => {
-              const isActive =
-                currentPartProgress && part.partId === currentPartProgress.partId;
+          <div className="sticky top-0 z-30 -mx-4 bg-white/95 backdrop-blur border-b border-gray-100">
+            <div className="flex overflow-x-auto no-scrollbar flex-nowrap gap-2 p-3">
+              {currentProject.partsProgress.map((part) => {
+                const isActive =
+                  currentPartProgress && part.partId === currentPartProgress.partId;
 
-              return (
-                <button
-                  key={part.partId}
-                  onClick={() =>
-                    onUpdateProject({
-                      ...currentProject,
-                      currentPartId: part.partId,
-                      totalRow: part.totalRow || 1,
-                      sectionRow: part.sectionRow || 1,
-                    })
-                  }
-                  className={
-                    'px-4 py-1.5 rounded-full text-[10px] font-black tracking-[0.18em] uppercase transition ' +
-                    (isActive
-                      ? 'bg-theme-primary text-white shadow'
-                      : 'bg-theme-bg text-theme-text/60 hover:bg-theme-bg/80')
-                  }
-                >
-                  {part.name || '主體'}
-                </button>
-              );
-            })}
+                return (
+                  <button
+                    key={part.partId}
+                    onClick={() =>
+                      onUpdateProject({
+                        ...currentProject,
+                        currentPartId: part.partId,
+                        totalRow: part.totalRow || 1,
+                        sectionRow: part.sectionRow || 1,
+                      })
+                    }
+                    className={
+                      'flex-none px-5 py-2 rounded-full text-[10px] font-black tracking-[0.18em] uppercase transition-all' +
+                      (isActive
+                        ? 'bg-theme-primary text-white shadow'
+                        : 'bg-theme-bg text-theme-text/60 hover:bg-theme-bg/80')
+                    }
+                  >
+                    {part.name || '主體'}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         )}
 
