@@ -1874,7 +1874,7 @@ function ProjectView({
         </div>
 
         {/* 3️⃣ 下方 Panel：靠畫面底部，SECTION LOOP / CURRENTLY / ROW COUNTER 內容維持 */}
-        <div className="flex-1 flex items-end justify-center overflow-hidden">
+        <div className="flex-1 flex items-end justify-center overflow-hidden pb-safe">
           {currentPartProgress && (
             <div className="w-full max-w-5xl pb-[calc(0.5rem+env(safe-area-inset-bottom))]">
               {/* 浮動當前指令（可選） */}
