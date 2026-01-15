@@ -1393,11 +1393,23 @@ function ProjectView({
       }
 
       if (a.mode === 'EVERY') {
-        if (!a.startFrom || a.startFrom < 1) {
-          return val > 0 && val % a.value === 0;
+        const start = a.startFrom || 0; // 若沒設定起始，則從 0 開始算（例如 Every 6 就會是 6, 12...）
+        
+        // 如果還沒到開始排數，不觸發
+        if (val < start || val <= 0) return false;
+        
+        // 計算間隔是否吻合
+        const diff = val - start;
+        const isHit = diff % a.value === 0;
+        
+        // 3. 處理重複次數 (repeatCount)
+        if (isHit && a.repeatCount && a.repeatCount > 0) {
+          // 計算目前是第幾次觸發 (例如 start=2, value=2, val=4, 則次數為 2)
+          const currentIteration = Math.floor(diff / a.value) + 1;
+          return currentIteration <= a.repeatCount;
         }
-        if (val < a.startFrom) return false;
-        return (val - a.startFrom) % a.value === 0;
+
+        return isHit;
       }
 
       return val === a.value;
@@ -2624,6 +2636,7 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
         type: 'TOTAL',
         sectionId: 'ALL',
         startFrom: 1,
+        repeatCount: 2, // 👈 新增：只重複 5 次
         message: '',
       },
     ];
@@ -3620,6 +3633,38 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                           <span className="text-[10px] font-black opacity-40 uppercase tracking-[0.16em]">
                             {a.mode === 'EVERY' ? '排為間隔' : '排'}
                           </span>
+
+                          {/* 新增：重複次數（僅 EVERY 模式顯示） */}
+                          {a.mode === 'EVERY' && (
+                            <>
+                              <span className="text-[10px] font-black opacity-40 uppercase tracking-[0.16em] ml-2">
+                                ，重複
+                              </span>
+                              <input
+                                type="number"
+                                placeholder="∞"
+                                value={a.repeatCount || ''}
+                                onChange={(e) => {
+                                  // 如果清空則設為 null 或 undefined，代表無限循環
+                                  const v = e.target.value === '' ? null : parseInt(e.target.value);
+                                  updateActivePart((p) => ({
+                                    ...p,
+                                    alerts: (p.alerts || []).map((rule) =>
+                                      rule.id === a.id ? { ...rule, repeatCount: v } : rule
+                                    ),
+                                  }));
+                                }}
+                                className="w-16 text-center font-black border-none tabular-nums rounded-xl px-2 py-1.5 focus:ring-2"
+                                style={{
+                                  backgroundColor: 'var(--bg-color)',
+                                  color: 'var(--text-color)',
+                                }}
+                              />
+                              <span className="text-[10px] font-black opacity-40 uppercase tracking-[0.16em]">
+                                次
+                              </span>
+                            </>
+                          )}
                         </div>
 
                         {/* 文字區段限制（僅 TEXT 顯示） */}
