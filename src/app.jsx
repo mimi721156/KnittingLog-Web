@@ -1433,23 +1433,21 @@ function ProjectView({
 
   // 在 ProjectView 元件內部
   useEffect(() => {
-    // 只要 selectedId 有值，代表現在正要進入或已經在明細頁面
+    // 當 selectedId 從 null 變成有值（進入明細頁）時觸發
     if (selectedId) {
-      // 1. 取得捲動容器並歸零
-      // 如果您有為 main 標籤設置 ref (例如 projectMainRef)，建議使用 ref
-      if (projectMainRef.current) {
-        projectMainRef.current.scrollTop = 0;
-      } else {
-        // 備案：若沒用 ref，則搜尋帶有捲動屬性的標籤
-        const mainElement = document.querySelector('main');
-        if (mainElement) mainElement.scrollTop = 0;
+      // 透過 querySelector 抓取您的 main 標籤
+      const mainElement = document.querySelector('main');
+      
+      if (mainElement) {
+        // 強制重置捲動位置為頂部
+        mainElement.scrollTop = 0;
       }
-
-      // 2. 視窗層級的保險歸零
+      
+      // 為了保險起見，也重置視窗層級的捲動（針對行動端瀏覽器特性）
       window.scrollTo(0, 0);
     }
   }, [selectedId]); // 當選取的 ID 改變時執行
-  
+
   const sectionLoopInfo = useMemo(() => {
     if (!currentProject || !currentPattern) return null;
 
