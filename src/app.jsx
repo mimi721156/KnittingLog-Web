@@ -1431,6 +1431,25 @@ function ProjectView({
     }
   }, [alertKey]);
 
+  // 在 ProjectView 元件內部
+  useEffect(() => {
+    // 只要 selectedId 有值，代表現在正要進入或已經在明細頁面
+    if (selectedId) {
+      // 1. 取得捲動容器並歸零
+      // 如果您有為 main 標籤設置 ref (例如 projectMainRef)，建議使用 ref
+      if (projectMainRef.current) {
+        projectMainRef.current.scrollTop = 0;
+      } else {
+        // 備案：若沒用 ref，則搜尋帶有捲動屬性的標籤
+        const mainElement = document.querySelector('main');
+        if (mainElement) mainElement.scrollTop = 0;
+      }
+
+      // 2. 視窗層級的保險歸零
+      window.scrollTo(0, 0);
+    }
+  }, [selectedId]); // 當選取的 ID 改變時執行
+  
   const sectionLoopInfo = useMemo(() => {
     if (!currentProject || !currentPattern) return null;
 
@@ -1880,8 +1899,7 @@ function ProjectView({
               {/* 浮動當前指令（可選） */}
               {activeInstructionText && (
                 <div
-                  className="mb-2 bg-white/95 backdrop-blur rounded-[2rem] shadow-lg border border-theme-bg/60 px-4 py-3 cursor-pointer"
-                  onClick={() => setShowFullInstruction(!showFullInstruction)}
+                  className="mb-2 bg-white/95 backdrop-blur rounded-[2rem] shadow-lg border border-theme-bg/60 px-4 py-3"
                 >
                   <div className="flex items-start gap-3">
                     <div className="mt-1 w-6 h-6 rounded-full bg-theme-primary/10 flex items-center justify-center text-[11px] font-black text-theme-primary">
@@ -1894,20 +1912,10 @@ function ProjectView({
                         </div>
                       )}
                       <div
-                        className={
-                          'text-xs md:text-sm text-theme-text/90 whitespace-pre-wrap leading-relaxed ' +
-                          (showFullInstruction
-                            ? 'max-h-40 overflow-y-auto'
-                            : 'max-h-10 overflow-hidden')
-                        }
+                        className="text-xs md:text-sm text-theme-text/90 whitespace-pre-wrap leading-relaxed"
                       >
                         {activeInstructionText}
                       </div>
-                      {!showFullInstruction && (
-                        <div className="mt-1 text-[10px] text-theme-text/40">
-                          點擊展開完整指令…
-                        </div>
-                      )}
                     </div>
                   </div>
                 </div>
@@ -2345,6 +2353,24 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
     }
     return null;
   });
+
+  // 在 EditorView 元件內部的 useEffect 區域加入
+  useEffect(() => {
+    // 1. 處理右側主要內容區的重置
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = 0;
+    }
+
+    // 2. 如果你的主 container (main 標籤) 也可能帶有捲動偏移
+    // 透過選擇器強制歸零，確保進入時畫面在最上方
+    const mainContent = document.querySelector('main');
+    if (mainContent) {
+      mainContent.scrollTop = 0;
+    }
+    
+    // 3. 針對視窗本身做最後防線
+    window.scrollTo(0, 0);
+  }, []); // 僅在元件掛載時執行一次
 
   useEffect(() => {
     if (!data.parts || !data.parts.length) return;
