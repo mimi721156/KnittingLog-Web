@@ -3472,13 +3472,22 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                           </label>
                           <input 
                             type="number" 
-                            placeholder="如: 12"
+                            placeholder="none"
                             value={sec.patternRows || ''} 
                             onChange={(e) => {
-                              const v = e.target.value === '' ? null : parseInt(e.target.value);
-                              updateActivePart(sec.id, { patternRows: v });
+                              // 如果輸入為空則設為 null
+                              const v = e.target.value === '' ? null : parseInt(e.target.value) || 0;
+                              
+                              // 使用你原本的 updateActivePart 模式
+                              updateActivePart((p) => ({
+                                ...p,
+                                textSections: (p.textSections || []).map((s) =>
+                                  s.id === sec.id ? { ...s, patternRows: v } : s
+                                ),
+                              }));
                             }}
-                            className="w-full text-xl md:text-2xl font-black border-none p-0 focus:ring-0 tabular-nums bg-transparent text-theme-primary" 
+                            className="w-full text-xl md:text-2xl font-black border-none p-0 focus:ring-0 tabular-nums bg-transparent"
+                            style={{ color: sec.patternRows ? 'var(--primary-color)' : 'var(--text-color)' }}
                           />
                         </div>
                         <div
