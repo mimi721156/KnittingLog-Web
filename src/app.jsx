@@ -645,7 +645,7 @@ const normalizeProject = (p) => {
   );
 
   // --- 棒針 + 勾針 組合圖示 ---
-  const KnittingIcon = ({ color = '#D4A373' }) => (
+  const KnittingIcon = () => (
     <svg
       width="64"
       height="64"
@@ -653,44 +653,39 @@ const normalizeProject = (p) => {
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
-      {/* 棒針 1 */}
-      <line
-        x1="15"
-        y1="15"
-        x2="49"
-        y2="49"
-        stroke={color}
-        strokeWidth="2.5"
-        strokeLinecap="round"
-      />
-      <circle cx="13" cy="13" r="3" fill={color} />
+      {/* 使用 currentColor 或直接讀取變數 */}
+      <g stroke="var(--primary-color)" fill="var(--primary-color)">
+        {/* 棒針 1 */}
+        <line
+          x1="15" y1="15" x2="49" y2="49"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+        />
+        <circle cx="13" cy="13" r="3" />
 
-      {/* 棒針 2 */}
-      <line
-        x1="49"
-        y1="15"
-        x2="15"
-        y2="49"
-        stroke={color}
-        strokeWidth="2.5"
-        strokeLinecap="round"
-      />
-      <circle cx="51" cy="13" r="3" fill={color} />
+        {/* 棒針 2 */}
+        <line
+          x1="49" y1="15" x2="15" y2="49"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+        />
+        <circle cx="51" cy="13" r="3" />
 
-      {/* 勾針 */}
-      <path
-        d="M32 10V50M32 50C32 50 32 54 28 54"
-        stroke={color}
-        strokeWidth="3"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M32 50.5C33.5 49 35 48 37 49"
-        stroke={color}
-        strokeWidth="2.5"
-        strokeLinecap="round"
-      />
+        {/* 勾針 */}
+        <path
+          d="M32 10V50M32 50C32 50 32 54 28 54"
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          fill="none" /* 勾針主體不填滿 */
+        />
+        <path
+          d="M32 50.5C33.5 49 35 48 37 49"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          fill="none"
+        />
+      </g>
     </svg>
   );
 
@@ -2755,7 +2750,7 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                   : 'var(--text-color)',
             }}
           >
-            編輯內容
+            edit
           </button>
           <button
             onClick={() => setActiveTab('ALERTS')}
@@ -2771,7 +2766,7 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                   : 'var(--text-color)',
             }}
           >
-            提醒規則
+            alert
           </button>
         </div>
 
@@ -4392,9 +4387,7 @@ function App() {
       <div className="flex-1 flex flex-col h-full overflow-hidden relative">
         <div className="md:hidden p-5 bg-white/60 backdrop-blur sticky top-0 z-20 border-b border-theme-accent/20 flex justify-between items-center">
           <div className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-theme-primary rounded-xl flex items-center justify-center text-white font-black text-[10px]">
-              C
-            </div>
+            <KnittingIcon/>
             <span className="font-black text-theme-text tracking-tighter text-xl uppercase">
               Cozy Knit
             </span>
