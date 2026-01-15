@@ -2772,7 +2772,7 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
               </button>
             </div>
 
-            <div className="p-6 flex-1 overflow-y-auto no-scrollbar space-y-8">
+            <div className="p-6 pb-safe flex-1 overflow-y-auto no-scrollbar space-y-8">
               {/* 基礎資訊 */}
               <section className="space-y-4">
                 <div className="flex items-center gap-2 mb-2 opacity-40">
@@ -3018,7 +3018,7 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
 
               {/* 備註（可收闔） */}
               <section
-                className="rounded-2xl p-4 border space-y-2"
+                className="flex-shrink-0 rounded-2xl p-4 border space-y-2"
                 style={{
                   backgroundColor: 'var(--bg-color)',
                   borderColor: 'var(--accent-color)',
@@ -3057,6 +3057,10 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                     style={{ color: 'var(--text-color)' }}
                   />
                 )}
+              </section>
+
+              <section className="rounded-2xl p-4 border space-y-2 mb-4">
+                {/* ... */}
               </section>
             </div>
           </div>
