@@ -645,7 +645,7 @@ const normalizeProject = (p) => {
   );
 
   // --- 棒針 + 勾針 組合圖示 ---
-  const KnittingIcon = ({ size = 30, color = 'var(--accent-color)' }) => (
+  const KnittingIcon = ({ size = 30, color = 'var(--primary-color)' }) => (
     <svg
       width="64"
       height="64"
@@ -653,39 +653,37 @@ const normalizeProject = (p) => {
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
-      {/* 使用 currentColor 或直接讀取變數 */}
-      <g stroke="var(--accent-color)" fill="var(--accent-color)">
-        {/* 棒針 1 */}
-        <line
-          x1="15" y1="15" x2="49" y2="49"
-          strokeWidth="2.5"
-          strokeLinecap="round"
-        />
-        <circle cx="13" cy="13" r="3" />
+    {/* 使用 currentColor 或直接讀取變數 */}
+      {/* 棒針 1 */}
+      <line
+        x1="15" y1="15" x2="49" y2="49"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+      />
+      <circle cx="13" cy="13" r="3" />
 
-        {/* 棒針 2 */}
-        <line
-          x1="49" y1="15" x2="15" y2="49"
-          strokeWidth="2.5"
-          strokeLinecap="round"
-        />
-        <circle cx="51" cy="13" r="3" />
+      {/* 棒針 2 */}
+      <line
+        x1="49" y1="15" x2="15" y2="49"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+      />
+      <circle cx="51" cy="13" r="3" />
 
-        {/* 勾針 */}
-        <path
-          d="M32 10V50M32 50C32 50 32 54 28 54"
-          strokeWidth="3"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          fill="none" /* 勾針主體不填滿 */
-        />
-        <path
-          d="M32 50.5C33.5 49 35 48 37 49"
-          strokeWidth="2.5"
-          strokeLinecap="round"
-          fill="none"
-        />
-      </g>
+      {/* 勾針 */}
+      <path
+        d="M32 10V50M32 50C32 50 32 54 28 54"
+        strokeWidth="3"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        fill="none" /* 勾針主體不填滿 */
+      />
+      <path
+        d="M32 50.5C33.5 49 35 48 37 49"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        fill="none"
+      />
     </svg>
   );
 
@@ -709,7 +707,7 @@ const DefaultCover = ({ name }) => {
       {/* 中央組合圖示 */}
       <div className="relative flex flex-col items-center gap-4">
         <div className="p-2 bg-white/60 backdrop-blur-md rounded-[2rem] shadow-sm border border-white/50 transform -rotate-3 group-hover:rotate-0 transition-transform duration-500">
-          <KnittingIcon />
+          <KnittingIcon color='var(--primary-color)' />
         </div>
         <div className="flex flex-col items-center">
           <span className="text-[10px] font-black opacity-20 uppercase tracking-[0.4em] mb-1">
@@ -1528,15 +1526,80 @@ function ProjectView({
   const activeInstruction = projectStats.activeSection; // 目前段落
   const activeInstructionText = activeInstruction?.content || '';
 
+    const { ongoingProjects, completedProjects } = useMemo(() => {
+    const ongoing = [];
+    const completed = [];
+
+    listProjects.forEach((item) => {
+      const { project: p, partsMeta, plannedRows } = item;
+      let doneRows = 0;
+
+      // 延用您原本的進度計算邏輯
+      if (plannedRows && plannedRows > 0) {
+        if (Array.isArray(partsMeta) && Array.isArray(p.partsProgress) && p.partsProgress.length > 0) {
+          doneRows = partsMeta.reduce((sum, meta, idx) => {
+            const prog = p.partsProgress[idx];
+            const actual = prog?.totalRow ?? 0;
+            return sum + Math.min(actual, meta.targetRows || 0);
+          }, 0);
+        } else {
+          doneRows = Math.min(p.totalRow || 0, plannedRows);
+        }
+      }
+
+      const ratio = plannedRows > 0 ? doneRows / plannedRows : 0;
+      
+      // 分類：大於等於 1 (100%) 歸類為已完成
+      if (ratio >= 1) {
+        completed.push(item);
+      } else {
+        ongoing.push(item);
+      }
+    });
+
+    return { ongoingProjects: ongoing, completedProjects: completed };
+  }, [listProjects]);
+
+  // 增加一個 State 來控制目前顯示哪個 Tab
+  const [activeTab, setActiveTab] = useState('ONGOING'); // 'ONGOING' 或 'COMPLETED'
+  const displayList = activeTab === 'ONGOING' ? ongoingProjects : completedProjects;
+
   if (!selectedId) {
     return (
       <div className="max-w-6xl mx-auto p-8 md:p-12 animate-fade-in pb-32">
-        <h2 className="text-3xl font-black text-theme-text mb-6 tracking-tight">
-          進行中專案
-        </h2>
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
+          <div>
+            <h2 className="text-3xl font-black text-theme-text tracking-tight mb-2">
+              {activeTab === 'ONGOING' ? '進行中專案' : '已完成專案'}
+            </h2>
+            <p className="text-xs font-black opacity-30 uppercase tracking-widest">
+              {activeTab === 'ONGOING' ? 'Working on these' : 'Finished masterpieces'}
+            </p>
+          </div>
+
+          {/* 切換 Tab */}
+          <div className="flex p-1 bg-gray-100 rounded-2xl w-fit">
+            <button
+              onClick={() => setActiveTab('ONGOING')}
+              className={`px-6 py-2 rounded-xl text-[11px] font-black transition-all ${
+                activeTab === 'ONGOING' ? 'bg-white shadow-sm text-theme-primary' : 'text-gray-400'
+              }`}
+            >
+              進行中 ({ongoingProjects.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('COMPLETED')}
+              className={`px-6 py-2 rounded-xl text-[11px] font-black transition-all ${
+                activeTab === 'COMPLETED' ? 'bg-white shadow-sm text-theme-primary' : 'text-gray-400'
+              }`}
+            >
+              已完成 ({completedProjects.length})
+            </button>
+          </div>
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-          {listProjects.map(
+          {displayList.map(
             ({
               project: p,
               pattern: pat,
@@ -1713,7 +1776,7 @@ function ProjectView({
                           </div>
                         </div>
                         {overallPercent !== null && (
-                          <span className="text-xl font-black italic opacity-90">
+                          <span className="text-xl font-black opacity-90">
                             {overallPercent}%
                           </span>
                         )}
@@ -1731,9 +1794,14 @@ function ProjectView({
             }
           )}
 
-          {listProjects.length === 0 && (
-            <div className="col-span-full text-center py-24 opacity-30 font-black tracking-widest uppercase text-xs">
-              此分類目前沒有進行中的專案
+          {displayList.length === 0 && (
+            <div className="col-span-full text-center py-24 border-2 border-dashed border-gray-100 rounded-[40px]">
+              <div className="text-4xl mb-4 opacity-20">
+                {activeTab === 'ONGOING' ? '☕️' : '📦'}
+              </div>
+              <p className="opacity-30 font-black tracking-widest uppercase text-xs">
+                {activeTab === 'ONGOING' ? '目前沒有進行中的專案' : '尚無已完成的紀錄'}
+              </p>
             </div>
           )}
         </div>
