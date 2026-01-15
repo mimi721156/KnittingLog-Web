@@ -3476,7 +3476,7 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                             value={sec.patternRows || ''} 
                             onChange={(e) => {
                               const v = e.target.value === '' ? null : parseInt(e.target.value);
-                              updateSection(sec.id, { patternRows: v });
+                              updateActivePart(sec.id, { patternRows: v });
                             }}
                             className="w-full text-xl md:text-2xl font-black border-none p-0 focus:ring-0 tabular-nums bg-transparent text-theme-primary" 
                           />
