@@ -1459,13 +1459,18 @@ function ProjectView({
   const sectionLoopInfo = useMemo(() => {
     if (!currentProject || !currentPattern) return null;
 
+    // 狀況一：文字織圖 (TEXT)
     if (
       currentPattern.type === 'TEXT' &&
-      projectStats.activeSection &&
-      projectStats.activeSection.rowsPerLoop
+      projectStats.activeSection
     ) {
       const sec = projectStats.activeSection;
-      const rowsPerLoop = sec.rowsPerLoop || 1;
+      
+      // --- 核心邏輯修改處 ---
+      // 優先使用自定義的花樣循環 patternRows，若沒設定則 fallback 到區段的 rowsPerLoop
+      const rowsPerLoop = sec.patternRows || sec.rowsPerLoop || 1;
+      // ----------------------
+
       const offsetFromStart = currentTotalRow - sec.startRow;
       if (offsetFromStart < 0) return null;
 
@@ -1478,9 +1483,12 @@ function ProjectView({
         loopRow,
         loopIndex,
         rowsPerLoop,
+        // 額外標記這是否為「花樣模式」，方便 UI 切換顏色或標題
+        isPatternMode: !!sec.patternRows 
       };
     }
 
+    // 狀況二：圖表織圖 (CHART)
     if (
       currentPattern.type === 'CHART' &&
       currentPattern.sections &&
@@ -1499,6 +1507,7 @@ function ProjectView({
         loopRow,
         loopIndex,
         rowsPerLoop,
+        isPatternMode: false
       };
     }
 
@@ -2018,28 +2027,22 @@ function ProjectView({
                         {/* Section Loop */}
                         <div className="text-theme-text/70">
                           <div className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text/40 mb-1">
-                            Section Loop
+                            {sectionLoopInfo?.isPatternLoop ? 'Pattern Loop' : 'Section Loop'}
                           </div>
                           {sectionLoopInfo ? (
-                            <div className="border-l-2 border-theme-primary/20 pl-2">
+                            <div className={`border-l-2 pl-2 ${sectionLoopInfo.isPatternLoop ? 'border-theme-accent' : 'border-theme-primary/20'}`}>
                               {sectionLoopInfo.title && (
                                 <div className="text-xs font-bold text-theme-text truncate max-w-[120px] md:max-w-none">
                                   {sectionLoopInfo.title}
                                 </div>
                               )}
                               <div className="text-[11px] md:text-xs text-theme-text/60 tabular-nums">
-                                第{' '}
-                                <span className="font-semibold text-theme-text/90">
-                                  {sectionLoopInfo.loopRow}
-                                </span>{' '}
-                                / {sectionLoopInfo.rowsPerLoop} 排
-                                <span className="mx-1 text-theme-text/30">|</span>
-                                第{' '}
-                                <span className="font-semibold text-theme-text/90">
-                                  {sectionLoopInfo.loopIndex}
-                                </span>{' '}
-                                輪
-                              </div>
+                                  第 <span className={`font-semibold ${sectionLoopInfo.isPatternLoop ? 'text-theme-accent' : 'text-theme-text/90'}`}>
+                                    {sectionLoopInfo.loopRow}
+                                  </span> / {sectionLoopInfo.rowsPerLoop} 排
+                                  <span className="mx-1 text-theme-text/30">|</span>
+                                  第 <span className="font-semibold text-theme-text/90">{sectionLoopInfo.loopIndex}</span> 輪
+                                </div>
                             </div>
                           ) : (
                             <div className="text-[10px] opacity-50">
@@ -2556,6 +2559,7 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
         content: '',
         repeats: 1,
         rowsPerLoop: 1,
+        patternRows: null, // 👈 新增：用於記錄花樣循環排數
       },
     ];
     updateActivePart((p) => ({ ...p, textSections: nextSections }));
@@ -3461,8 +3465,24 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                           />
                         </div>
 
+                        {/* 新增：花樣循環 (Pattern Cycle) */}
+                        <div className="rounded-2xl p-4 shadow-sm bg-theme-bg border-2 border-dashed border-theme-primary/20">
+                          <label className="text-[9px] font-black color-theme-primary uppercase block mb-1">
+                            花樣循環 (選填)
+                          </label>
+                          <input 
+                            type="number" 
+                            placeholder="如: 12"
+                            value={sec.patternRows || ''} 
+                            onChange={(e) => {
+                              const v = e.target.value === '' ? null : parseInt(e.target.value);
+                              updateSection(sec.id, { patternRows: v });
+                            }}
+                            className="w-full text-xl md:text-2xl font-black border-none p-0 focus:ring-0 tabular-nums bg-transparent text-theme-primary" 
+                          />
+                        </div>
                         <div
-                          className="hidden md:flex flex-col justify-center rounded-2xl px-4 shadow-inner"
+                          className="flex flex-col justify-center rounded-2xl px-4 shadow-inner"
                           style={{
                             backgroundColor: '#ffffff',
                             boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.02)',
@@ -3477,6 +3497,7 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                             <span className="text-[10px]">Rows</span>
                           </div>
                         </div>
+
                       </div>
                     </div>
 
