@@ -11,6 +11,47 @@ import { loadFromGitHub, saveToGitHub } from './src/githubContentsApi.js';
 
 const { useState, useEffect, useMemo, useRef } = React;
 
+// === Theme color helpers (for dark-mode-safe surfaces) ===
+function hexToRgb(hex) {
+  if (!hex) return { r: 0, g: 0, b: 0 };
+  let h = String(hex).trim().replace('#', '');
+  if (h.length === 3) h = h.split('').map((c) => c + c).join('');
+  if (h.length !== 6) return { r: 0, g: 0, b: 0 };
+  const r = parseInt(h.slice(0, 2), 16);
+  const g = parseInt(h.slice(2, 4), 16);
+  const b = parseInt(h.slice(4, 6), 16);
+  return { r, g, b };
+}
+
+function rgbToHex(r, g, b) {
+  const toHex = (n) =>
+    Math.max(0, Math.min(255, Math.round(n)))
+      .toString(16)
+      .padStart(2, '0');
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
+
+function mixHex(a, b, t) {
+  const A = hexToRgb(a);
+  const B = hexToRgb(b);
+  const m = (x, y) => x + (y - x) * t;
+  return rgbToHex(m(A.r, B.r), m(A.g, B.g), m(A.b, B.b));
+}
+
+function luminance(hex) {
+  const { r, g, b } = hexToRgb(hex);
+  const srgb = [r, g, b].map((v) => {
+    const c = v / 255;
+    return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+  });
+  return 0.2126 * srgb[0] + 0.7152 * srgb[1] + 0.0722 * srgb[2];
+}
+
+function isDarkHex(hex) {
+  return luminance(hex) < 0.45;
+}
+
+
 
 // === 基礎設定 ===
 
@@ -4487,6 +4528,21 @@ function App() {
     r.style.setProperty('--text-color', t.text);
     r.style.setProperty('--accent-color', t.accent);
     r.style.setProperty('--secondary-color', t.bg);
+    const dark = isDarkHex(t.bg);
+    r.dataset.isDark = dark ? 'true' : 'false';
+
+    // Cards / panels should NOT stay pure white in dark themes, or text can vanish.
+    const surface = dark ? mixHex(t.bg, '#ffffff', 0.10) : '#ffffff';
+    const surfaceStrong = dark ? mixHex(t.bg, '#ffffff', 0.16) : mixHex('#ffffff', '#000000', 0.03);
+    const surfaceGlass = dark ? mixHex(t.bg, '#ffffff', 0.22) : mixHex('#ffffff', '#000000', 0.06);
+    const border = dark ? mixHex(t.bg, '#ffffff', 0.22) : mixHex('#000000', '#ffffff', 0.88);
+    const textMuted = dark ? mixHex(t.text, t.bg, 0.35) : mixHex(t.text, t.bg, 0.55);
+
+    r.style.setProperty('--surface-color', surface);
+    r.style.setProperty('--surface-strong-color', surfaceStrong);
+    r.style.setProperty('--surface-glass-color', surfaceGlass);
+    r.style.setProperty('--border-color', border);
+    r.style.setProperty('--muted-text-color', textMuted);
   }, [savedPatterns, activeProjects, yarns, themeKey, categories]);
 
   const appStateForSync = {
@@ -4577,6 +4633,37 @@ function App() {
 
   return (
     <div className="flex h-screen overflow-hidden">
+      {/* Dark theme safety overrides: remap hard-coded light utility colors to theme surfaces */}
+      <style>{`
+        [data-is-dark="true"] .bg-white { background-color: var(--surface-color) !important; }
+        [data-is-dark="true"] .bg-white\/98 { background-color: var(--surface-glass-color) !important; }
+        [data-is-dark="true"] .bg-white\/95 { background-color: var(--surface-glass-color) !important; }
+        [data-is-dark="true"] .bg-white\/90 { background-color: var(--surface-glass-color) !important; }
+        [data-is-dark="true"] .bg-white\/80 { background-color: var(--surface-strong-color) !important; }
+        [data-is-dark="true"] .bg-white\/60 { background-color: var(--surface-strong-color) !important; }
+        [data-is-dark="true"] .bg-white\/50 { background-color: var(--surface-strong-color) !important; }
+        [data-is-dark="true"] .bg-white\/40 { background-color: var(--surface-color) !important; }
+        [data-is-dark="true"] .bg-white\/25 { background-color: var(--surface-color) !important; }
+        [data-is-dark="true"] .bg-white\/15 { background-color: var(--surface-color) !important; }
+
+        [data-is-dark="true"] .border-gray-100 { border-color: var(--border-color) !important; }
+        [data-is-dark="true"] .border-white { border-color: var(--border-color) !important; }
+        [data-is-dark="true"] .border-white\/50 { border-color: var(--border-color) !important; }
+
+        [data-is-dark="true"] .text-gray-900,
+        [data-is-dark="true"] .text-gray-800,
+        [data-is-dark="true"] .text-gray-700 { color: var(--text-color) !important; }
+
+        [data-is-dark="true"] .text-gray-600,
+        [data-is-dark="true"] .text-gray-500,
+        [data-is-dark="true"] .text-gray-400,
+        [data-is-dark="true"] .text-gray-300,
+        [data-is-dark="true"] .text-gray-200 { color: var(--muted-text-color) !important; }
+
+        /* Symbol palette: KNIT used bg-white which breaks in dark mode */
+        [data-is-dark="true"] .bg-gray-100 { background-color: var(--surface-strong-color) !important; }
+        [data-is-dark="true"] .bg-gray-200 { background-color: var(--surface-glass-color) !important; }
+      `}</style>
       <div className="hidden md:flex w-24 bg-white border-r border-theme-accent/20 flex-col items-center py-12 space-y-12 z-30 shadow-sm relative">
         <div className="w-14 h-14 bg-theme-primary text-white rounded-[1.25rem] flex items-center justify-center shadow-xl shadow-theme-primary/20 font-black text-2xl">
           C
