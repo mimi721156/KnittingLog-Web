@@ -1938,7 +1938,7 @@ function ProjectView({
                     {/* 左邊：封面色塊 */}
                     <div className="w-24 h-32 md:w-28 md:h-36 flex-shrink-0 rounded-2xl overflow-hidden shadow-inner relative bg-theme-bg">
                       <div className="absolute inset-0 flex items-center justify-center text-3xl">
-                        🧶
+                        <KnittingIcon size={48} color='var(--primary-color)' />
                       </div>
                       {p.startAt && (
                         <div className="absolute bottom-0 inset-x-0 bg-black/35 backdrop-blur-[2px] py-1 text-center">
