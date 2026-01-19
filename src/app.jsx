@@ -2103,7 +2103,10 @@ function ProjectView({
               <div className="max-w-xl w-full px-2 sm:px-0 pointer-events-auto">
                 <div className="animate-float-subtle bg-theme-primary text-white rounded-[1.5rem] shadow-2xl border border-white/30 px-3 py-2 flex items-start gap-2">
                   <div className="w-7 h-7 bg-white/15 rounded-2xl flex items-center justify-center text-base flex-shrink-0">
-                    🔔
+                    <Icons.Bell
+                            size={18}
+                            style={{ color: 'var(--primary-color)' }}
+                    />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="text-[9px] font-black uppercase tracking-[0.18em] opacity-70 mb-0.5 truncate">
@@ -4729,19 +4732,23 @@ function App() {
           <Icons.Cloud />
         </button>
 
-        <div className="flex flex-col gap-5 pb-2">
-          {Object.values(THEMES).map((t) => (
-            <div
-              key={t.id}
-              onClick={() => setThemeKey(t.id)}
-              className="theme-dot transition-all"
-              style={{
-                backgroundColor: t.primary,
-                opacity: themeKey === t.id ? 1 : 0.3,
-                transform: themeKey === t.id ? 'scale(1.2)' : 'scale(1)',
-              }}
+        {/* Theme picker trigger (Desktop) */}
+        <div className="pb-2 hidden md:flex flex-col items-center gap-3">
+          <button
+            onClick={() => setThemePickerOpen(true)}
+            className="w-full mx-3 px-3 py-2 rounded-2xl bg-theme-bg/60 border border-theme-accent/20 shadow-sm flex items-center justify-center gap-2"
+            aria-label="Theme"
+            title="Theme"
+          >
+            <span
+              className="w-4 h-4 rounded-full border border-white/60 shadow-sm"
+              style={{ backgroundColor: (THEMES[themeKey] || THEMES.PURPLE).primary }}
             />
-          ))}
+            <span className="text-[10px] font-black uppercase tracking-[0.15em] text-theme-text/70">
+              Theme
+            </span>
+            <span className="text-[10px] text-theme-text/40">▾</span>
+          </button>
         </div>
       </div>
 
@@ -4821,6 +4828,58 @@ function App() {
                       }}
                     />
                   </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Theme picker popover (Desktop) */}
+        {themePickerOpen && (
+          <div className="fixed inset-0 z-50 hidden md:block">
+            {/* click-away */}
+            <div
+              className="absolute inset-0"
+              onClick={() => setThemePickerOpen(false)}
+            />
+
+            <div className="absolute left-24 bottom-6">
+              <div className="w-[360px] bg-white/95 backdrop-blur rounded-[2rem] border border-theme-accent/20 shadow-[0_18px_60px_rgba(0,0,0,0.18)] overflow-hidden">
+                <div className="px-5 pt-4 pb-3 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="w-6 h-6 rounded-full border border-white/60 shadow-sm"
+                      style={{
+                        backgroundColor:
+                          (THEMES[themeKey] || THEMES.PURPLE).primary,
+                      }}
+                    />
+                    <div>
+                      <div className="text-sm font-black text-theme-text tracking-tight">
+                        主題
+                      </div>
+                      <div className="text-[10px] font-black uppercase tracking-[0.18em] text-theme-text/35">
+                        Appearance
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setThemePickerOpen(false)}
+                    className="w-9 h-9 rounded-full bg-theme-bg/60 border border-theme-accent/20 flex items-center justify-center text-theme-text"
+                    aria-label="Close"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <div className="px-5 pb-5 max-h-[70vh] overflow-y-auto no-scrollbar">
+                  <ThemePickerSection
+                    themeKey={themeKey}
+                    setThemeKey={(id) => {
+                      setThemeKey(id);
+                      setThemePickerOpen(false);
+                    }}
+                  />
                 </div>
               </div>
             </div>
