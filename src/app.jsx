@@ -4635,20 +4635,21 @@ function App() {
     <div className="flex h-screen overflow-hidden">
       {/* Dark theme safety overrides: remap hard-coded light utility colors to theme surfaces */}
       <style>{`
-        [data-is-dark="true"] .bg-white { background-color: var(--surface-color) !important; }
-        [data-is-dark="true"] .bg-white\/98 { background-color: var(--surface-glass-color) !important; }
-        [data-is-dark="true"] .bg-white\/95 { background-color: var(--surface-glass-color) !important; }
-        [data-is-dark="true"] .bg-white\/90 { background-color: var(--surface-glass-color) !important; }
-        [data-is-dark="true"] .bg-white\/80 { background-color: var(--surface-strong-color) !important; }
-        [data-is-dark="true"] .bg-white\/60 { background-color: var(--surface-strong-color) !important; }
-        [data-is-dark="true"] .bg-white\/50 { background-color: var(--surface-strong-color) !important; }
-        [data-is-dark="true"] .bg-white\/40 { background-color: var(--surface-color) !important; }
-        [data-is-dark="true"] .bg-white\/25 { background-color: var(--surface-color) !important; }
-        [data-is-dark="true"] .bg-white\/15 { background-color: var(--surface-color) !important; }
+        [data-is-dark="true"] [class~="bg-white/98"] { background-color: var(--surface-glass-color) !important; }
+        [data-is-dark="true"] [class~="bg-white/95"] { background-color: var(--surface-glass-color) !important; }
+        [data-is-dark="true"] [class~="bg-white/90"] { background-color: var(--surface-glass-color) !important; }
+
+        [data-is-dark="true"] [class~="bg-white/80"] { background-color: var(--surface-strong-color) !important; }
+        [data-is-dark="true"] [class~="bg-white/60"] { background-color: var(--surface-strong-color) !important; }
+        [data-is-dark="true"] [class~="bg-white/50"] { background-color: var(--surface-strong-color) !important; }
+
+        [data-is-dark="true"] [class~="bg-white/40"] { background-color: var(--surface-color) !important; }
+        [data-is-dark="true"] [class~="bg-white/25"] { background-color: var(--surface-color) !important; }
+        [data-is-dark="true"] [class~="bg-white/15"] { background-color: var(--surface-color) !important; }
 
         [data-is-dark="true"] .border-gray-100 { border-color: var(--border-color) !important; }
         [data-is-dark="true"] .border-white { border-color: var(--border-color) !important; }
-        [data-is-dark="true"] .border-white\/50 { border-color: var(--border-color) !important; }
+        [data-is-dark="true"] [class~="border-white/50"] { border-color: var(--border-color) !important; }
 
         [data-is-dark="true"] .text-gray-900,
         [data-is-dark="true"] .text-gray-800,
