@@ -1954,8 +1954,8 @@ function ProjectView({
 
           {/* 有提醒時：卡片浮在這個高度內，可略為蓋到下方 Panel */}
           {showAlertOverlay && currentAlerts.length > 0 && (
-            <div className="absolute inset-0 z-20 pointer-events-none flex items-center justify-center">
-              <div className="max-w-xl w-full px-1 sm:px-0 pointer-events-auto">
+            <div className="absolute inset-0 z-20 pointer-events-none flex justify-center pt-[20%]">
+              <div className="max-w-xl w-full px-2 sm:px-0 pointer-events-auto">
                 <div className="animate-float-subtle bg-theme-primary text-white rounded-[1.5rem] shadow-2xl border border-white/30 px-3 py-2 flex items-start gap-2">
                   <div className="w-7 h-7 bg-white/15 rounded-2xl flex items-center justify-center text-base flex-shrink-0">
                     🔔
@@ -1967,7 +1967,7 @@ function ProjectView({
                     </div>
 
                     {/* 裡面文字高度限制，避免整張卡過高 */}
-                    <div className="mt-0.5 space-y-1 max-h-24 overflow-y-auto pr-1">
+                    <div className="mt-0.5 space-y-2">
                       {currentAlerts.map((alert, idx) => (
                         <div
                           key={alert.id || idx}
@@ -1979,7 +1979,7 @@ function ProjectView({
                               {alert.type === 'SECTION' ? 'Section' : 'Total'} ·{' '}
                               {alert.mode === 'EVERY' ? 'Every' : 'At'} {alert.value}
                             </div>
-                            <div className="text-[11px] font-bold">
+                            <div className="text-[11px] font-bold break-words">
                               {alert.message || '下一段變化來了～'}
                             </div>
                           </div>
