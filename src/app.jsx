@@ -1954,7 +1954,7 @@ function ProjectView({
 
           {/* 有提醒時：卡片浮在這個高度內，可略為蓋到下方 Panel */}
           {showAlertOverlay && currentAlerts.length > 0 && (
-            <div className="absolute inset-0 z-20 pointer-events-none flex justify-center pt-[20%]">
+            <div className="absolute inset-0 z-20 pointer-events-none flex justify-center pt-[0%]">
               <div className="max-w-xl w-full px-2 sm:px-0 pointer-events-auto">
                 <div className="animate-float-subtle bg-theme-primary text-white rounded-[1.5rem] shadow-2xl border border-white/30 px-3 py-2 flex items-start gap-2">
                   <div className="w-7 h-7 bg-white/15 rounded-2xl flex items-center justify-center text-base flex-shrink-0">
