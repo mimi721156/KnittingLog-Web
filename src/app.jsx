@@ -1307,7 +1307,7 @@ function YarnView({ yarns, onSaveYarn, onDeleteYarn }) {
             <div className="absolute top-0 right-0 w-24 h-24 bg-theme-bg rounded-bl-full opacity-50 -mr-8 -mt-8 transition-transform group-hover:scale-110"></div>
             <div className="relative z-10 flex gap-4">
               <div className="w-16 h-16 bg-theme-bg rounded-2xl flex items-center justify-center text-3xl shadow-inner flex-shrink-0">
-                🧶
+                <KnittingIcon size={40} color='var(--primary-color)' />
               </div>
               <div className="min-w-0 flex-1">
                 <h3 className="font-black text-theme-text text-lg truncate">
