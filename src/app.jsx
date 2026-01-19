@@ -32,35 +32,48 @@ const SYMBOLS = {
   },
 };
 
+// const THEMES = {
+//   PURPLE: {
+//     id: 'PURPLE',
+//     primary: '#8e8499',
+//     bg: '#f4f2f7',
+//     text: '#5d5666',
+//     accent: '#dcd3e3',
+//   },
+//   BLUE: {
+//     id: 'BLUE',
+//     primary: '#7da1c4',
+//     bg: '#f0f5f9',
+//     text: '#4e6173',
+//     accent: '#cfe0eb',
+//   },
+//   PINK: {
+//     id: 'PINK',
+//     primary: '#c48e8e',
+//     bg: '#faf3f3',
+//     text: '#735252',
+//     accent: '#ebcfcf',
+//   },
+//   DARK: {
+//     id: 'DARK',
+//     primary: '#1a1a1a',
+//     bg: '#ffffff',
+//     text: '#1a1a1a',
+//     accent: '#eeeeee',
+//   },
+// };
+
+// 引用您提供的主題資料
 const THEMES = {
-  PURPLE: {
-    id: 'PURPLE',
-    primary: '#8e8499',
-    bg: '#f4f2f7',
-    text: '#5d5666',
-    accent: '#dcd3e3',
-  },
-  BLUE: {
-    id: 'BLUE',
-    primary: '#7da1c4',
-    bg: '#f0f5f9',
-    text: '#4e6173',
-    accent: '#cfe0eb',
-  },
-  PINK: {
-    id: 'PINK',
-    primary: '#c48e8e',
-    bg: '#faf3f3',
-    text: '#735252',
-    accent: '#ebcfcf',
-  },
-  DARK: {
-    id: 'DARK',
-    primary: '#1a1a1a',
-    bg: '#ffffff',
-    text: '#1a1a1a',
-    accent: '#eeeeee',
-  },
+  PURPLE: { id: 'PURPLE', name: '薰衣草', primary: '#8e8499', bg: '#f4f2f7', text: '#5d5666', accent: '#dcd3e3' },
+  BLUE: { id: 'BLUE', name: '靜謐藍', primary: '#7da1c4', bg: '#f0f5f9', text: '#4e6173', accent: '#cfe0eb' },
+  PINK: { id: 'PINK', name: '櫻花粉', primary: '#c48e8e', bg: '#faf3f3', text: '#735252', accent: '#ebcfcf' },
+  DARK: { id: 'DARK', name: '簡約黑', primary: '#1a1a1a', bg: '#ffffff', text: '#1a1a1a', accent: '#eeeeee' },
+  GREEN: { id: 'GREEN', name: '抹茶森林', primary: '#7B8E6F', bg: '#F2F4EF', text: '#4A5443', accent: '#DDE3D5' },
+  AUTUMN: { id: 'AUTUMN', name: '秋日暖陽', primary: '#C68B77', bg: '#FBF7F4', text: '#6B4E44', accent: '#EEDAD1' },
+  SAND: { id: 'SAND', name: '燕麥奶茶', primary: '#A69080', bg: '#F8F6F4', text: '#594E46', accent: '#E6DED8' },
+  OCEAN: { id: 'OCEAN', name: '北歐冷杉', primary: '#66999B', bg: '#F2F7F7', text: '#3E5152', accent: '#CDE0E1' },
+  NIGHT: { id: 'NIGHT', name: '午夜沉靜', primary: '#A1B5D1', bg: '#1A1C23', text: '#E2E4E9', accent: '#2D313E' },
 };
 
 
@@ -958,12 +971,103 @@ function GitHubSyncDialog({ open, onClose, onApplyRemote, currentState }) {
 
 // === 教學頁 ===
 
-function TutorialView() {
+// 教學頁內的「個人化外觀」區塊（主題切換）
+const ThemePickerSection = ({ themeKey, setThemeKey }) => {
   return (
-    <div className="max-w-4xl mx-auto p-8 md:p-12 animate-fade-in pb-32">
-      <h2 className="text-4xl font-black text-theme-text mb-12 tracking-tighter">
-        編織指南與符號
-      </h2>
+    <section className="bg-white/50 backdrop-blur-md rounded-[2.5rem] p-6 md:p-8 border border-theme-accent/20 shadow-sm">
+      <div className="flex items-center gap-3 mb-6">
+        <div className="w-10 h-10 rounded-2xl bg-theme-primary flex items-center justify-center text-white shadow-lg shadow-theme-primary/20">
+          <Icons.Sparkles />
+        </div>
+        <div>
+          <h3 className="text-xl font-black text-theme-text tracking-tight">
+            個人化外觀
+          </h3>
+          <p className="text-[10px] font-black opacity-30 uppercase tracking-[0.2em]">
+            Appearance Settings
+          </p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-3 sm:grid-cols-5 gap-4">
+        {Object.values(THEMES).map((t) => {
+          const isActive = themeKey === t.id;
+          return (
+            <button
+              key={t.id}
+              onClick={() => setThemeKey(t.id)}
+              className={
+                'group relative flex flex-col items-center gap-3 p-3 rounded-[2rem] transition-all duration-300 ' +
+                (isActive
+                  ? 'bg-white shadow-xl scale-105'
+                  : 'hover:bg-white/40')
+              }
+            >
+              {/* 色彩預覽圓圈 */}
+              <div
+                className="w-12 h-12 rounded-full border-2 flex items-center justify-center transition-transform group-hover:rotate-12"
+                style={{
+                  backgroundColor: t.bg,
+                  borderColor: isActive ? t.primary : 'transparent',
+                }}
+              >
+                <div
+                  className="w-8 h-8 rounded-full shadow-inner"
+                  style={{ backgroundColor: t.primary }}
+                />
+              </div>
+
+              {/* 主題名稱 */}
+              <span
+                className="text-[10px] font-black tracking-tighter opacity-60 group-hover:opacity-100"
+                style={{ color: isActive ? t.primary : 'inherit' }}
+              >
+                {t.name}
+              </span>
+
+              {/* 選中提示小勾勾 */}
+              {isActive && (
+                <div
+                  className="absolute top-1 right-1 w-5 h-5 rounded-full flex items-center justify-center shadow-md animate-in zoom-in duration-300"
+                  style={{ backgroundColor: t.primary }}
+                >
+                  <Icons.Check size={10} className="text-white" />
+                </div>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="mt-8 pt-6 border-t border-theme-accent/10 flex items-center justify-between">
+        <p className="text-[11px] text-theme-text/40 font-medium italic">
+          提示：切換主題會同時改變 APP 的整體配色。
+        </p>
+        <div className="flex gap-2">
+          <div className="w-2 h-2 rounded-full bg-theme-primary animate-pulse" />
+          <div className="w-2 h-2 rounded-full bg-theme-accent" />
+        </div>
+      </div>
+    </section>
+  );
+};
+
+function TutorialView({ themeKey, setThemeKey }) {
+  return (
+    <div className="max-w-4xl mx-auto p-8 md:p-12 animate-fade-in pb-32 space-y-10">
+      <div>
+        <h2 className="text-4xl font-black text-theme-text mb-3 tracking-tighter">
+          使用指南與設定
+        </h2>
+        <p className="text-xs font-black opacity-30 uppercase tracking-[0.25em]">
+          Tutorial & Preferences
+        </p>
+      </div>
+
+      {/* 個人化外觀（Appearance Settings） */}
+      <ThemePickerSection themeKey={themeKey} setThemeKey={setThemeKey} />
+
+      {/* 基礎符號 */}
       <div className="bg-white p-10 rounded-[3rem] shadow-cozy border border-white">
         <h3 className="font-black text-theme-primary text-xl mb-10 border-b border-theme-bg pb-5 tracking-widest uppercase">
           基礎符號
@@ -4705,7 +4809,9 @@ function App() {
               }}
             />
           )}
-          {view === 'TUTORIAL' && <TutorialView />}
+          {view === 'TUTORIAL' && (
+            <TutorialView themeKey={themeKey} setThemeKey={setThemeKey} />
+          )}
         </main>
 
         {shouldShowMobileTabBar && (
