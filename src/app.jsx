@@ -4494,6 +4494,7 @@ function App() {
 
   const [categoryFilter, setCategoryFilter] = useState('ALL');
   const [syncOpen, setSyncOpen] = useState(false);
+  const [themePickerOpen, setThemePickerOpen] = useState(false);
 
   const shouldShowMobileTabBar =
     view !== 'EDITOR' && !(view === 'PROJECTS' && selectedProjectId);
@@ -4635,21 +4636,20 @@ function App() {
     <div className="flex h-screen overflow-hidden">
       {/* Dark theme safety overrides: remap hard-coded light utility colors to theme surfaces */}
       <style>{`
-        [data-is-dark="true"] [class~="bg-white/98"] { background-color: var(--surface-glass-color) !important; }
-        [data-is-dark="true"] [class~="bg-white/95"] { background-color: var(--surface-glass-color) !important; }
-        [data-is-dark="true"] [class~="bg-white/90"] { background-color: var(--surface-glass-color) !important; }
-
-        [data-is-dark="true"] [class~="bg-white/80"] { background-color: var(--surface-strong-color) !important; }
-        [data-is-dark="true"] [class~="bg-white/60"] { background-color: var(--surface-strong-color) !important; }
-        [data-is-dark="true"] [class~="bg-white/50"] { background-color: var(--surface-strong-color) !important; }
-
-        [data-is-dark="true"] [class~="bg-white/40"] { background-color: var(--surface-color) !important; }
-        [data-is-dark="true"] [class~="bg-white/25"] { background-color: var(--surface-color) !important; }
-        [data-is-dark="true"] [class~="bg-white/15"] { background-color: var(--surface-color) !important; }
+        [data-is-dark="true"] .bg-white { background-color: var(--surface-color) !important; }
+        [data-is-dark="true"] .bg-white\\/98 { background-color: var(--surface-glass-color) !important; }
+        [data-is-dark="true"] .bg-white\\/95 { background-color: var(--surface-glass-color) !important; }
+        [data-is-dark="true"] .bg-white\\/90 { background-color: var(--surface-glass-color) !important; }
+        [data-is-dark="true"] .bg-white\\/80 { background-color: var(--surface-strong-color) !important; }
+        [data-is-dark="true"] .bg-white\\/60 { background-color: var(--surface-strong-color) !important; }
+        [data-is-dark="true"] .bg-white\\/50 { background-color: var(--surface-strong-color) !important; }
+        [data-is-dark="true"] .bg-white\\/40 { background-color: var(--surface-color) !important; }
+        [data-is-dark="true"] .bg-white\\/25 { background-color: var(--surface-color) !important; }
+        [data-is-dark="true"] .bg-white\\/15 { background-color: var(--surface-color) !important; }
 
         [data-is-dark="true"] .border-gray-100 { border-color: var(--border-color) !important; }
         [data-is-dark="true"] .border-white { border-color: var(--border-color) !important; }
-        [data-is-dark="true"] [class~="border-white/50"] { border-color: var(--border-color) !important; }
+        [data-is-dark="true"] .border-white\\/50 { border-color: var(--border-color) !important; }
 
         [data-is-dark="true"] .text-gray-900,
         [data-is-dark="true"] .text-gray-800,
@@ -4762,21 +4762,70 @@ function App() {
             >
               <Icons.Cloud />
             </button>
-            <div className="flex gap-1.5">
-              {Object.values(THEMES).map((t) => (
-                <div
-                  key={t.id}
-                  onClick={() => setThemeKey(t.id)}
-                  className="w-6 h-6 rounded-full border-2 border-white shadow-sm"
-                  style={{
-                    backgroundColor: t.primary,
-                    opacity: themeKey === t.id ? 1 : 0.4,
-                  }}
-                />
-              ))}
-            </div>
+            <button
+              onClick={() => setThemePickerOpen(true)}
+              className="flex items-center gap-2 pl-2 pr-2.5 py-1.5 rounded-full bg-theme-bg/60 border border-theme-accent/20 shadow-sm"
+              aria-label="Theme"
+            >
+              <span
+                className="w-5 h-5 rounded-full border border-white/70 shadow-sm"
+                style={{ backgroundColor: (THEMES[themeKey] || THEMES.PURPLE).primary }}
+              />
+              <span className="text-[10px] font-black uppercase tracking-[0.15em] text-theme-text/70">
+                Theme
+              </span>
+              <span className="text-[10px] text-theme-text/40">▾</span>
+            </button>
           </div>
         </div>
+
+        {themePickerOpen && (
+          <div className="fixed inset-0 z-50 md:hidden">
+            <div
+              className="absolute inset-0 bg-black/40"
+              onClick={() => setThemePickerOpen(false)}
+            />
+            <div className="absolute left-0 right-0 bottom-0">
+              <div className="mx-auto max-w-3xl">
+                <div className="bg-white/95 backdrop-blur rounded-t-[2.5rem] border-t border-theme-accent/20 shadow-[0_-12px_40px_rgba(0,0,0,0.18)] overflow-hidden">
+                  <div className="px-5 pt-4 pb-3 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span
+                        className="w-6 h-6 rounded-full border border-white/60 shadow-sm"
+                        style={{ backgroundColor: (THEMES[themeKey] || THEMES.PURPLE).primary }}
+                      />
+                      <div>
+                        <div className="text-sm font-black text-theme-text tracking-tight">
+                          主題
+                        </div>
+                        <div className="text-[10px] font-black uppercase tracking-[0.18em] text-theme-text/35">
+                          Appearance
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setThemePickerOpen(false)}
+                      className="w-9 h-9 rounded-full bg-theme-bg/60 border border-theme-accent/20 flex items-center justify-center text-theme-text"
+                      aria-label="Close"
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  <div className="px-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] max-h-[70vh] overflow-y-auto no-scrollbar">
+                    <ThemePickerSection
+                      themeKey={themeKey}
+                      setThemeKey={(id) => {
+                        setThemeKey(id);
+                        setThemePickerOpen(false);
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         <main
           className={
