@@ -1093,6 +1093,52 @@ const ThemePickerSection = ({ themeKey, setThemeKey }) => {
   );
 };
 
+// Compact theme picker for dropdown/popover menus (vertical list)
+const ThemePickerMenu = ({ themeKey, setThemeKey }) => {
+  return (
+    <div className="flex flex-col gap-2">
+      {Object.values(THEMES).map((t) => {
+        const isActive = themeKey === t.id;
+        return (
+          <button
+            key={t.id}
+            onClick={() => setThemeKey(t.id)}
+            className={
+              'w-full flex items-center gap-3 px-3 py-2 rounded-2xl transition-all duration-200 border ' +
+              (isActive
+                ? 'bg-white/60 border-theme-accent/30 shadow-sm'
+                : 'bg-white/30 hover:bg-white/50 border-transparent')
+            }
+          >
+            <span
+              className="w-6 h-6 rounded-full border border-white/60 shadow-sm"
+              style={{ backgroundColor: t.primary }}
+            />
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-black text-theme-text tracking-tight truncate">
+                {t.name}
+              </div>
+              <div className="text-[10px] font-black uppercase tracking-[0.18em] text-theme-text/35 truncate">
+                {t.id}
+              </div>
+            </div>
+            {isActive ? (
+              <span
+                className="w-7 h-7 rounded-full flex items-center justify-center border border-theme-accent/20"
+                style={{ backgroundColor: t.primary }}
+              >
+                <Icons.Check size={12} className="text-white" />
+              </span>
+            ) : (
+              <span className="text-xs text-theme-text/30">→</span>
+            )}
+          </button>
+        );
+      })}
+    </div>
+  );
+};
+
 function TutorialView({ themeKey, setThemeKey }) {
   return (
     <div className="max-w-4xl mx-auto p-8 md:p-12 animate-fade-in pb-32 space-y-10">
@@ -4872,8 +4918,8 @@ function App() {
                   </button>
                 </div>
 
-                <div className="px-5 pb-5 max-h-[70vh] overflow-y-auto no-scrollbar">
-                  <ThemePickerSection
+                <div className="px-4 pb-4 max-h-[70vh] overflow-y-auto no-scrollbar">
+                  <ThemePickerMenu
                     themeKey={themeKey}
                     setThemeKey={(id) => {
                       setThemeKey(id);
