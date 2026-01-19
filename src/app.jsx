@@ -4782,18 +4782,32 @@ function App() {
         <div className="pb-2 hidden md:flex flex-col items-center gap-3">
           <button
             onClick={() => setThemePickerOpen(true)}
-            className="w-full mx-3 px-3 py-2 rounded-2xl bg-theme-bg/60 border border-theme-accent/20 shadow-sm flex items-center justify-center gap-2"
-            aria-label="Theme"
+            className="
+              w-full
+              flex flex-col items-center
+              gap-1
+              px-2 py-2
+              rounded-xl
+              bg-white/60
+              hover:bg-white/80
+              transition
+              overflow-hidden
+            "
             title="Theme"
           >
+            {/* 當前主題色預覽 */}
             <span
-              className="w-4 h-4 rounded-full border border-white/60 shadow-sm"
-              style={{ backgroundColor: (THEMES[themeKey] || THEMES.PURPLE).primary }}
+              className="w-5 h-5 rounded-full shrink-0"
+              style={{ background: THEMES[themeKey].primary }}
             />
-            <span className="text-[10px] font-black uppercase tracking-[0.15em] text-theme-text/70">
-              Theme
+
+            {/* 文字（直式、不會撐寬） */}
+            <span className="text-[11px] font-semibold leading-none opacity-80">
+              THEME
             </span>
-            <span className="text-[10px] text-theme-text/40">▾</span>
+
+            {/* 箭頭 */}
+            <span className="text-[10px] leading-none opacity-50">▼</span>
           </button>
         </div>
       </div>
