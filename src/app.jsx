@@ -2029,9 +2029,7 @@ function ProjectView({
                     <div
                       className="rounded-2xl p-4 text-white shadow-md"
                       style={{
-                        backgroundColor: isDarkTheme
-                          ? 'var(--theme-primary)'
-                          : 'var(--theme-text)',
+                        backgroundColor: 'var(--theme-text)',
                       }}
                     >
                       <div className="flex justify-between items-end mb-2">
@@ -4826,6 +4824,7 @@ function App() {
         /* Symbol palette: KNIT used bg-white which breaks in dark mode */
         [data-is-dark="true"] .bg-gray-100 { background-color: var(--surface-strong-color) !important; }
         [data-is-dark="true"] .bg-gray-200 { background-color: var(--surface-glass-color) !important; }
+        [data-is-dark="true"] {--theme-text: var(--theme-primary);}
       `}</style>
       <div className="hidden md:flex w-24 bg-white border-r border-theme-accent/20 flex-col items-center py-12 space-y-12 z-30 shadow-sm relative">
         <div className="w-14 h-14 bg-theme-primary text-white rounded-[1.25rem] flex items-center justify-center shadow-xl shadow-theme-primary/20 font-black text-2xl">
