@@ -1924,7 +1924,7 @@ function ProjectView({
                           <span className="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 font-medium">
                             {p.category || '未分類'}
                           </span>
-                          <span
+                          {/* <span
                             className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${
                               pat?.type === 'CHART'
                                 ? 'border-purple-200 text-purple-500'
@@ -1932,7 +1932,7 @@ function ProjectView({
                             }`}
                           >
                             {pat?.type || 'TEXT'}
-                          </span>
+                          </span> */}
                         </div>
                       </div>
 
@@ -1976,7 +1976,13 @@ function ProjectView({
 
                     <div className="flex-1 flex flex-col justify-between py-1">
                       {/* 目前部位 + 目前部位排數 */}
-                      <div className="bg-[#F8F9FA] rounded-2xl p-2.5 space-y-2 border border-gray-50">
+                      <div
+                        className="rounded-2xl p-2.5 space-y-2 border"
+                        style={{
+                          backgroundColor: 'var(--surface-color)',
+                          borderColor: 'var(--border-soft-color)',
+                        }}
+                      >
                         <div className="flex items-center gap-2">
                           <div className="p-1 bg-white rounded-lg shadow-sm text-theme-primary text-xs font-black">
                             部位
@@ -2020,7 +2026,14 @@ function ProjectView({
 
                   {/* 底部：總進度區 */}
                   {ratio !== null && plannedRows !== null && (
-                    <div className="bg-theme-text rounded-2xl p-4 text-white shadow-md">
+                    <div
+                      className="rounded-2xl p-4 text-white shadow-md"
+                      style={{
+                        backgroundColor: isDarkTheme
+                          ? 'var(--theme-primary)'
+                          : 'var(--theme-text)',
+                      }}
+                    >
                       <div className="flex justify-between items-end mb-2">
                         <div className="flex flex-col">
                           <span className="text-[9px] text-white/50 font-bold uppercase tracking-widest">
@@ -4159,14 +4172,14 @@ function LibraryView({
                 {ptn.category || '未分類'}
               </span>
 
-              <span
+              {/* <span
                 className="
                   px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest
                   bg-theme-primary text-white backdrop-blur
                 "
               >
                 {ptn.type}
-              </span>
+              </span> */}
             </div>
 
             {/* 右上角：工具鈕（hover 才出現） */}
