@@ -55,6 +55,7 @@ function isDarkHex(hex) {
   return luminance(hex) < 0.45;
 }
 
+
 function useIsMobile(breakpointPx = 768) {
   const [isMobile, setIsMobile] = React.useState(() => {
     if (typeof window === 'undefined') return false;
@@ -4568,6 +4569,8 @@ function CategoryLibraryView({
     onDeleteCategory(name);
   };
 
+  const isMobile = useIsMobile(768);
+
   return (
     <div className="max-w-5xl mx-auto p-8 md:p-12 animate-fade-in pb-32">
       {/* Header */}
@@ -4803,7 +4806,6 @@ function App() {
   const [syncOpen, setSyncOpen] = useState(false);
   const [themePickerOpen, setThemePickerOpen] = useState(false);
 
-  const isMobile = useIsMobile(768);
 
   const shouldShowMobileTabBar =
     view !== 'EDITOR' && !(view === 'PROJECTS' && selectedProjectId);
