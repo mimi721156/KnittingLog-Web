@@ -4110,19 +4110,11 @@ function LibraryView({
           <div className="flex flex-wrap gap-3">
             <button
               onClick={() => {
-                onNewPattern('CHART');
-              }}
-              className="bg-theme-primary/10 text-theme-primary px-7 py-3 rounded-[1.5rem] font-black text-[10px] uppercase tracking-widest border-2 border-theme-primary/10 transition-all hover:bg-theme-primary hover:text-white shadow-sm"
-            >
-              + CHART
-            </button>
-            <button
-              onClick={() => {
                 onNewPattern('TEXT');
               }}
-              className="bg-theme-primary text-white px-7 py-3 rounded-[1.5rem] font-black text-[10px] uppercase tracking-widest shadow-xl shadow-theme-primary/20 transition-all hover:opacity-80"
+              className="bg-theme-primary text-white px-5 py-3 rounded-[1.5rem] font-black text-[10px] uppercase tracking-widest shadow-xl shadow-theme-primary/20 transition-all hover:opacity-80"
             >
-              + TEXT
+              + ADD
             </button>
           </div>
         </div>
