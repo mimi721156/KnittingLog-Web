@@ -4725,9 +4725,9 @@ function CategoryLibraryView({
                 </div>
 
                 {/* 右上 icon：排序模式改成 GripVertical */}
-                <div className="w-10 h-10 rounded-2xl bg-theme-bg flex items-center justify-center text-theme-primary text-lg font-black">
+                {/* <div className="w-10 h-10 rounded-2xl bg-theme-bg flex items-center justify-center text-theme-primary text-lg font-black">
                   {isSortMode ? <Icons.GripVertical /> : <Icons.Grid />}
-                </div>
+                </div> */}
                 {isSortMode && isMobile && c.name !== '未分類' && (
                 <div className="flex flex-col gap-1 ml-2">
                   <button
