@@ -2284,7 +2284,8 @@ function ProjectView({
                                 </div>
                               )}
                               <div className="text-[11px] md:text-xs text-theme-text/60 tabular-nums">
-                                  第 <span className="font-semibold text-theme-text/90">{sectionLoopInfo.loopRow}</span> / 
+                                  第 <span className="font-semibold text-theme-text/90">{sectionLoopInfo.loopRow}</span>
+                                  &nbsp;/&nbsp;
                                   <span className={sectionLoopInfo.isLastLoop ? "font-bold" : ""}>
                                     {sectionLoopInfo.rowsPerLoop}
                                   </span> 排
@@ -2293,7 +2294,7 @@ function ProjectView({
                                   <span className="font-semibold text-theme-text/90">
                                     {sectionLoopInfo.loopIndex}
                                   </span>
-                                  /
+                                  &nbsp;/&nbsp;
                                   <span className="text-theme-text/60">
                                     {sectionLoopInfo.totalLoops}
                                   </span>{" "}
