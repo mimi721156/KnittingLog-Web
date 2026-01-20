@@ -51,15 +51,21 @@ export function loadAppState() {
   };
 }
 
-export function saveAppState({ savedPatterns, activeProjects, yarns, themeKey }) {
+export function saveAppState({
+  savedPatterns = [],
+  activeProjects = [],
+  yarns = [],
+  themeKey = 'PURPLE',
+  categories = [], // ✅ 關鍵
+} = {}) {
   if (typeof window === 'undefined' || !window.localStorage) return;
   const ls = window.localStorage;
 
-  ls.setItem(STORAGE_KEYS.PATTERNS, JSON.stringify(savedPatterns || []));
-  ls.setItem(STORAGE_KEYS.PROJECTS, JSON.stringify(activeProjects || []));
-  ls.setItem(STORAGE_KEYS.YARNS, JSON.stringify(yarns || []));
-  ls.setItem(STORAGE_KEYS.THEME, themeKey || 'PURPLE');
-  ls.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(categories || []));
+  ls.setItem(STORAGE_KEYS.PATTERNS, JSON.stringify(savedPatterns));
+  ls.setItem(STORAGE_KEYS.PROJECTS, JSON.stringify(activeProjects));
+  ls.setItem(STORAGE_KEYS.YARNS, JSON.stringify(yarns));
+  ls.setItem(STORAGE_KEYS.THEME, themeKey);
+  ls.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(categories));
 }
 
 // ---- GitHub 設定 / Token ----
