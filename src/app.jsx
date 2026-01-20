@@ -104,17 +104,28 @@ const SYMBOLS = {
 //   },
 // };
 
-// 引用您提供的主題資料
+
+// 擴充後的 13 套主題資料，新增「午夜板岩」灰色系
 const THEMES = {
+  // --- 淺色系 ---
   PURPLE: { id: 'PURPLE', name: '薰衣草', primary: '#8e8499', bg: '#f4f2f7', text: '#5d5666', accent: '#dcd3e3' },
   BLUE: { id: 'BLUE', name: '靜謐藍', primary: '#7da1c4', bg: '#f0f5f9', text: '#4e6173', accent: '#cfe0eb' },
   PINK: { id: 'PINK', name: '櫻花粉', primary: '#c48e8e', bg: '#faf3f3', text: '#735252', accent: '#ebcfcf' },
-  DARK: { id: 'DARK', name: '簡約黑', primary: '#1a1a1a', bg: '#ffffff', text: '#1a1a1a', accent: '#eeeeee' },
   GREEN: { id: 'GREEN', name: '抹茶森林', primary: '#7B8E6F', bg: '#F2F4EF', text: '#4A5443', accent: '#DDE3D5' },
-  AUTUMN: { id: 'AUTUMN', name: '秋日暖陽', primary: '#C68B77', bg: '#FBF7F4', text: '#6B4E44', accent: '#EEDAD1' },
   SAND: { id: 'SAND', name: '燕麥奶茶', primary: '#A69080', bg: '#F8F6F4', text: '#594E46', accent: '#E6DED8' },
-  OCEAN: { id: 'OCEAN', name: '北歐冷杉', primary: '#66999B', bg: '#F2F7F7', text: '#3E5152', accent: '#CDE0E1' },
-  NIGHT: { id: 'NIGHT', name: '午夜沉靜', primary: '#A1B5D1', bg: '#1A1C23', text: '#E2E4E9', accent: '#2D313E' },
+  
+  // --- 午夜深色系 (Midnight Variations) ---
+  NIGHT_BLUE: { id: 'NIGHT_BLUE', name: '午夜藍', primary: '#A1B5D1', bg: '#1A1C23', text: '#E2E4E9', accent: '#2D313E' },
+  NIGHT_GREEN: { id: 'NIGHT_GREEN', name: '午夜森林', primary: '#8DBA8F', bg: '#161B16', text: '#E0E6E1', accent: '#242B24' },
+  NIGHT_PURPLE: { id: 'NIGHT_PURPLE', name: '午夜漿果', primary: '#B2A3D1', bg: '#18151D', text: '#E6E1E9', accent: '#26222C' },
+  NIGHT_ROSE: { id: 'NIGHT_ROSE', name: '午夜紅玫瑰', primary: '#D1A1A1', bg: '#1D1515', text: '#E9E1E1', accent: '#2D2222' },
+  
+  // ✅ 新增：午夜板岩 (更具現代感的藍灰色調)
+  NIGHT_SLATE: { id: 'NIGHT_SLATE', name: '午夜板岩', primary: '#94A3B8', bg: '#0F172A', text: '#F1F5F9', accent: '#1E293B' },
+  
+  NIGHT_GRAY: { id: 'NIGHT_GRAY', name: '午夜極黑', primary: '#9DA5B4', bg: '#121212', text: '#E3E3E3', accent: '#242424' },
+  NIGHT_COFFEE: { id: 'NIGHT_COFFEE', name: '午夜可可', primary: '#D4B499', bg: '#1A1816', text: '#ECE5E0', accent: '#292523' },
+  DARK: { id: 'DARK', name: '簡約黑', primary: '#1a1a1a', bg: '#ffffff', text: '#1a1a1a', accent: '#eeeeee' },
 };
 
 
