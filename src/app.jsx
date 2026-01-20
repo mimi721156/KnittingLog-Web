@@ -772,7 +772,7 @@ const normalizeProject = (p) => {
 // --- 預設封面元件 ---
 const DefaultCover = ({ name }) => {
   return (
-    <div className="w-full h-full flex items-center justify-center relative overflow-hidden bg-[#F1F3EE]">
+    <div className="w-full h-full flex items-center justify-center relative overflow-hidden bg-theme-bg">
       {/* 背景紋路 - 模擬編織感 */}
       <svg className="absolute inset-0 w-full h-full opacity-[0.05]" viewBox="0 0 100 100">
         <pattern id="knitPattern" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
@@ -792,11 +792,11 @@ const DefaultCover = ({ name }) => {
           <KnittingIcon color='var(--primary-color)' />
         </div>
         <div className="flex flex-col items-center">
-          <span className="text-[10px] font-black opacity-20 uppercase tracking-[0.4em] mb-1">
+          <span className="text-[10px] font-black text-theme-text/40 uppercase tracking-[0.4em] mb-1">
             Handmade
           </span>
-          <div className="h-[1px] w-8 bg-black/10 mb-2" />
-          <span className="text-[11px] font-bold text-[#344E41]/40 max-w-[120px] text-center truncate px-2">
+          <div className="h-[1px] w-8 bg-theme-text/20 mb-2" />
+          <span className="text-[11px] font-bold text-theme-text/60 max-w-[120px] text-center truncate px-2">
             {name || 'New Pattern'}
           </span>
         </div>
@@ -2324,7 +2324,7 @@ function ProjectView({
                               typeof totalRows === 'number' && (
                                 <div className="text-[10px] text-theme-text/50">
                                   第 <span className="font-bold">{currentRow}</span>{' '}
-                                  / {totalRows} 排
+                                   / {totalRows} 排
                                   <span className="mx-1 text-theme-text/30">•</span>
                                   進度 {progressPercent}%
                                 </div>
@@ -4689,12 +4689,19 @@ function App() {
     });
     const t = THEMES[themeKey] || THEMES.PURPLE;
     const r = document.documentElement;
-    r.style.setProperty('--primary-color', t.primary);
+    const dark = isDarkHex(t.bg);
+
+    // ✅ Midnight themes often use a lighter "primary" swatch.
+    // If the app also uses `text-white` on `bg-theme-primary`, it can become unreadable.
+    // So: when the theme background is dark, auto-darken a light primary to a safer UI primary.
+    const primarySafe = dark && !isDarkHex(t.primary) ? mixHex(t.primary, t.bg, 0.55) : t.primary;
+
+    r.style.setProperty('--primary-color', primarySafe);
+    r.style.setProperty('--primary-raw-color', t.primary);
     r.style.setProperty('--bg-color', t.bg);
     r.style.setProperty('--text-color', t.text);
     r.style.setProperty('--accent-color', t.accent);
     r.style.setProperty('--secondary-color', t.bg);
-    const dark = isDarkHex(t.bg);
     r.dataset.isDark = dark ? 'true' : 'false';
 
     // Cards / panels should NOT stay pure white in dark themes, or text can vanish.
@@ -4813,7 +4820,10 @@ function App() {
         [data-is-dark="true"] .bg-white\\/15 { background-color: var(--surface-color) !important; }
 
         [data-is-dark="true"] .border-gray-100 { border-color: var(--border-color) !important; }
+        [data-is-dark="true"] .border-gray-200 { border-color: var(--border-color) !important; }
         [data-is-dark="true"] .border-white { border-color: var(--border-color) !important; }
+        [data-is-dark="true"] .border-white\\/70 { border-color: var(--border-color) !important; }
+        [data-is-dark="true"] .border-white\\/60 { border-color: var(--border-color) !important; }
         [data-is-dark="true"] .border-white\\/50 { border-color: var(--border-color) !important; }
 
         [data-is-dark="true"] .text-gray-900,
@@ -4829,6 +4839,24 @@ function App() {
         /* Symbol palette: KNIT used bg-white which breaks in dark mode */
         [data-is-dark="true"] .bg-gray-100 { background-color: var(--surface-strong-color) !important; }
         [data-is-dark="true"] .bg-gray-200 { background-color: var(--surface-glass-color) !important; }
+
+        /* Extra hard-coded light helpers */
+        [data-is-dark="true"] .bg-gray-50 { background-color: var(--surface-color) !important; }
+
+        /* Symbol + UI pastel chips should not be blinding in midnight themes */
+        [data-is-dark="true"] .bg-blue-50,
+        [data-is-dark="true"] .bg-red-50,
+        [data-is-dark="true"] .bg-yellow-50,
+        [data-is-dark="true"] .bg-green-50,
+        [data-is-dark="true"] .bg-purple-50 { background-color: var(--surface-strong-color) !important; }
+
+        /* bg-theme-text is a light color in midnight themes (it equals --text-color), so using it as a surface breaks contrast */
+        [data-is-dark="true"] .bg-theme-text { background-color: var(--accent-color) !important; }
+
+        /* Fix: text-white/xx can become unreadable when paired with a light surface */
+        [data-is-dark="true"] .text-white\/70,
+        [data-is-dark="true"] .text-white\/60,
+        [data-is-dark="true"] .text-white\/50 { color: var(--muted-text-color) !important; }
       `}</style>
       <div className="hidden md:flex w-24 bg-white border-r border-theme-accent/20 flex-col items-center py-12 space-y-12 z-30 shadow-sm relative">
         <div className="w-14 h-14 bg-theme-primary text-white rounded-[1.25rem] flex items-center justify-center shadow-xl shadow-theme-primary/20 font-black text-2xl">
