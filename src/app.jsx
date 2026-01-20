@@ -4328,10 +4328,16 @@ function CategoryLibraryView({
   onAddCategory,
   onRenameCategory,
   onDeleteCategory,
+  onUpdateOrder, // ✅ 新增：拖曳排序完成後回傳新順序
 }) {
   const [newCat, setNewCat] = useState('');
   const [editingName, setEditingName] = useState(null);
   const [tempName, setTempName] = useState('');
+
+  // ✅ 新增：排序模式 + 拖曳狀態
+  const [isSortMode, setIsSortMode] = useState(false);
+  const [draggedIndex, setDraggedIndex] = useState(null);
+  const [dragOverIndex, setDragOverIndex] = useState(null);
 
   const stats = useMemo(
     () =>
@@ -4347,6 +4353,41 @@ function CategoryLibraryView({
     [categories, savedPatterns, activeProjects]
   );
 
+  const isDefaultCategory = (name) => name === '未分類';
+
+  // --- 拖曳邏輯（照樣式.txt） ---
+  const handleDragStart = (e, index) => {
+    if (!isSortMode) return;
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+    const target = e.currentTarget;
+    setTimeout(() => target.classList.add('dragging'), 0); // :contentReference[oaicite:3]{index=3}
+  };
+
+  const handleDragOver = (e, index) => {
+    if (!isSortMode) return;
+    e.preventDefault();
+    setDragOverIndex(index); // :contentReference[oaicite:4]{index=4}
+  };
+
+  const handleDrop = (e, index) => {
+    if (!isSortMode || draggedIndex === null || draggedIndex === index) return;
+
+    const newOrder = [...categories];
+    const draggedItem = newOrder[draggedIndex];
+    newOrder.splice(draggedIndex, 1);
+    newOrder.splice(index, 0, draggedItem);
+
+    onUpdateOrder?.(newOrder); // :contentReference[oaicite:5]{index=5}
+  };
+
+  const handleDragEnd = (e) => {
+    e.currentTarget.classList.remove('dragging');
+    setDraggedIndex(null);
+    setDragOverIndex(null); // :contentReference[oaicite:6]{index=6}
+  };
+
+  // --- 編輯邏輯（你原本的） ---
   const handleAdd = () => {
     const name = newCat.trim();
     if (!name) return;
@@ -4386,10 +4427,9 @@ function CategoryLibraryView({
     onDeleteCategory(name);
   };
 
-  const isDefaultCategory = (name) => name === '未分類';
-
   return (
     <div className="max-w-5xl mx-auto p-8 md:p-12 animate-fade-in pb-32">
+      {/* Header */}
       <div className="flex justify-between items-center mb-8 gap-4 flex-wrap">
         <div>
           <h2 className="text-4xl font-black text-theme-text tracking-tighter leading-none mb-3">
@@ -4397,59 +4437,91 @@ function CategoryLibraryView({
           </h2>
           <p className="text-sm text-theme-text/60">統一管理分類。</p>
         </div>
+
+        {/* ✅ 新增：排序模式切換按鈕（照樣式檔的「調整順序/完成排序」概念） */}
+        <button
+          onClick={() => setIsSortMode((v) => !v)}
+          className={`flex items-center gap-2 px-5 py-2 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all ${
+            isSortMode
+              ? 'bg-theme-primary text-white shadow-cozy scale-[1.02]'
+              : 'bg-white text-theme-text shadow-cozy border border-white hover:bg-gray-50'
+          }`}
+          title={isSortMode ? '完成排序' : '調整順序'}
+        >
+          {isSortMode ? <Icons.Check size={14} /> : <Icons.GripVertical size={14} />}
+          {isSortMode ? '完成排序' : '調整順序'}
+        </button>
       </div>
 
-      <div className="bg-white p-6 rounded-[2.5rem] shadow-cozy border border-white mb-8">
-        <div className="flex flex-wrap gap-2 mb-4">
-          {stats.length > 0 ? (
-            stats.map((c) => (
-              <span
-                key={c.name}
-                className="px-3 py-1.5 rounded-full bg-theme-bg text-[11px] font-black text-theme-text/70 tracking-widest"
-              >
-                {c.name}
+      {/* 新增分類：排序模式時隱藏（照樣式檔） */}
+      {!isSortMode && (
+        <div className="bg-white p-6 rounded-[2.5rem] shadow-cozy border border-white mb-8">
+          <div className="flex flex-wrap gap-2 mb-4">
+            {stats.length > 0 ? (
+              stats.map((c) => (
+                <span
+                  key={c.name}
+                  className="px-3 py-1.5 rounded-full bg-theme-bg text-[11px] font-black text-theme-text/70 tracking-widest"
+                >
+                  {c.name}
+                </span>
+              ))
+            ) : (
+              <span className="text-xs text-gray-400">
+                尚未建立任何分類，可以先從下方新增。
               </span>
-            ))
-          ) : (
-            <span className="text-xs text-gray-400">
-              尚未建立任何分類，可以先從下方新增。
-            </span>
-          )}
+            )}
+          </div>
+          <div className="flex gap-2">
+            <input
+              value={newCat}
+              onChange={(e) => setNewCat(e.target.value)}
+              placeholder="新增分類，例如：童裝、披肩、玩偶…"
+              className="flex-1 bg-theme-bg/40 rounded-xl px-3 py-2 text-xs border-none focus:ring-2 ring-theme-primary/20"
+              onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
+            />
+            <button
+              onClick={handleAdd}
+              className="px-4 py-2 rounded-xl bg-theme-primary text-white text-[10px] font-black uppercase tracking-[0.15em]"
+            >
+              新增
+            </button>
+          </div>
         </div>
-        <div className="flex gap-2">
-          <input
-            value={newCat}
-            onChange={(e) => setNewCat(e.target.value)}
-            placeholder="新增分類，例如：童裝、披肩、玩偶…"
-            className="flex-1 bg-theme-bg/40 rounded-xl px-3 py-2 text-xs border-none focus:ring-2 ring-theme-primary/20"
-          />
-          <button
-            onClick={handleAdd}
-            className="px-4 py-2 rounded-xl bg-theme-primary text-white text-[10px] font-black uppercase tracking-[0.15em]"
-          >
-            新增
-          </button>
-        </div>
-      </div>
+      )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {stats.map((c) => {
+      {/* 類別列表：排序模式下改成單欄比較好拖 */}
+      <div className={`grid gap-6 ${isSortMode ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2'}`}>
+        {stats.map((c, index) => {
           const editing = editingName === c.name;
           const locked = isDefaultCategory(c.name);
+
           return (
             <div
               key={c.name}
-              className="bg-white p-7 rounded-[2.5rem] shadow-cozy border border-white flex flex-col gap-4"
+              draggable={isSortMode && !editing} // :contentReference[oaicite:7]{index=7}
+              onDragStart={(e) => handleDragStart(e, index)}
+              onDragOver={(e) => handleDragOver(e, index)}
+              onDrop={(e) => handleDrop(e, index)}
+              onDragEnd={handleDragEnd}
+              className={`
+                bg-white p-7 rounded-[2.5rem] shadow-cozy border border-white flex flex-col gap-4 transition-all
+                ${isSortMode ? 'cursor-grab active:cursor-grabbing border-dashed' : ''}
+                ${dragOverIndex === index && draggedIndex !== index ? 'drag-over' : ''}
+              `}
             >
               <div className="flex justify-between items-center gap-4">
                 <div className="flex-1 min-w-0">
                   <div className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text/50 mb-1">
                     Category
                   </div>
+
                   {editing ? (
                     <input
                       value={tempName}
                       onChange={(e) => setTempName(e.target.value)}
+                      onBlur={() => saveEdit(c.name)} // 你原本這段沒有 blur，我順手補上：比較不會卡住
+                      onKeyDown={(e) => e.key === 'Enter' && saveEdit(c.name)}
                       className="w-full bg-theme-bg/40 rounded-xl px-3 py-2 text-sm font-black border-none focus:ring-2 ring-theme-primary/20"
                       autoFocus
                     />
@@ -4459,8 +4531,10 @@ function CategoryLibraryView({
                     </div>
                   )}
                 </div>
+
                 <div className="flex items-center gap-1 flex-shrink-0">
-                  {!locked && !editing && (
+                  {/* 排序模式：隱藏編輯/刪除（照樣式檔「排序模式下只管拖」） */}
+                  {!isSortMode && !locked && !editing && (
                     <>
                       <button
                         onClick={() => startEdit(c.name)}
@@ -4476,7 +4550,8 @@ function CategoryLibraryView({
                       </button>
                     </>
                   )}
-                  {editing && (
+
+                  {!isSortMode && editing && (
                     <>
                       <button
                         onClick={() => saveEdit(c.name)}
@@ -4492,37 +4567,45 @@ function CategoryLibraryView({
                       </button>
                     </>
                   )}
-                  {locked && !editing && (
+
+                  {!isSortMode && locked && !editing && (
                     <span className="text-[9px] text-theme-text/30 uppercase tracking-[0.18em]">
                       default
                     </span>
                   )}
                 </div>
+
+                {/* 右上 icon：排序模式改成 GripVertical */}
                 <div className="w-10 h-10 rounded-2xl bg-theme-bg flex items-center justify-center text-theme-primary text-lg font-black">
-                  <Icons.Grid />
+                  {isSortMode ? <Icons.GripVertical /> : <Icons.Grid />}
                 </div>
               </div>
-              <div className="flex gap-4 text-xs text-theme-text/70">
-                <div className="flex-1 bg-theme-bg/40 rounded-2xl px-4 py-3">
-                  <div className="text-[9px] font-black uppercase tracking-[0.2em] opacity-60 mb-1">
-                    Patterns
+
+              {/* 統計：排序模式下隱藏（照樣式檔） */}
+              {!isSortMode && (
+                <div className="flex gap-4 text-xs text-theme-text/70">
+                  <div className="flex-1 bg-theme-bg/40 rounded-2xl px-4 py-3">
+                    <div className="text-[9px] font-black uppercase tracking-[0.2em] opacity-60 mb-1">
+                      Patterns
+                    </div>
+                    <div className="text-lg font-black tabular-nums">
+                      {c.patternCount}
+                    </div>
                   </div>
-                  <div className="text-lg font-black tabular-nums">
-                    {c.patternCount}
+                  <div className="flex-1 bg-theme-bg/40 rounded-2xl px-4 py-3">
+                    <div className="text-[9px] font-black uppercase tracking-[0.2em] opacity-60 mb-1">
+                      Projects
+                    </div>
+                    <div className="text-lg font-black tabular-nums">
+                      {c.projectCount}
+                    </div>
                   </div>
                 </div>
-                <div className="flex-1 bg-theme-bg/40 rounded-2xl px-4 py-3">
-                  <div className="text-[9px] font-black uppercase tracking-[0.2em] opacity-60 mb-1">
-                    Projects
-                  </div>
-                  <div className="text-lg font-black tabular-nums">
-                    {c.projectCount}
-                  </div>
-                </div>
-              </div>
+              )}
             </div>
           );
         })}
+
         {stats.length === 0 && (
           <div className="col-span-full text-center text-xs text-gray-400 py-10">
             還沒有分類，可以先在上方新增一兩個想用的類別。
@@ -5049,6 +5132,7 @@ function App() {
               onAddCategory={handleAddCategory}
               onRenameCategory={handleRenameCategory}
               onDeleteCategory={handleDeleteCategory}
+              onUpdateOrder={(newOrder) => setCategories(newOrder)}
             />
           )}
           {view === 'EDITOR' && currentPattern && (
