@@ -3735,8 +3735,8 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                         <div
                           className="flex flex-col justify-center rounded-2xl px-4 shadow-inner"
                           style={{
-                            backgroundColor: '#ffffff',
-                            boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.02)',
+                            backgroundColor: 'var(--surface-color)', // 或 var(--surface-strong-color)
+                            boxShadow: 'inset 0 0 0 1px var(--border-soft-color)',
                           }}
                         >
                           <span className="text-[9px] font-black opacity-40 uppercase mb-1">
@@ -3785,7 +3785,7 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                   style={{
                     borderColor: 'var(--accent-color)',
                     color: 'var(--text-color)',
-                    backgroundColor: 'rgba(255,255,255,0.6)',
+                    backgroundColor: 'var(--surface-glass-color)', // 讓你在午夜也不會白爆
                   }}
                 >
                   <Icons.Plus
