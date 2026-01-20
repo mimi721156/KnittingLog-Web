@@ -1275,7 +1275,12 @@ function YarnView({ yarns, onSaveYarn, onDeleteYarn }) {
                 onChange={(e) =>
                   setEditing({ ...editing, brand: e.target.value })
                 }
-                className="w-full bg-theme-bg/30 rounded-xl p-4 border-none font-bold focus:ring-2 ring-theme-primary/20"
+                className="w-full rounded-xl p-4 text-sm border-none focus:ring-2 ring-theme-primary/20 transition-all"
+                style={{
+                      backgroundColor: 'var(--bg-color)',
+                      color: 'var(--text-color)',
+                      boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.03)',
+                }}
               />
             </div>
 
@@ -1289,8 +1294,12 @@ function YarnView({ yarns, onSaveYarn, onDeleteYarn }) {
                 onChange={(e) =>
                   setEditing({ ...editing, name: e.target.value })
                 }
-                className="w-full bg-theme-bg/30 rounded-xl p-4 border-none font-bold focus:ring-2 ring-theme-primary/20"
-              />
+                className="w-full rounded-xl p-4 text-sm border-none focus:ring-2 ring-theme-primary/20 transition-all"
+                style={{
+                      backgroundColor: 'var(--bg-color)',
+                      color: 'var(--text-color)',
+                      boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.03)',
+                }}              />
             </div>
 
             <div>
@@ -1298,14 +1307,20 @@ function YarnView({ yarns, onSaveYarn, onDeleteYarn }) {
                 材質 Material
               </label>
               <input
-                type="text"
-                placeholder="例如：100% wool / wool 70% + nylon 30%"
-                value={editing.material || ''}
-                onChange={(e) =>
-                  setEditing({ ...editing, material: e.target.value })
-                }
-                className="w-full bg-theme-bg/30 rounded-xl p-4 border-none text-sm focus:ring-2 ring-theme-primary/20"
-              />
+                  type="text"
+                  placeholder="例如：100% wool / wool 70% + nylon 30%"
+                  // 確保 value 始終為字串，避免受控元件從 undefined 變為有值時報錯
+                  value={editing?.material ?? ''} 
+                  onChange={(e) =>
+                    setEditing(prev => ({ ...prev, material: e.target.value }))
+                  }
+                  className="w-full rounded-xl p-4 text-sm border-none focus:ring-2 ring-theme-primary/20 transition-all"
+                  style={{
+                    backgroundColor: 'var(--bg-color)', // 優先使用變數
+                    color: 'var(--text-color)',
+                    boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.03)',
+                  }}
+                />
             </div>
 
             <div>
@@ -1319,7 +1334,12 @@ function YarnView({ yarns, onSaveYarn, onDeleteYarn }) {
                 onChange={(e) =>
                   setEditing({ ...editing, weight: e.target.value })
                 }
-                className="w-full bg-theme-bg/30 rounded-xl p-4 border-none text-sm focus:ring-2 ring-theme-primary/20"
+                className="w-full rounded-xl p-4 text-sm border-none focus:ring-2 ring-theme-primary/20 transition-all"
+                style={{
+                      backgroundColor: 'var(--bg-color)',
+                      color: 'var(--text-color)',
+                      boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.03)',
+                }}
               />
             </div>
           </div>
@@ -2536,8 +2556,14 @@ function ProjectView({
                       projectName: e.target.value,
                     })
                   }
-                  className="w-full bg-theme-bg/40 rounded-xl border-none text-base font-black tracking-tight px-3 py-2 focus:ring-2 ring-theme-primary/30"
+                  // 修正：移除了 bg-theme-bg/40，改由 style 內的 var(--bg-color) 控制
+                  className="w-full rounded-xl border-none text-base font-black tracking-tight px-3 py-2 focus:ring-2 ring-theme-primary/30 outline-none"
                   placeholder="給這個作品取一個名字…"
+                  style={{
+                    backgroundColor: 'var(--bg-color)',
+                    color: 'var(--text-color)',
+                    boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.03)',
+                  }}
                 />
               </div>
               {currentProject.startAt && (
@@ -2557,14 +2583,19 @@ function ProjectView({
                 Category
               </span>
               <select
-                className="bg-theme-bg/70 rounded-full px-3 py-1.5 border-none text-[10px]"
-                value={currentProject.category || '未分類'}
+                className="rounded-full px-3 py-1.5 border-none text-[10px] outline-none"
+                value={currentProject?.category || '未分類'}
                 onChange={(e) =>
                   onUpdateProject({
                     ...currentProject,
                     category: e.target.value,
                   })
                 }
+                style={{
+                  backgroundColor: 'var(--bg-color)',
+                  color: 'var(--text-color)',
+                  boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.03)',
+                }}
               >
                 {(categories || ['未分類']).map((c) => (
                   <option key={c} value={c}>
@@ -2581,14 +2612,19 @@ function ProjectView({
                   Yarn
                 </span>
                 <select
-                  className="bg-theme-bg/60 rounded-full px-3 py-1 border-none text-[10px]"
-                  value={currentProject.yarnId || ''}
+                  className="rounded-full px-3 py-1 border-none text-[10px] outline-none"
+                  value={currentProject?.yarnId || ''}
                   onChange={(e) =>
                     onUpdateProject({
                       ...currentProject,
                       yarnId: e.target.value || null,
                     })
                   }
+                  style={{
+                    backgroundColor: 'var(--bg-color)',
+                    color: 'var(--text-color)',
+                    boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.03)',
+                  }}
                 >
                   <option value="">未選擇</option>
                   {yarns.map((y) => (
@@ -2604,15 +2640,21 @@ function ProjectView({
                   Needle
                 </span>
                 <input
-                  className="bg-theme-bg/60 rounded-full px-3 py-1 border-none text-[10px] w-24"
+                  type="text"
+                  className="rounded-full px-3 py-1 border-none text-[10px] w-24 outline-none"
                   placeholder="4.0mm"
-                  value={currentProject.needle || ''}
+                  value={currentProject?.needle || ''}
                   onChange={(e) =>
                     onUpdateProject({
                       ...currentProject,
                       needle: e.target.value,
                     })
                   }
+                  style={{
+                    backgroundColor: 'var(--bg-color)',
+                    color: 'var(--text-color)',
+                    boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.03)',
+                  }}
                 />
               </div>
 
@@ -2621,15 +2663,21 @@ function ProjectView({
                   Cast on
                 </span>
                 <input
-                  className="bg-theme-bg/60 rounded-full px-3 py-1 border-none text-[10px] w-24"
+                  type="text"
+                  className="rounded-full px-3 py-1 border-none text-[10px] w-24 outline-none"
                   placeholder="例如 112"
-                  value={currentProject.castOn || ''}
+                  value={currentProject?.castOn || ''}
                   onChange={(e) =>
                     onUpdateProject({
                       ...currentProject,
                       castOn: e.target.value,
                     })
                   }
+                  style={{
+                    backgroundColor: 'var(--bg-color)',
+                    color: 'var(--text-color)',
+                    boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.03)',
+                  }}
                 />
               </div>
             </div>
@@ -2750,22 +2798,27 @@ function ProjectView({
                 </div>
               </div>
             )}
-          <div className="bg-theme-bg/40 p-4 rounded-[1.5rem] border border-theme-bg/60">
+          <div className="bg-theme-bg/40 p-4 rounded-[1.5rem] border border-theme-bg/60 mt-1">
             <div className="text-[9px] font-black uppercase tracking-[0.2em] opacity-50 mb-2">
               Project Notes
             </div>
             <div className="text-sm text-theme-text whitespace-pre-wrap leading-relaxed">
               <textarea
-              className="w-full mt-2 bg-theme-bg/40 rounded-2xl p-3.5 text-sm leading-relaxed border-none focus:ring-2 ring-theme-primary/20 min-h-[180px] resize-none"
-              placeholder="例：第 35 排發現麻花偏緊，下次改 4.5mm 棒針；袖長預計多織 5cm。"
-              value={currentProject.notes || ''}
-              onChange={(e) =>
-                onUpdateProject({
-                  ...currentProject,
-                  notes: e.target.value,
-                })
-              }
-            />
+                className="w-full mt-2 rounded-2xl p-3.5 text-sm leading-relaxed border-none focus:ring-2 ring-theme-primary/20 min-h-[180px] resize-none outline-none transition-shadow"
+                placeholder="例：第 35 排發現麻花偏緊，下次改 4.5mm 棒針；袖長預計多織 5cm。"
+                value={currentProject?.notes ?? ''}
+                onChange={(e) =>
+                  onUpdateProject({
+                    ...currentProject,
+                    notes: e.target.value,
+                  })
+                }
+                style={{
+                  backgroundColor: 'var(--bg-color)',
+                  color: 'var(--text-color)',
+                  boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.03)',
+                }}
+              />
             </div>
           </div>
         </Modal>
