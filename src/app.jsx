@@ -1718,6 +1718,7 @@ function ProjectView({
         title: sec.title,
         loopRow,
         loopIndex,
+        totalLoops,
         rowsPerLoop: displayRowsPerLoop, // 這裡會動態變動
         isPatternMode: !!sec.patternRows,
         isLastLoop: loopIndex === totalLoops // 標記是否為最後一輪，可用於 UI 提示
@@ -2288,7 +2289,15 @@ function ProjectView({
                                     {sectionLoopInfo.rowsPerLoop}
                                   </span> 排
                                   <span className="mx-1 text-theme-text/30">|</span>
-                                  第 <span className="font-semibold text-theme-text/90">{sectionLoopInfo.loopIndex}</span> 輪
+                                  第{" "}
+                                  <span className="font-semibold text-theme-text/90">
+                                    {sectionLoopInfo.loopIndex}
+                                  </span>
+                                  /
+                                  <span className="text-theme-text/60">
+                                    {sectionLoopInfo.totalLoops}
+                                  </span>{" "}
+                                  輪
                                 </div>
                             </div>
                           </>
@@ -2722,9 +2731,9 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
   const scrollContainerRef = useRef(null);
   const listEndRef = useRef(null);
 
-  useEffect(() => {
-    onUpdate(data);
-  }, [data]);
+  // useEffect(() => {
+  //   onUpdate(data);
+  // }, [data]);
 
   const totalRows = useMemo(() => {
     if (data.type !== 'TEXT') return 0;
