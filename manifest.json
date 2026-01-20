@@ -1,0 +1,20 @@
+{
+  "name": "KnittingLog",
+  "short_name": "KnitLog",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#f4f2f7",
+  "theme_color": "#8e8499",
+  "icons": [
+    {
+      "src": "./assets/icon-128.png",
+      "sizes": "128x128",
+      "type": "image/png"
+    },
+    {
+      "src": "./assets/icon-256.png",
+      "sizes": "256x256",
+      "type": "image/png"
+    }
+  ]
+}
