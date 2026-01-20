@@ -55,7 +55,30 @@ function isDarkHex(hex) {
   return luminance(hex) < 0.45;
 }
 
+function useIsMobile(breakpointPx = 768) {
+  const [isMobile, setIsMobile] = React.useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia(`(max-width: ${breakpointPx}px)`).matches;
+  });
 
+  React.useEffect(() => {
+    const mq = window.matchMedia(`(max-width: ${breakpointPx}px)`);
+    const onChange = (e) => setIsMobile(e.matches);
+
+    // Safari 相容
+    if (mq.addEventListener) mq.addEventListener('change', onChange);
+    else mq.addListener(onChange);
+
+    setIsMobile(mq.matches);
+
+    return () => {
+      if (mq.removeEventListener) mq.removeEventListener('change', onChange);
+      else mq.removeListener(onChange);
+    };
+  }, [breakpointPx]);
+
+  return isMobile;
+}
 
 // === 基礎設定 ===
 
@@ -2413,7 +2436,7 @@ function ProjectView({
                             }
                             title={lastPushAt ? `上次上傳：${lastPushAt}` : '一鍵上傳到 GitHub'}
                           >
-                            <span className="text-sm">☁️</span>
+                            <span className="text-sm"><Icons.Cloud /></span>
                             <span className="hidden md:inline">{isPushing ? '上傳中' : '上傳'}</span>
                             {pushHint && (
                               <span className="ml-1 text-theme-text/40 hidden md:inline">{pushHint}</span>
@@ -4489,6 +4512,22 @@ function CategoryLibraryView({
     setDragOverIndex(null); // :contentReference[oaicite:6]{index=6}
   };
 
+  const moveCategory = (from, to) => {
+    if (from === to) return;
+    if (to < 0 || to >= categories.length) return;
+
+    const item = categories[from];
+    // 如果你不希望「未分類」被移動：保護一下
+    if (item === '未分類') return;
+
+    const next = [...categories];
+    next.splice(from, 1);
+    next.splice(to, 0, item);
+
+    onUpdateOrder?.(next);
+  };
+
+
   // --- 編輯邏輯（你原本的） ---
   const handleAdd = () => {
     const name = newCat.trim();
@@ -4554,6 +4593,11 @@ function CategoryLibraryView({
           {isSortMode ? '完成排序' : '調整順序'}
         </button>
       </div>
+      {isSortMode && (
+        <div className="text-[11px] text-theme-text/50 mt-2">
+          {isMobile ? '用 ↑↓ 調整順序' : '拖曳卡片調整順序'}
+        </div>
+      )}
 
       {/* 新增分類：排序模式時隱藏（照樣式檔） */}
       {!isSortMode && (
@@ -4601,7 +4645,7 @@ function CategoryLibraryView({
           return (
             <div
               key={c.name}
-              draggable={isSortMode && !editing} // :contentReference[oaicite:7]{index=7}
+              draggable={isSortMode && !isMobile && !editing} // :contentReference[oaicite:7]{index=7}
               onDragStart={(e) => handleDragStart(e, index)}
               onDragOver={(e) => handleDragOver(e, index)}
               onDrop={(e) => handleDrop(e, index)}
@@ -4681,6 +4725,24 @@ function CategoryLibraryView({
                 <div className="w-10 h-10 rounded-2xl bg-theme-bg flex items-center justify-center text-theme-primary text-lg font-black">
                   {isSortMode ? <Icons.GripVertical /> : <Icons.Grid />}
                 </div>
+                {isSortMode && isMobile && c.name !== '未分類' && (
+                <div className="flex flex-col gap-1 ml-2">
+                  <button
+                    onClick={() => moveCategory(index, index - 1)}
+                    className="w-9 h-9 rounded-xl bg-theme-bg hover:bg-theme-bg/70 text-theme-text/70 flex items-center justify-center"
+                    title="上移"
+                  >
+                    ↑
+                  </button>
+                  <button
+                    onClick={() => moveCategory(index, index + 1)}
+                    className="w-9 h-9 rounded-xl bg-theme-bg hover:bg-theme-bg/70 text-theme-text/70 flex items-center justify-center"
+                    title="下移"
+                  >
+                    ↓
+                  </button>
+                </div>
+              )}
               </div>
 
               {/* 統計：排序模式下隱藏（照樣式檔） */}
@@ -4740,6 +4802,8 @@ function App() {
   const [categoryFilter, setCategoryFilter] = useState('ALL');
   const [syncOpen, setSyncOpen] = useState(false);
   const [themePickerOpen, setThemePickerOpen] = useState(false);
+
+  const isMobile = useIsMobile(768);
 
   const shouldShowMobileTabBar =
     view !== 'EDITOR' && !(view === 'PROJECTS' && selectedProjectId);
