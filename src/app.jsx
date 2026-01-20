@@ -2153,7 +2153,7 @@ function ProjectView({
             }
             title={lastPushAt ? `上次上傳：${lastPushAt}` : '一鍵上傳到 GitHub'}
           >
-            <span className="text-sm">☁️</span>
+            <span className="text-sm"><Icons.Cloud /></span>
             <span className="hidden sm:inline">
               {isPushing ? '上傳中' : '上傳'}
             </span>
