@@ -2127,7 +2127,7 @@ function ProjectView({
             <span className="hidden sm:inline">織圖</span>
           </button>
           {/* ☁️ 一鍵上傳 */}
-          <button
+          {/* <button
             onClick={async () => {
               if (!onQuickPush) return;
               try {
@@ -2157,14 +2157,14 @@ function ProjectView({
             <span className="hidden sm:inline">
               {isPushing ? '上傳中' : '上傳'}
             </span>
-          </button>
+          </button> */}
 
           {/* 小狀態提示 */}
-          {pushHint && (
+          {/* {pushHint && (
             <span className="hidden md:inline text-[10px] font-black tracking-[0.18em] uppercase text-theme-text/40">
               {pushHint}
             </span>
-          )}
+          )} */}
           {/* Notes 按鈕 */}
           <button
             onClick={() => setActiveModal('notes')}
@@ -2382,9 +2382,44 @@ function ProjectView({
                     {/* 右半：Row Counter（原樣） */}
                     <div className="w-full md:w-auto flex items-center justify-end">
                       <div className="w-full md:w-auto flex flex-col items-center md:items-end gap-2">
-                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-theme-text/40 self-start md:self-end">
-                          Row Counter
-                        </span>
+                        <div className="w-full flex items-center justify-between">
+                          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-theme-text/40">
+                            Row Counter
+                          </span>
+
+                          {/* ☁️ Quick Push（放這裡最順手） */}
+                          <button
+                            onClick={async () => {
+                              if (!onQuickPush) return;
+                              try {
+                                setIsPushing(true);
+                                setPushHint('');
+                                await onQuickPush();
+                                setPushHint('已上傳');
+                              } catch (e) {
+                                setPushHint('上傳失敗');
+                                window.alert(e?.message || '上傳失敗');
+                              } finally {
+                                setIsPushing(false);
+                                setTimeout(() => setPushHint(''), 2000);
+                              }
+                            }}
+                            disabled={isPushing}
+                            className={
+                              'inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[9px] font-black uppercase tracking-[0.18em] shadow-sm transition ' +
+                              (isPushing
+                                ? 'bg-theme-bg text-theme-text/40 cursor-not-allowed'
+                                : 'bg-white border border-theme-bg/60 hover:bg-theme-bg')
+                            }
+                            title={lastPushAt ? `上次上傳：${lastPushAt}` : '一鍵上傳到 GitHub'}
+                          >
+                            <span className="text-sm">☁️</span>
+                            <span className="hidden md:inline">{isPushing ? '上傳中' : '上傳'}</span>
+                            {pushHint && (
+                              <span className="ml-1 text-theme-text/40 hidden md:inline">{pushHint}</span>
+                            )}
+                          </button>
+                        </div>
 
                         <div className="flex items-center gap-2 w-full">
                           {/* - 按鈕 */}
