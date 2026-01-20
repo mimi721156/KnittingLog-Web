@@ -6,6 +6,10 @@ import {
   saveSyncSettings,
   loadToken,
   saveToken,
+  loadLastSha,
+  saveLastSha,
+  loadLastPushAt,
+  saveLastPushAt,
 } from './src/storage.js';
 import { loadFromGitHub, saveToGitHub } from './src/githubContentsApi.js';
 
@@ -1378,11 +1382,14 @@ function ProjectView({
   categories,
   selectedId,
   setSelectedId,
+  onQuickPush,
+  lastPushAt,
 }) {
   const [plusN, setPlusN] = useState('');
   const [showAlertOverlay, setShowAlertOverlay] = useState(false);
   const [activeModal, setActiveModal] = useState(null); // 👈 這行要加
-
+  const [isPushing, setIsPushing] = useState(false);
+  const [pushHint, setPushHint] = useState('');
 
   const currentProject = useMemo(
     () => activeProjects.find((x) => x.id === selectedId),
@@ -2119,7 +2126,45 @@ function ProjectView({
             <Icons.ScrollText size={14} />
             <span className="hidden sm:inline">織圖</span>
           </button>
+          {/* ☁️ 一鍵上傳 */}
+          <button
+            onClick={async () => {
+              if (!onQuickPush) return;
+              try {
+                setIsPushing(true);
+                setPushHint('');
+                await onQuickPush();
+                setPushHint('已上傳');
+              } catch (e) {
+                setPushHint('上傳失敗');
+                window.alert(e?.message || '上傳失敗');
+              } finally {
+                setIsPushing(false);
+                // 讓提示字自己消失
+                setTimeout(() => setPushHint(''), 2000);
+              }
+            }}
+            disabled={isPushing}
+            className={
+              'inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.18em] shadow-sm transition ' +
+              (isPushing
+                ? 'bg-theme-bg text-theme-text/40 cursor-not-allowed'
+                : 'bg-white border border-theme-bg/60 hover:bg-theme-bg')
+            }
+            title={lastPushAt ? `上次上傳：${lastPushAt}` : '一鍵上傳到 GitHub'}
+          >
+            <span className="text-sm">☁️</span>
+            <span className="hidden sm:inline">
+              {isPushing ? '上傳中' : '上傳'}
+            </span>
+          </button>
 
+          {/* 小狀態提示 */}
+          {pushHint && (
+            <span className="hidden md:inline text-[10px] font-black tracking-[0.18em] uppercase text-theme-text/40">
+              {pushHint}
+            </span>
+          )}
           {/* Notes 按鈕 */}
           <button
             onClick={() => setActiveModal('notes')}
@@ -4648,7 +4693,7 @@ function App() {
   const [currentPattern, setCurrentPattern] = useState(null);
   const [themeKey, setThemeKey] = useState('PURPLE');
   const [selectedProjectId, setSelectedProjectId] = useState(null);
-
+  const [lastPushAt, setLastPushAt] = useState('');
   const [categories, setCategories] = useState([
     '圍巾',
     '毛帽',
@@ -4677,6 +4722,7 @@ function App() {
     if (state.categories && Array.isArray(state.categories)) {
       setCategories(state.categories);
     }
+    setLastPushAt(loadLastPushAt() || '');
   }, []);
 
   useEffect(() => {
@@ -4797,6 +4843,41 @@ function App() {
       : savedPatterns.some(
           (p) => (p.category || '未分類') === categoryFilter
         );
+
+  async function handleQuickPush() {
+    const base = loadSyncSettings();
+    const token = loadToken();
+    const settings = { ...base, token };
+
+    if (
+      !settings.owner ||
+      !settings.repo ||
+      !settings.branch ||
+      !settings.path ||
+      !token
+    ) {
+      throw new Error('尚未設定雲端同步資訊或 Token（到「⚙︎ 雲端同步」設定一次就好）');
+    }
+
+    const payload = {
+      savedPatterns,
+      activeProjects,
+      yarns,
+      themeKey,
+      categories,
+      updatedAt: new Date().toISOString(),
+    };
+
+    const { sha } = await saveToGitHub(settings, payload, { sha: loadLastSha() });
+
+    // ✅ 記住 sha / 時間，下次上傳更快
+    saveLastSha(sha);
+    const nowIso = new Date().toISOString();
+    saveLastPushAt(nowIso);
+    setLastPushAt(nowIso);
+
+    return { sha, pushedAt: nowIso };
+  }
 
   // 先算出：現在是不是「專案詳細頁（選了某個 project）」
   // 看你的邏輯，選了 project 才會出現那個 counter 畫面
@@ -5125,6 +5206,8 @@ function App() {
               onDeleteProject={(id) =>
                 setActiveProjects((prev) => prev.filter((x) => x.id !== id))
               }
+              onQuickPush={handleQuickPush}
+              lastPushAt={lastPushAt}
             />
           )}
           {view === 'YARNS' && (
