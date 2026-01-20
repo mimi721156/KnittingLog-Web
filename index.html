@@ -129,6 +129,17 @@
       background: rgba(0, 0, 0, 0.1);
       border-radius: 10px;
     }
+
+    .dragging {
+      opacity: 0.5;
+      transform: scale(0.95);
+      border: 2px dashed var(--primary-color) !important;
+      box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1) !important;
+    }
+    .drag-over {
+      border-top: 4px solid var(--primary-color) !important;
+      transform: translateY(4px);
+    }
   </style>
 </head>
 <body class="h-screen overflow-hidden flex flex-col bg-knitting-pattern">
