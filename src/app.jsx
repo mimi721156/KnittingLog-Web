@@ -518,6 +518,39 @@ function calculateTotalRows(parts) {
 }
 
 
+// === TEXT 織圖 cm / 比例 helpers ===
+// parts 內的 textSections 允許覆寫全域 textSections（同 id 以 parts 優先）
+function getEffectiveTextSection(pattern, part, sectionId) {
+  if (!sectionId) return null;
+  const fromPart = part?.textSections?.find((s) => s?.id === sectionId) || null;
+  const fromGlobal = pattern?.textSections?.find((s) => s?.id === sectionId) || null;
+  if (!fromPart && !fromGlobal) return null;
+  return { ...(fromGlobal || {}), ...(fromPart || {}) };
+}
+
+// 設計比例：rowsPerLoop / lengthCmPerLoop（可選） => rows/cm
+function getChartRowsPerCmFromTextSection(sec) {
+  const rows = Number(sec?.rowsPerLoop);
+  const cm = Number(sec?.lengthCmPerLoop);
+  if (!Number.isFinite(rows) || !Number.isFinite(cm) || cm <= 0) return null;
+  return rows / cm;
+}
+
+// 方便顯示：這段總排數 / 總長度（cm）
+function getTextSectionTotalRows(sec) {
+  const rows = Number(sec?.rowsPerLoop || 0);
+  const rep = Number(sec?.repeats || 0);
+  return rows * rep;
+}
+
+function getTextSectionTotalCm(sec) {
+  const cm = Number(sec?.lengthCmPerLoop);
+  const rep = Number(sec?.repeats || 0);
+  if (!Number.isFinite(cm) || cm <= 0) return null;
+  return cm * rep;
+}
+
+
 const createNewPattern = (type = 'CHART', category = '未分類') => {
   const now = new Date().toISOString();
 
@@ -3822,7 +3855,7 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
 
                     {/* 排數設定區 */}
                     <div className="px-6 md:px-8 pt-5 pb-2 md:pb-4">
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
                         <div
                           className="rounded-2xl p-4 shadow-sm space-y-1"
                           style={{
@@ -3880,6 +3913,60 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                           />
                         </div>
 
+
+
+{/* 新增：每輪長度 (cm/Loop) */}
+<div
+  className="rounded-2xl p-4 shadow-sm space-y-1"
+  style={{
+    backgroundColor: 'var(--bg-color)',
+    boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.02)',
+  }}
+>
+  <label className="text-[9px] font-black opacity-40 uppercase block mb-1">
+    每輪長度 cm/Loop（選填）
+  </label>
+  <input
+    type="number"
+    step="0.1"
+    value={
+      sec.lengthCmPerLoop === null || sec.lengthCmPerLoop === undefined
+        ? ''
+        : sec.lengthCmPerLoop
+    }
+    onChange={(e) => {
+      const raw = e.target.value;
+      const v =
+        raw === '' ? null : Number.isFinite(parseFloat(raw)) ? parseFloat(raw) : null;
+
+      updateActivePart((p) => ({
+        ...p,
+        textSections: (p.textSections || []).map((s) =>
+          s.id === sec.id
+            ? {
+                ...s,
+                // 空值代表「未設定」
+                lengthCmPerLoop: v,
+              }
+            : s
+        ),
+      }));
+    }}
+    className="w-full text-xl md:text-2xl font-black border-none p-0 focus:ring-0 tabular-nums bg-transparent"
+    style={{ color: 'var(--text-color)' }}
+    placeholder="例如 6.5"
+  />
+  {/* 顯示設計比例：rows/cm */}
+  {(() => {
+    const rowsPerCm = getChartRowsPerCmFromTextSection(sec);
+    if (!rowsPerCm) return null;
+    return (
+      <div className="text-[10px] mt-1 text-theme-text/50 tabular-nums">
+        設計比例：約 {rowsPerCm.toFixed(2)} rows/cm
+      </div>
+    );
+  })()}
+</div>
                         {/* 新增：花樣循環 (Pattern Cycle) */}
                         <div className="rounded-2xl p-4 shadow-sm bg-theme-bg border-2 border-dashed border-theme-primary/20">
                           <label className="text-[9px] font-black color-theme-primary uppercase block mb-1">
