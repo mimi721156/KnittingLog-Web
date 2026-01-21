@@ -508,6 +508,20 @@ function cls(...names) {
 function calculateTotalRows(parts, gauge) {
   if (!parts || parts.length === 0) return 0;
 
+  const rowsPer10cm = Number(gauge?.rowsPer10cm);
+  const hasGauge = Number.isFinite(rowsPer10cm) && rowsPer10cm > 0;
+  const rowsPerCm = hasGauge ? rowsPer10cm / 10 : null;
+
+  const getActualRowsPerLoop = (sec) => {
+    const baseRows = Number(sec?.rowsPerLoop || 0);
+    const cmPerLoop = Number(sec?.lengthCmPerLoop);
+    if (hasGauge && Number.isFinite(cmPerLoop) && cmPerLoop > 0 && rowsPerCm) {
+      // 允許些微誤差：以四捨五入換算成實際要織的排數
+      return Math.max(1, Math.round(cmPerLoop * rowsPerCm));
+    }
+    return baseRows;
+  };
+
   return parts.reduce((acc, part) => {
     const sections = part.textSections || [];
     const partTotal = sections.reduce((sum, sec) => {
@@ -1272,7 +1286,251 @@ const ThemePickerMenu = ({ themeKey, setThemeKey }) => {
   );
 };
 
+// === 小工具：密度 / 排數 / 起針換算（不需要建立專案） ===
+function GaugeCalculatorTool() {
+  const [rowsPer10cm, setRowsPer10cm] = useState(24);
+  const [stsPer10cm, setStsPer10cm] = useState(18);
+  const [targetLength, setTargetLength] = useState(30);
+  const [targetWidth, setTargetWidth] = useState(40);
+  const [toast, setToast] = useState('');
+
+  const resultRows = useMemo(() => {
+    const r = (Number(rowsPer10cm) / 10) * Number(targetLength);
+    if (!Number.isFinite(r)) return 0;
+    return Math.ceil(r);
+  }, [rowsPer10cm, targetLength]);
+
+  const resultStitches = useMemo(() => {
+    const s = (Number(stsPer10cm) / 10) * Number(targetWidth);
+    if (!Number.isFinite(s)) return 0;
+    return Math.ceil(s);
+  }, [stsPer10cm, targetWidth]);
+
+  const copyToClipboard = async (val) => {
+    try {
+      await navigator.clipboard.writeText(String(val));
+      setToast('已複製');
+      window.setTimeout(() => setToast(''), 1200);
+    } catch (e) {
+      setToast('複製失敗');
+      window.setTimeout(() => setToast(''), 1400);
+    }
+  };
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* 左側：輸入 */}
+      <div className="space-y-4">
+        <div className="bg-white/60 backdrop-blur-md rounded-[2.5rem] p-6 border border-theme-accent/20 shadow-sm">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 rounded-2xl bg-theme-primary flex items-center justify-center text-white shadow-lg shadow-theme-primary/20">
+              <span className="text-lg">🧶</span>
+            </div>
+            <div>
+              <div className="text-lg font-black text-theme-text tracking-tight">織片密度 (10×10cm)</div>
+              <div className="text-[10px] font-black uppercase tracking-[0.22em] text-theme-text/35">Gauge</div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-[10px] font-black uppercase tracking-[0.18em] text-theme-text/35 block ml-2 mb-1">
+                針數 / 10cm
+              </label>
+              <div className="relative">
+                <input
+                  type="number"
+                  value={stsPer10cm}
+                  onChange={(e) => setStsPer10cm(Number(e.target.value))}
+                  className="w-full rounded-2xl px-5 py-4 font-black text-xl border-none focus:ring-2 ring-theme-primary/20 outline-none"
+                  style={{
+                    backgroundColor: 'var(--bg-color)',
+                    color: 'var(--text-color)',
+                    boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.03)',
+                  }}
+                />
+                <span className="absolute right-5 top-1/2 -translate-y-1/2 text-[10px] font-black uppercase tracking-[0.18em] text-theme-text/25">
+                  sts
+                </span>
+              </div>
+            </div>
+
+            <div>
+              <label className="text-[10px] font-black uppercase tracking-[0.18em] text-theme-text/35 block ml-2 mb-1">
+                排數 / 10cm
+              </label>
+              <div className="relative">
+                <input
+                  type="number"
+                  value={rowsPer10cm}
+                  onChange={(e) => setRowsPer10cm(Number(e.target.value))}
+                  className="w-full rounded-2xl px-5 py-4 font-black text-xl border-none focus:ring-2 ring-theme-primary/20 outline-none"
+                  style={{
+                    backgroundColor: 'var(--bg-color)',
+                    color: 'var(--text-color)',
+                    boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.03)',
+                  }}
+                />
+                <span className="absolute right-5 top-1/2 -translate-y-1/2 text-[10px] font-black uppercase tracking-[0.18em] text-theme-text/25">
+                  rows
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white/60 backdrop-blur-md rounded-[2.5rem] p-6 border border-theme-accent/20 shadow-sm">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 rounded-2xl bg-theme-bg flex items-center justify-center text-theme-text shadow-inner border border-theme-accent/20">
+              <span className="text-lg">📏</span>
+            </div>
+            <div>
+              <div className="text-lg font-black text-theme-text tracking-tight">預計織物尺寸</div>
+              <div className="text-[10px] font-black uppercase tracking-[0.22em] text-theme-text/35">Target Size</div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-[10px] font-black uppercase tracking-[0.18em] text-theme-text/35 block ml-2 mb-1">
+                寬度 (cm)
+              </label>
+              <div className="relative">
+                <input
+                  type="number"
+                  value={targetWidth}
+                  onChange={(e) => setTargetWidth(Number(e.target.value))}
+                  className="w-full rounded-2xl px-5 py-4 font-black text-xl border-none focus:ring-2 ring-theme-primary/20 outline-none"
+                  style={{
+                    backgroundColor: 'var(--bg-color)',
+                    color: 'var(--text-color)',
+                    boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.03)',
+                  }}
+                />
+                <span className="absolute right-5 top-1/2 -translate-y-1/2 text-[10px] font-black uppercase tracking-[0.18em] text-theme-text/25">
+                  cm
+                </span>
+              </div>
+            </div>
+
+            <div>
+              <label className="text-[10px] font-black uppercase tracking-[0.18em] text-theme-text/35 block ml-2 mb-1">
+                長度 (cm)
+              </label>
+              <div className="relative">
+                <input
+                  type="number"
+                  value={targetLength}
+                  onChange={(e) => setTargetLength(Number(e.target.value))}
+                  className="w-full rounded-2xl px-5 py-4 font-black text-xl border-none focus:ring-2 ring-theme-primary/20 outline-none"
+                  style={{
+                    backgroundColor: 'var(--bg-color)',
+                    color: 'var(--text-color)',
+                    boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.03)',
+                  }}
+                />
+                <span className="absolute right-5 top-1/2 -translate-y-1/2 text-[10px] font-black uppercase tracking-[0.18em] text-theme-text/25">
+                  cm
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 右側：結果 */}
+      <div className="space-y-4">
+        <div className="bg-theme-primary text-white rounded-[3rem] p-8 shadow-xl shadow-theme-primary/15 relative overflow-hidden">
+          <div className="absolute -right-6 -top-6 w-28 h-28 rounded-bl-full bg-white/10" />
+          <div className="relative">
+            <div className="text-[10px] font-black uppercase tracking-[0.28em] opacity-70">
+              需要排數
+            </div>
+            <div className="mt-2 flex items-end gap-2">
+              <div className="text-6xl font-black tracking-tighter">{resultRows}</div>
+              <div className="text-xl font-black opacity-60 pb-2">排</div>
+            </div>
+            <div className="mt-6 pt-5 border-t border-white/15 text-sm font-medium leading-relaxed opacity-90">
+              以 <span className="font-black underline">{rowsPer10cm} 排 / 10cm</span> 的密度，
+              目標長度 <span className="font-black underline">{targetLength}cm</span>。
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white/60 backdrop-blur-md rounded-[2.5rem] p-6 border border-theme-accent/20 shadow-sm flex items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-[1.75rem] bg-theme-bg flex items-center justify-center shadow-inner border border-theme-accent/20">
+              <span className="text-2xl">🧵</span>
+            </div>
+            <div>
+              <div className="text-[10px] font-black uppercase tracking-[0.22em] text-theme-text/35">
+                建議起針
+              </div>
+              <div className="text-3xl font-black text-theme-text tracking-tight">
+                {resultStitches} <span className="text-sm text-theme-text/35">針</span>
+              </div>
+            </div>
+          </div>
+
+          <button
+            onClick={() => copyToClipboard(resultStitches)}
+            className="w-12 h-12 rounded-2xl bg-white/50 hover:bg-white/70 active:scale-95 transition-all border border-theme-accent/20 flex items-center justify-center"
+            title="複製"
+          >
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="text-theme-text/60"
+            >
+              <rect x="9" y="9" width="13" height="13" rx="2" />
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+            </svg>
+          </button>
+        </div>
+
+        {toast ? (
+          <div className="text-center">
+            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/60 border border-theme-accent/20 text-xs font-black tracking-[0.18em] text-theme-text/60">
+              {toast}
+            </span>
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function ToolCard({ title, subtitle, icon, children }) {
+  return (
+    <section className="bg-white/50 backdrop-blur-md rounded-[2.5rem] p-6 md:p-8 border border-theme-accent/20 shadow-sm">
+      <div className="flex items-center gap-3 mb-6">
+        <div className="w-10 h-10 rounded-2xl bg-theme-primary flex items-center justify-center text-white shadow-lg shadow-theme-primary/20">
+          <span className="text-lg">{icon}</span>
+        </div>
+        <div className="min-w-0">
+          <h3 className="text-xl font-black text-theme-text tracking-tight truncate">{title}</h3>
+          {subtitle ? (
+            <div className="text-[10px] font-black uppercase tracking-[0.24em] text-theme-text/35 truncate">
+              {subtitle}
+            </div>
+          ) : null}
+        </div>
+      </div>
+
+      {children}
+    </section>
+  );
+}
+
 function TutorialView({ themeKey, setThemeKey }) {
+  const [showThemeSettings, setShowThemeSettings] = useState(false);
+
   return (
     <div className="max-w-4xl mx-auto p-8 md:p-12 animate-fade-in pb-32 space-y-10">
       <div>
@@ -1284,8 +1542,68 @@ function TutorialView({ themeKey, setThemeKey }) {
         </p>
       </div>
 
-      {/* 個人化外觀（Appearance Settings） */}
-      <ThemePickerSection themeKey={themeKey} setThemeKey={setThemeKey} />
+      {/* 小工具區（放密度計算、之後也能加更多工具） */}
+      <ToolCard
+        title="小工具"
+        subtitle="Quick Tools"
+        icon="🧰"
+      >
+        <div className="space-y-6">
+          <div className="rounded-[2rem] border border-theme-accent/20 bg-white/40 p-4">
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <div className="text-sm font-black text-theme-text tracking-tight">密度與排數計算器</div>
+                <div className="text-[11px] text-theme-text/50 font-medium leading-relaxed mt-1">
+                  不用建立專案也能快速算：排數、起針、目標尺寸。
+                </div>
+              </div>
+              <div className="text-2xl">🧮</div>
+            </div>
+          </div>
+
+          <GaugeCalculatorTool />
+
+          <div className="rounded-[2rem] border border-theme-accent/20 bg-white/40 p-4">
+            <div className="text-[10px] font-black uppercase tracking-[0.24em] text-theme-text/35">
+              之後可放：換線記錄、針號換算、縮針小抄、段落提醒…（你想加什麼就加什麼 😼）
+            </div>
+          </div>
+        </div>
+      </ToolCard>
+
+      {/* 個人化外觀（Appearance Settings） - 收起來，按鈕才展開 */}
+      <section className="bg-white/50 backdrop-blur-md rounded-[2.5rem] p-6 md:p-8 border border-theme-accent/20 shadow-sm">
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-2xl bg-theme-bg flex items-center justify-center text-theme-text shadow-inner border border-theme-accent/20">
+              <span className="text-lg">🎨</span>
+            </div>
+            <div className="min-w-0">
+              <div className="text-xl font-black text-theme-text tracking-tight truncate">主題設定</div>
+              <div className="text-[10px] font-black uppercase tracking-[0.24em] text-theme-text/35 truncate">
+                Appearance Settings
+              </div>
+            </div>
+          </div>
+
+          <button
+            onClick={() => setShowThemeSettings((v) => !v)}
+            className="shrink-0 px-4 py-2 rounded-2xl bg-white/60 hover:bg-white/80 active:scale-95 transition-all border border-theme-accent/20 text-xs font-black uppercase tracking-[0.18em] text-theme-text/60"
+          >
+            {showThemeSettings ? '收起' : '展開'}
+          </button>
+        </div>
+
+        {showThemeSettings ? (
+          <div className="mt-6">
+            <ThemePickerSection themeKey={themeKey} setThemeKey={setThemeKey} />
+          </div>
+        ) : (
+          <div className="mt-4 text-[11px] text-theme-text/50 font-medium leading-relaxed">
+            這裡先幫你收起來～需要換心情再打開就好。
+          </div>
+        )}
+      </section>
 
       {/* 基礎符號 */}
       <div className="bg-white p-10 rounded-[3rem] shadow-cozy border border-white">
