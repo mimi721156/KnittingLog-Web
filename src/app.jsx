@@ -508,24 +508,10 @@ function cls(...names) {
 function calculateTotalRows(parts, gauge) {
   if (!parts || parts.length === 0) return 0;
 
-  const rowsPer10cm = Number(gauge?.rowsPer10cm);
-  const hasGauge = Number.isFinite(rowsPer10cm) && rowsPer10cm > 0;
-  const rowsPerCm = hasGauge ? rowsPer10cm / 10 : null;
-
-  const getActualRowsPerLoop = (sec) => {
-    const baseRows = Number(sec?.rowsPerLoop || 0);
-    const cmPerLoop = Number(sec?.lengthCmPerLoop);
-    if (hasGauge && Number.isFinite(cmPerLoop) && cmPerLoop > 0 && rowsPerCm) {
-      // 允許些微誤差：以四捨五入換算成實際要織的排數
-      return Math.max(1, Math.round(cmPerLoop * rowsPerCm));
-    }
-    return baseRows;
-  };
-
   return parts.reduce((acc, part) => {
     const sections = part.textSections || [];
     const partTotal = sections.reduce((sum, sec) => {
-      const rows = getActualRowsPerLoop(sec);
+      const rows = getActualRowsPerLoopFromGauge(sec, gauge);
       const rep = Number(sec?.repeats || 0);
       return sum + rows * rep;
     }, 0);
@@ -693,10 +679,31 @@ function getProjectRowsPerCm(gauge) {
 }
 
 // 把某段 textSection 的「設計 cm」換算成「這個專案要織的實際排數/輪」
+function getEffectiveRowConvertMode(sec) {
+  const cm = Number(sec?.lengthCmPerLoop);
+  const hasCm = Number.isFinite(cm) && cm > 0;
+  const mode = sec?.rowConvertMode;
+  if (mode === 'CM' || mode === 'LOCK') return mode;
+  return hasCm ? 'CM' : 'LOCK';
+}
+
+function getEffectivePatternRhythm(sec) {
+  const m = sec?.patternRhythm;
+  if (m === 'SCALE' || m === 'FIXED') return m;
+  return 'SCALE';
+}
+
+// 把某段 textSection 的「設計 cm」換算成「這個專案要織的實際排數/輪」
 function getActualRowsPerLoopFromGauge(sec, gauge) {
   const baseRows = Number(sec?.rowsPerLoop || 0);
+
+  // 依段落設定決定是否要跟 cm 做縮放
+  const mode = getEffectiveRowConvertMode(sec);
+  if (mode !== 'CM') return baseRows;
+
   const cmPerLoop = Number(sec?.lengthCmPerLoop);
   const rowsPerCm = getProjectRowsPerCm(gauge);
+
   if (rowsPerCm && Number.isFinite(cmPerLoop) && cmPerLoop > 0) {
     return Math.max(1, Math.round(cmPerLoop * rowsPerCm));
   }
@@ -1897,7 +1904,11 @@ const projectStats = useMemo(() => {
       
       // --- 核心邏輯修改處 ---
       // 優先使用自定義的花樣循環 patternRows，若沒設定則 fallback 到區段的 rowsPerLoop
-            const patternRows = sec.patternRows ? Math.max(1, Math.round(sec.patternRows * (sec.scale || 1))) : sec.rowsPerLoop || 1;
+            const rhythm = getEffectivePatternRhythm(sec);
+            const rawPatternRows = sec.patternRows ? Math.max(1, Math.round(sec.patternRows)) : null;
+            const patternRows = rawPatternRows
+              ? Math.max(1, rhythm === 'SCALE' ? Math.round(rawPatternRows * (sec.scale || 1)) : rawPatternRows)
+              : sec.rowsPerLoop || 1;
       const sectionTotalRows = sec.totalRows; // 該區段總長度（例如 44）
       // ----------------------
 
@@ -4208,6 +4219,73 @@ function EditorView({ pattern, onUpdate, onBack, categories, yarns }) {
                             <span className="text-[10px]">Rows</span>
                           </div>
                         </div>
+
+                      {/* 小選項：排數換算 / 花樣節奏 */}
+                      <div className="mt-4 flex flex-wrap gap-3">
+                        <div
+                          className="flex items-center gap-2 rounded-2xl px-3 py-2 shadow-sm"
+                          style={{
+                            backgroundColor: 'var(--bg-color)',
+                            boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.02)',
+                          }}
+                        >
+                          <span className="text-[9px] font-black opacity-50 uppercase tracking-[0.18em]">
+                            排數換算
+                          </span>
+                          <select
+                            value={getEffectiveRowConvertMode(sec)}
+                            onChange={(e) => {
+                              const v = e.target.value;
+                              updateActivePart((p) => ({
+                                ...p,
+                                textSections: (p.textSections || []).map((s) =>
+                                  s.id === sec.id ? { ...s, rowConvertMode: v } : s
+                                ),
+                              }));
+                            }}
+                            className="text-[11px] font-black rounded-xl px-2 py-1 border-none outline-none"
+                            style={{
+                              backgroundColor: 'var(--surface-color)',
+                              color: 'var(--text-color)',
+                            }}
+                          >
+                            <option value="CM">跟 cm（縮放）</option>
+                            <option value="LOCK">鎖排數（不縮放）</option>
+                          </select>
+                        </div>
+
+                        <div
+                          className="flex items-center gap-2 rounded-2xl px-3 py-2 shadow-sm"
+                          style={{
+                            backgroundColor: 'var(--bg-color)',
+                            boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.02)',
+                          }}
+                        >
+                          <span className="text-[9px] font-black opacity-50 uppercase tracking-[0.18em]">
+                            花樣節奏
+                          </span>
+                          <select
+                            value={getEffectivePatternRhythm(sec)}
+                            onChange={(e) => {
+                              const v = e.target.value;
+                              updateActivePart((p) => ({
+                                ...p,
+                                textSections: (p.textSections || []).map((s) =>
+                                  s.id === sec.id ? { ...s, patternRhythm: v } : s
+                                ),
+                              }));
+                            }}
+                            className="text-[11px] font-black rounded-xl px-2 py-1 border-none outline-none"
+                            style={{
+                              backgroundColor: 'var(--surface-color)',
+                              color: 'var(--text-color)',
+                            }}
+                          >
+                            <option value="SCALE">跟著縮放</option>
+                            <option value="FIXED">固定不變</option>
+                          </select>
+                        </div>
+                      </div>
 
                       </div>
                     </div>
