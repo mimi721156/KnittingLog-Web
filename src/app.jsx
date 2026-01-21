@@ -504,50 +504,33 @@ function cls(...names) {
   return names.filter(Boolean).join(' ');
 }
 
-function calculateTotalRows(parts) {
+
+function calculateTotalRows(parts, gauge) {
   if (!parts || parts.length === 0) return 0;
+
+  const rowsPer10cm = Number(gauge?.rowsPer10cm);
+  const hasGauge = Number.isFinite(rowsPer10cm) && rowsPer10cm > 0;
+  const rowsPerCm = hasGauge ? rowsPer10cm / 10 : null;
+
+  const getActualRowsPerLoop = (sec) => {
+    const baseRows = Number(sec?.rowsPerLoop || 0);
+    const cmPerLoop = Number(sec?.lengthCmPerLoop);
+    if (hasGauge && Number.isFinite(cmPerLoop) && cmPerLoop > 0 && rowsPerCm) {
+      // 允許些微誤差：以四捨五入換算成實際要織的排數
+      return Math.max(1, Math.round(cmPerLoop * rowsPerCm));
+    }
+    return baseRows;
+  };
+
   return parts.reduce((acc, part) => {
     const sections = part.textSections || [];
     const partTotal = sections.reduce((sum, sec) => {
-      const rows = Number(sec.rowsPerLoop || 0);
-      const rep = Number(sec.repeats || 0);
+      const rows = getActualRowsPerLoop(sec);
+      const rep = Number(sec?.repeats || 0);
       return sum + rows * rep;
     }, 0);
     return acc + partTotal;
   }, 0);
-}
-
-
-// === TEXT 織圖 cm / 比例 helpers ===
-// parts 內的 textSections 允許覆寫全域 textSections（同 id 以 parts 優先）
-function getEffectiveTextSection(pattern, part, sectionId) {
-  if (!sectionId) return null;
-  const fromPart = part?.textSections?.find((s) => s?.id === sectionId) || null;
-  const fromGlobal = pattern?.textSections?.find((s) => s?.id === sectionId) || null;
-  if (!fromPart && !fromGlobal) return null;
-  return { ...(fromGlobal || {}), ...(fromPart || {}) };
-}
-
-// 設計比例：rowsPerLoop / lengthCmPerLoop（可選） => rows/cm
-function getChartRowsPerCmFromTextSection(sec) {
-  const rows = Number(sec?.rowsPerLoop);
-  const cm = Number(sec?.lengthCmPerLoop);
-  if (!Number.isFinite(rows) || !Number.isFinite(cm) || cm <= 0) return null;
-  return rows / cm;
-}
-
-// 方便顯示：這段總排數 / 總長度（cm）
-function getTextSectionTotalRows(sec) {
-  const rows = Number(sec?.rowsPerLoop || 0);
-  const rep = Number(sec?.repeats || 0);
-  return rows * rep;
-}
-
-function getTextSectionTotalCm(sec) {
-  const cm = Number(sec?.lengthCmPerLoop);
-  const rep = Number(sec?.repeats || 0);
-  if (!Number.isFinite(cm) || cm <= 0) return null;
-  return cm * rep;
 }
 
 
@@ -682,6 +665,57 @@ const normalizePattern = (p) => {
   return p;
 };
 
+
+
+// === TEXT 織圖 cm / 比例 helpers ===
+// parts 內的 textSections 允許覆寫全域 textSections（同 id 以 parts 優先）
+function getEffectiveTextSection(pattern, part, sectionId) {
+  if (!sectionId) return null;
+  const fromPart = part?.textSections?.find((s) => s?.id === sectionId) || null;
+  const fromGlobal = pattern?.textSections?.find((s) => s?.id === sectionId) || null;
+  if (!fromPart && !fromGlobal) return null;
+  return { ...(fromGlobal || {}), ...(fromPart || {}) };
+}
+
+// 設計比例：rowsPerLoop / lengthCmPerLoop（可選） => rows/cm
+function getChartRowsPerCmFromTextSection(sec) {
+  const rows = Number(sec?.rowsPerLoop);
+  const cm = Number(sec?.lengthCmPerLoop);
+  if (!Number.isFinite(rows) || !Number.isFinite(cm) || cm <= 0) return null;
+  return rows / cm;
+}
+
+// 專案實際密度：rowsPer10cm => rows/cm
+function getProjectRowsPerCm(gauge) {
+  const rowsPer10cm = Number(gauge?.rowsPer10cm);
+  if (!Number.isFinite(rowsPer10cm) || rowsPer10cm <= 0) return null;
+  return rowsPer10cm / 10;
+}
+
+// 把某段 textSection 的「設計 cm」換算成「這個專案要織的實際排數/輪」
+function getActualRowsPerLoopFromGauge(sec, gauge) {
+  const baseRows = Number(sec?.rowsPerLoop || 0);
+  const cmPerLoop = Number(sec?.lengthCmPerLoop);
+  const rowsPerCm = getProjectRowsPerCm(gauge);
+  if (rowsPerCm && Number.isFinite(cmPerLoop) && cmPerLoop > 0) {
+    return Math.max(1, Math.round(cmPerLoop * rowsPerCm));
+  }
+  return baseRows;
+}
+
+// 方便顯示：這段總排數 / 總長度（cm）
+function getTextSectionTotalRows(sec, gauge) {
+  const rows = getActualRowsPerLoopFromGauge(sec, gauge);
+  const rep = Number(sec?.repeats || 0);
+  return rows * rep;
+}
+
+function getTextSectionTotalCm(sec) {
+  const cm = Number(sec?.lengthCmPerLoop);
+  const rep = Number(sec?.repeats || 0);
+  if (!Number.isFinite(cm) || cm <= 0) return null;
+  return cm * rep;
+}
 const createProjectFromPattern = (ptn) => {
   const now = new Date().toISOString();
   const normalizedPattern = normalizePattern(ptn);
@@ -717,6 +751,7 @@ const createProjectFromPattern = (ptn) => {
     yarnId: normalizedPattern.meta?.yarnId ?? null,
     needle: normalizedPattern.meta?.needle ?? '',
     castOn: normalizedPattern.meta?.castOn ?? '',
+    gauge: { rowsPer10cm: null, stsPer10cm: null },
     totalRow: 1,
     sectionRow: 1,
     notes: '',
@@ -732,6 +767,10 @@ const normalizeProject = (p) => {
   if (!p) return p;
 
   if (Array.isArray(p.partsProgress) && p.partsProgress.length > 0) {
+    // 補上 gauge（舊資料相容）
+    if (!p.gauge) {
+      return { ...p, gauge: { rowsPer10cm: null, stsPer10cm: null } };
+    }
     return p;
   }
 
@@ -744,6 +783,7 @@ const normalizeProject = (p) => {
 
   return {
     ...p,
+    gauge: p.gauge || { rowsPer10cm: null, stsPer10cm: null },
     currentPartId: mainPartId,
     partsProgress: [
       {
@@ -1518,9 +1558,16 @@ function ProjectView({
     );
   }, [currentPattern, currentProject]);
 
-  const projectStats = useMemo(() => {
+  
+const projectStats = useMemo(() => {
     if (!currentPattern || currentPattern.type !== 'TEXT')
-      return { targetTotal: 0, activeSection: null, sectionsSummary: [] };
+      return {
+        targetTotal: 0,
+        targetChartTotal: 0,
+        globalScale: 1,
+        activeSection: null,
+        sectionsSummary: [],
+      };
 
     const sectionsSource =
       currentPatternPart?.textSections && currentPatternPart.textSections.length
@@ -1528,32 +1575,86 @@ function ProjectView({
         : currentPattern.textSections || [];
 
     if (!sectionsSource || !sectionsSource.length) {
-      return { targetTotal: 0, activeSection: null, sectionsSummary: [] };
+      return {
+        targetTotal: 0,
+        targetChartTotal: 0,
+        globalScale: 1,
+        activeSection: null,
+        sectionsSummary: [],
+      };
     }
 
-    let cumulativeRows = 0;
+    const gauge = currentProject?.gauge || null;
+    let cumulativeChart = 0;
+    let cumulativeProject = 0;
     let activeSection = null;
-    const total = currentTotalRow;
 
-    const summary = sectionsSource.map((s) => {
-      const sectionTotal = (s.rowsPerLoop || 1) * (s.repeats || 1);
-      const startRow = cumulativeRows + 1;
-      cumulativeRows += sectionTotal;
+    const totalProjectRow = currentTotalRow; // 這裡的 currentTotalRow 就是「專案實際排數」
+    const summary = sectionsSource.map((sec) => {
+      const chartRowsPerLoop = Number(sec.rowsPerLoop || 0);
+      const repeats = Number(sec.repeats || 0);
 
-      if (total >= startRow && total <= cumulativeRows) {
-        activeSection = {
-          ...s,
-          startRow,
-          endRow: cumulativeRows,
-          totalRows: sectionTotal,
-        };
+      const chartTotalRows = chartRowsPerLoop * repeats;
+
+      const projectRowsPerLoop = getActualRowsPerLoopFromGauge(sec, gauge);
+      const projectTotalRows = projectRowsPerLoop * repeats;
+
+      const chartStartRow = cumulativeChart + 1;
+      const chartEndRow = cumulativeChart + chartTotalRows;
+
+      const projectStartRow = cumulativeProject + 1;
+      const projectEndRow = cumulativeProject + projectTotalRows;
+
+      const scale =
+        chartTotalRows > 0 ? projectTotalRows / chartTotalRows : 1;
+
+      const item = {
+        ...sec,
+
+        // 用專案實際排數覆蓋 rowsPerLoop / totalRows，讓下游（Section Loop / 提醒）直接吃「實際排數」
+        rowsPerLoop: projectRowsPerLoop,
+        totalRows: projectTotalRows,
+
+        // 另外保留織圖原始（chart）資訊，方便做換算或 debug
+        chartRowsPerLoop,
+        chartTotalRows,
+        chartStartRow,
+        chartEndRow,
+        startRow: projectStartRow,
+        endRow: projectEndRow,
+        projectRowsPerLoop,
+        projectTotalRows,
+        scale,
+      };
+
+      // 用「專案實際排數」判斷目前所在段落
+      if (
+        !activeSection &&
+        totalProjectRow >= projectStartRow &&
+        totalProjectRow <= projectEndRow
+      ) {
+        activeSection = item;
       }
 
-      return { ...s, totalRows: sectionTotal, startRow, endRow: cumulativeRows };
+      cumulativeChart += chartTotalRows;
+      cumulativeProject += projectTotalRows;
+
+      return item;
     });
 
-    return { targetTotal: cumulativeRows, sectionsSummary: summary, activeSection };
-  }, [currentPattern, currentPatternPart, currentTotalRow]);
+    const targetChartTotal = cumulativeChart;
+    const targetTotal = cumulativeProject;
+    const globalScale =
+      targetChartTotal > 0 ? targetTotal / targetChartTotal : 1;
+
+    return {
+      targetTotal,
+      targetChartTotal,
+      globalScale,
+      sectionsSummary: summary,
+      activeSection,
+    };
+  }, [currentPattern, currentPatternPart, currentTotalRow, currentProject?.gauge]);
 
   const currentPartTitle =
     currentPatternPart?.name || currentPatternPart?.title || '目前部位';
@@ -1610,7 +1711,10 @@ function ProjectView({
       const partsMeta = rawParts.map((part, idx) => {
         const sections = part.textSections || [];
         const targetRows = sections.reduce(
-          (sum, s) => sum + (s.repeats || 1) * (s.rowsPerLoop || 1),
+(sum, s) =>
+  sum +
+  (Number(s?.repeats || 0) *
+    Number(getActualRowsPerLoopFromGauge(s, p.gauge) || 0)),
           0
         );
         return {
@@ -1675,9 +1779,10 @@ function ProjectView({
 
     return alertsSource.filter((a) => {
       let val;
+      let sec = null;
 
       if (a.sectionId && a.sectionId !== 'ALL') {
-        const sec = projectStats.sectionsSummary?.find(
+        sec = projectStats.sectionsSummary?.find(
           (s) => s.id === a.sectionId
         );
         if (!sec) return false;
@@ -1693,26 +1798,50 @@ function ProjectView({
       }
 
       if (a.mode === 'EVERY') {
-        const start = a.startFrom || 0; // 若沒設定起始，則從 0 開始算（例如 Every 6 就會是 6, 12...）
-        
+        // a.value / startFrom（以及 SECTION 內的排數）是「織圖排數」概念；
+        // 這裡先換算成「專案實際排數」後再判斷是否命中。
+        const baseScale =
+          a.type === 'SECTION'
+            ? sec?.scale ?? projectStats.globalScale ?? 1
+            : projectStats.globalScale ?? 1;
+
+        const scale =
+          Number.isFinite(baseScale) && baseScale > 0 ? baseScale : 1;
+
+        const start = Math.max(0, Math.round(Number(a.startFrom || 0) * scale));
+        const interval = Math.max(
+          1,
+          Math.round(Number(a.value || 1) * scale)
+        );
+
         // 如果還沒到開始排數，不觸發
         if (val < start || val <= 0) return false;
-        
+
         // 計算間隔是否吻合
         const diff = val - start;
-        const isHit = diff % a.value === 0;
-        
-        // 3. 處理重複次數 (repeatCount)
+        const isHit = diff % interval === 0;
+
+        // 處理重複次數 (repeatCount)
         if (isHit && a.repeatCount && a.repeatCount > 0) {
-          // 計算目前是第幾次觸發 (例如 start=2, value=2, val=4, 則次數為 2)
-          const currentIteration = Math.floor(diff / a.value) + 1;
+          const currentIteration = Math.floor(diff / interval) + 1;
           return currentIteration <= a.repeatCount;
         }
 
         return isHit;
       }
 
-      return val === a.value;
+      {
+        const baseScale =
+          a.type === 'SECTION'
+            ? sec?.scale ?? projectStats.globalScale ?? 1
+            : projectStats.globalScale ?? 1;
+
+        const scale =
+          Number.isFinite(baseScale) && baseScale > 0 ? baseScale : 1;
+
+        const target = Math.round(Number(a.value || 0) * scale);
+        return val === target;
+      }
     });
   }, [
     currentProject?.id,
@@ -1768,7 +1897,7 @@ function ProjectView({
       
       // --- 核心邏輯修改處 ---
       // 優先使用自定義的花樣循環 patternRows，若沒設定則 fallback 到區段的 rowsPerLoop
-      const patternRows = sec.patternRows || sec.rowsPerLoop || 1;
+            const patternRows = sec.patternRows ? Math.max(1, Math.round(sec.patternRows * (sec.scale || 1))) : sec.rowsPerLoop || 1;
       const sectionTotalRows = sec.totalRows; // 該區段總長度（例如 44）
       // ----------------------
 
@@ -2713,6 +2842,77 @@ function ProjectView({
                   }}
                 />
               </div>
+
+<div className="flex items-center gap-1">
+  <span className="uppercase tracking-[0.2em] font-black opacity-60">
+    Rows/10cm
+  </span>
+  <input
+    type="number"
+    step="0.1"
+    className="rounded-full px-3 py-1 border-none text-[10px] w-24 outline-none tabular-nums"
+    placeholder="例如 28"
+    value={
+      currentProject?.gauge?.rowsPer10cm === null ||
+      currentProject?.gauge?.rowsPer10cm === undefined
+        ? ''
+        : currentProject.gauge.rowsPer10cm
+    }
+    onChange={(e) => {
+      const raw = e.target.value;
+      const v =
+        raw === '' ? null : Number.isFinite(parseFloat(raw)) ? parseFloat(raw) : null;
+
+      onUpdateProject({
+        ...currentProject,
+        gauge: {
+          ...(currentProject.gauge || {}),
+          rowsPer10cm: v,
+        },
+      });
+    }}
+    style={{
+      backgroundColor: 'var(--bg-color)',
+      color: 'var(--text-color)',
+    }}
+  />
+</div>
+
+<div className="flex items-center gap-1">
+  <span className="uppercase tracking-[0.2em] font-black opacity-60">
+    Sts/10cm
+  </span>
+  <input
+    type="number"
+    step="0.1"
+    className="rounded-full px-3 py-1 border-none text-[10px] w-24 outline-none tabular-nums"
+    placeholder="例如 20"
+    value={
+      currentProject?.gauge?.stsPer10cm === null ||
+      currentProject?.gauge?.stsPer10cm === undefined
+        ? ''
+        : currentProject.gauge.stsPer10cm
+    }
+    onChange={(e) => {
+      const raw = e.target.value;
+      const v =
+        raw === '' ? null : Number.isFinite(parseFloat(raw)) ? parseFloat(raw) : null;
+
+      onUpdateProject({
+        ...currentProject,
+        gauge: {
+          ...(currentProject.gauge || {}),
+          stsPer10cm: v,
+        },
+      });
+    }}
+    style={{
+      backgroundColor: 'var(--bg-color)',
+      color: 'var(--text-color)',
+    }}
+  />
+</div>
+
             </div>
           </div>
         </Modal>
