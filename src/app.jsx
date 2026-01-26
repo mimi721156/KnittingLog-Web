@@ -930,7 +930,7 @@ const DefaultCover = ({ name }) => {
 
 // === GitHub Sync Dialog ===
 
-const PATH_PRESETS = ['data/knitting.json', 'data/xiangdata.json'];
+const PATH_PRESETS = ['data/knitting.json', 'data/xiangdata.json', 'data/liudata.json'];
 
 function GitHubSyncDialog({ open, onClose, onApplyRemote, currentState }) {
   const [owner, setOwner] = useState('');
