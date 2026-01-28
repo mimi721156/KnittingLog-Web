@@ -2818,14 +2818,14 @@ const projectStats = useMemo(() => {
                     <div className="mt-1 w-6 h-6 rounded-full bg-theme-primary/10 flex items-center justify-center text-[11px] font-black text-theme-primary">
                       Now
                     </div>
-                    <div className="flex-1 overflow-y-auto">
+                    <div className="flex-1">
                       {activeInstruction?.title && (
                         <div className="text-[11px] font-semibold text-theme-text/70 mb-1">
                           {activeInstruction.title}
                         </div>
                       )}
                       <div
-                        className="text-xs md:text-sm text-theme-text/90 whitespace-pre-wrap leading-relaxed"
+                        className="text-xs md:text-sm text-theme-text/90 whitespace-pre-wrap leading-relaxed max-h-24 overflow-y-auto pr-1"
                       >
                         {activeInstructionText}
                       </div>
