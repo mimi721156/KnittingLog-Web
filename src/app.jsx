@@ -2812,7 +2812,7 @@ const projectStats = useMemo(() => {
               {/* 浮動當前指令（可選） */}
               {activeInstructionText && (
                 <div
-                  className="mb-2 bg-white/95 backdrop-blur rounded-[2rem] shadow-lg border border-theme-bg/60 px-4 py-3"
+                  className="mb-2 bg-white/95 backdrop-blur rounded-[2rem] shadow-lg border border-theme-bg/60 px-4 py-3 overflow-y-auto"
                 >
                   <div className="flex items-start gap-3">
                     <div className="mt-1 w-6 h-6 rounded-full bg-theme-primary/10 flex items-center justify-center text-[11px] font-black text-theme-primary">
