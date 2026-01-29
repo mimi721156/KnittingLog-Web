@@ -3192,7 +3192,41 @@ const projectStats = useMemo(() => {
                 />
               </div>
             </div>
-      
+            {/* Stitches Card */}
+            <div
+              className="rounded-2xl px-4 py-3 flex flex-col items-center justify-center"
+              style={{
+                backgroundColor: 'var(--bg-color)',
+                boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.04)',
+              }}
+            >
+              <div className="flex items-baseline gap-1">
+                <input
+                  type="number"
+                  step="0.1"
+                  value={currentProject?.gauge?.stsPer10cm ?? ''}
+                  onChange={(e) => {
+                    const v =
+                      e.target.value === '' ? null : parseFloat(e.target.value);
+                    onUpdateProject({
+                      ...currentProject,
+                      gauge: {
+                        ...(currentProject.gauge || {}),
+                        stsPer10cm: v,
+                      },
+                    });
+                  }}
+                  className="w-14 text-center text-xl font-black tabular-nums outline-none bg-transparent"
+                  style={{ color: 'var(--text-color)' }}
+                  placeholder="20"
+                />
+                <span className="text-[10px] font-black opacity-60">針</span>
+              </div>
+        
+              <div className="mt-1 text-[9px] uppercase tracking-[0.18em] text-theme-text/40 font-black">
+                Stitches
+              </div>
+            </div>
             {/* === Gauge / 10cm === */}
             <div className="space-y-2">
               <div className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text/50">
@@ -3233,42 +3267,6 @@ const projectStats = useMemo(() => {
             
                   <div className="mt-1 text-[9px] uppercase tracking-[0.18em] text-theme-text/40 font-black">
                     Rows
-                  </div>
-                </div>
-            
-                {/* Stitches Card */}
-                <div
-                  className="rounded-2xl px-4 py-3 flex flex-col items-center justify-center"
-                  style={{
-                    backgroundColor: 'var(--bg-color)',
-                    boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.04)',
-                  }}
-                >
-                  <div className="flex items-baseline gap-1">
-                    <input
-                      type="number"
-                      step="0.1"
-                      value={currentProject?.gauge?.stsPer10cm ?? ''}
-                      onChange={(e) => {
-                        const v =
-                          e.target.value === '' ? null : parseFloat(e.target.value);
-                        onUpdateProject({
-                          ...currentProject,
-                          gauge: {
-                            ...(currentProject.gauge || {}),
-                            stsPer10cm: v,
-                          },
-                        });
-                      }}
-                      className="w-14 text-center text-xl font-black tabular-nums outline-none bg-transparent"
-                      style={{ color: 'var(--text-color)' }}
-                      placeholder="20"
-                    />
-                    <span className="text-[10px] font-black opacity-60">針</span>
-                  </div>
-            
-                  <div className="mt-1 text-[9px] uppercase tracking-[0.18em] text-theme-text/40 font-black">
-                    Stitches
                   </div>
                 </div>
               </div>
