@@ -2750,9 +2750,24 @@ const projectStats = useMemo(() => {
         <div className="relative flex-none h-16 md:h-18 rounded-[1.75rem]">
           {/* 沒提醒時的淡淡提示文字 */}
           {(!showAlertOverlay || currentAlerts.length === 0) && (
-            <div className="h-full flex items-center justify-center text-[9px] tracking-[0.2em] uppercase text-theme-text/20">
-              Row alerts will appear here
-            </div>
+            <button
+              onClick={() => currentAlerts.length > 0 && setShowAlertOverlay(true)}
+              disabled={currentAlerts.length === 0}
+              className={`w-full h-full flex items-center justify-center text-[9px] tracking-[0.2em] uppercase transition-all
+                ${currentAlerts.length > 0 
+                  ? 'text-theme-text/40 hover:text-theme-text/60 cursor-pointer' 
+                  : 'text-theme-text/20 cursor-default'
+                }`}
+            >
+              {currentAlerts.length > 0 ? (
+                <span className="flex items-center gap-2">
+                  <Icons.Bell size={10} className="animate-pulse" />
+                  Click to show {currentAlerts.length} active alert{currentAlerts.length > 1 ? 's' : ''}
+                </span>
+              ) : (
+                "Row alerts will appear here"
+              )}
+            </button>
           )}
 
           {/* 有提醒時：卡片浮在這個高度內，可略為蓋到下方 Panel */}
