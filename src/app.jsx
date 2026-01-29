@@ -3198,6 +3198,7 @@ const projectStats = useMemo(() => {
               <div className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text/50">
                 Gauge / 10cm
               </div>
+              <div className="grid grid-cols-2 gap-3">
               {/* Stitches Card */}
                 <div
                   className="rounded-2xl px-4 py-3 flex flex-col items-center justify-center"
@@ -3233,7 +3234,6 @@ const projectStats = useMemo(() => {
                   Stitches
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
                 {/* Rows Card */}
                 <div
                   className="rounded-2xl px-4 py-3 flex flex-col items-center justify-center"
