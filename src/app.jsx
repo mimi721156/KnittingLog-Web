@@ -3041,209 +3041,241 @@ const projectStats = useMemo(() => {
 
       {/* ⬇️ 底下三個 Modal 區塊（project / instruction / notes）維持你原本的程式碼即可 */}
       {activeModal === 'project' && (
-  <Modal
-    title="織品資訊"
-    onClose={() => setActiveModal(null)}
-    icon={Icons.Sparkles}
-  >
-    <div className="space-y-6">
-
-      {/* === Project Identity === */}
-      <div className="space-y-3">
-        <div className="flex justify-between items-end gap-3">
-          <div className="flex-1">
-            <div className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text/50 mb-1">
-              Project Name
+        <Modal
+          title="織品資訊"
+          onClose={() => setActiveModal(null)}
+          icon={Icons.Sparkles}
+        >
+          <div className="space-y-6">
+      
+            {/* === Project Identity === */}
+            <div className="space-y-3">
+              <div className="flex justify-between items-end gap-3">
+                <div className="flex-1">
+                  <div className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text/50 mb-1">
+                    Project Name
+                  </div>
+                  <input
+                    type="text"
+                    value={currentProject.projectName || ''}
+                    onChange={(e) =>
+                      onUpdateProject({
+                        ...currentProject,
+                        projectName: e.target.value,
+                      })
+                    }
+                    className="w-full rounded-xl px-3 py-2 text-base font-black tracking-tight outline-none focus:ring-2 ring-theme-primary/30"
+                    placeholder="給這個作品取一個名字…"
+                    style={{
+                      backgroundColor: 'var(--bg-color)',
+                      color: 'var(--text-color)',
+                      boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.04)',
+                    }}
+                  />
+                </div>
+      
+                {currentProject.startAt && (
+                  <div className="text-right text-[9px] text-theme-text/50 uppercase tracking-[0.18em]">
+                    Started
+                    <br />
+                    <span className="font-black text-theme-text/80">
+                      {new Date(currentProject.startAt).toLocaleDateString()}
+                    </span>
+                  </div>
+                )}
+              </div>
+      
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text/50">
+                  Category
+                </span>
+                <select
+                  value={currentProject.category || '未分類'}
+                  onChange={(e) =>
+                    onUpdateProject({
+                      ...currentProject,
+                      category: e.target.value,
+                    })
+                  }
+                  className="rounded-full px-3 py-1.5 text-[10px] outline-none"
+                  style={{
+                    backgroundColor: 'var(--bg-color)',
+                    color: 'var(--text-color)',
+                    boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.04)',
+                  }}
+                >
+                  {(categories || ['未分類']).map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
-            <input
-              type="text"
-              value={currentProject.projectName || ''}
-              onChange={(e) =>
-                onUpdateProject({
-                  ...currentProject,
-                  projectName: e.target.value,
-                })
-              }
-              className="w-full rounded-xl px-3 py-2 text-base font-black tracking-tight outline-none focus:ring-2 ring-theme-primary/30"
-              placeholder="給這個作品取一個名字…"
-              style={{
-                backgroundColor: 'var(--bg-color)',
-                color: 'var(--text-color)',
-                boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.04)',
-              }}
-            />
+      
+            {/* === Materials & Tools === */}
+            <div className="flex flex-wrap gap-3 text-[10px] text-theme-text/70">
+              {/* Yarn */}
+              <div className="flex items-center gap-1">
+                <span className="font-black uppercase tracking-[0.2em]">
+                  Yarn
+                </span>
+                <select
+                  value={currentProject.yarnId || ''}
+                  onChange={(e) =>
+                    onUpdateProject({
+                      ...currentProject,
+                      yarnId: e.target.value || null,
+                    })
+                  }
+                  className="rounded-full px-3 py-1 outline-none"
+                  style={{
+                    backgroundColor: 'var(--bg-color)',
+                    color: 'var(--text-color)',
+                    boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.04)',
+                  }}
+                >
+                  <option value="">未選擇</option>
+                  {yarns.map((y) => (
+                    <option key={y.id} value={y.id}>
+                      {[y.brand, y.name].filter(Boolean).join(' ') || '未命名線材'}
+                    </option>
+                  ))}
+                </select>
+              </div>
+      
+              {/* Needle */}
+              <div className="flex items-center gap-1">
+                <span className="font-black uppercase tracking-[0.2em] opacity-60">
+                  Needle
+                </span>
+                <input
+                  type="text"
+                  value={currentProject.needle || ''}
+                  onChange={(e) =>
+                    onUpdateProject({
+                      ...currentProject,
+                      needle: e.target.value,
+                    })
+                  }
+                  placeholder="4.0mm"
+                  className="rounded-full px-3 py-1 w-24 outline-none"
+                  style={{
+                    backgroundColor: 'var(--bg-color)',
+                    color: 'var(--text-color)',
+                    boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.04)',
+                  }}
+                />
+              </div>
+      
+              {/* Cast On */}
+              <div className="flex items-center gap-1">
+                <span className="font-black uppercase tracking-[0.2em] opacity-60">
+                  Cast on
+                </span>
+                <input
+                  type="text"
+                  value={currentProject.castOn || ''}
+                  onChange={(e) =>
+                    onUpdateProject({
+                      ...currentProject,
+                      castOn: e.target.value,
+                    })
+                  }
+                  placeholder="例如 112"
+                  className="rounded-full px-3 py-1 w-24 outline-none"
+                  style={{
+                    backgroundColor: 'var(--bg-color)',
+                    color: 'var(--text-color)',
+                    boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.04)',
+                  }}
+                />
+              </div>
+            </div>
+      
+            {/* === Gauge / 10cm === */}
+            <div className="space-y-2">
+              <div className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text/50">
+                Gauge / 10cm
+              </div>
+            
+              <div className="grid grid-cols-2 gap-3">
+                {/* Rows Card */}
+                <div
+                  className="rounded-2xl px-4 py-3 flex flex-col items-center justify-center"
+                  style={{
+                    backgroundColor: 'var(--bg-color)',
+                    boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.04)',
+                  }}
+                >
+                  <div className="flex items-baseline gap-1">
+                    <input
+                      type="number"
+                      step="0.1"
+                      value={currentProject?.gauge?.rowsPer10cm ?? ''}
+                      onChange={(e) => {
+                        const v =
+                          e.target.value === '' ? null : parseFloat(e.target.value);
+                        onUpdateProject({
+                          ...currentProject,
+                          gauge: {
+                            ...(currentProject.gauge || {}),
+                            rowsPer10cm: v,
+                          },
+                        });
+                      }}
+                      className="w-14 text-center text-xl font-black tabular-nums outline-none bg-transparent"
+                      style={{ color: 'var(--text-color)' }}
+                      placeholder="28"
+                    />
+                    <span className="text-[10px] font-black opacity-60">段</span>
+                  </div>
+            
+                  <div className="mt-1 text-[9px] uppercase tracking-[0.18em] text-theme-text/40 font-black">
+                    Rows
+                  </div>
+                </div>
+            
+                {/* Stitches Card */}
+                <div
+                  className="rounded-2xl px-4 py-3 flex flex-col items-center justify-center"
+                  style={{
+                    backgroundColor: 'var(--bg-color)',
+                    boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.04)',
+                  }}
+                >
+                  <div className="flex items-baseline gap-1">
+                    <input
+                      type="number"
+                      step="0.1"
+                      value={currentProject?.gauge?.stsPer10cm ?? ''}
+                      onChange={(e) => {
+                        const v =
+                          e.target.value === '' ? null : parseFloat(e.target.value);
+                        onUpdateProject({
+                          ...currentProject,
+                          gauge: {
+                            ...(currentProject.gauge || {}),
+                            stsPer10cm: v,
+                          },
+                        });
+                      }}
+                      className="w-14 text-center text-xl font-black tabular-nums outline-none bg-transparent"
+                      style={{ color: 'var(--text-color)' }}
+                      placeholder="20"
+                    />
+                    <span className="text-[10px] font-black opacity-60">針</span>
+                  </div>
+            
+                  <div className="mt-1 text-[9px] uppercase tracking-[0.18em] text-theme-text/40 font-black">
+                    Stitches
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-
-          {currentProject.startAt && (
-            <div className="text-right text-[9px] text-theme-text/50 uppercase tracking-[0.18em]">
-              Started
-              <br />
-              <span className="font-black text-theme-text/80">
-                {new Date(currentProject.startAt).toLocaleDateString()}
-              </span>
-            </div>
-          )}
-        </div>
-
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text/50">
-            Category
-          </span>
-          <select
-            value={currentProject.category || '未分類'}
-            onChange={(e) =>
-              onUpdateProject({
-                ...currentProject,
-                category: e.target.value,
-              })
-            }
-            className="rounded-full px-3 py-1.5 text-[10px] outline-none"
-            style={{
-              backgroundColor: 'var(--bg-color)',
-              color: 'var(--text-color)',
-              boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.04)',
-            }}
-          >
-            {(categories || ['未分類']).map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      {/* === Materials & Tools === */}
-      <div className="flex flex-wrap gap-3 text-[10px] text-theme-text/70">
-        {/* Yarn */}
-        <div className="flex items-center gap-1">
-          <span className="font-black uppercase tracking-[0.2em]">
-            Yarn
-          </span>
-          <select
-            value={currentProject.yarnId || ''}
-            onChange={(e) =>
-              onUpdateProject({
-                ...currentProject,
-                yarnId: e.target.value || null,
-              })
-            }
-            className="rounded-full px-3 py-1 outline-none"
-            style={{
-              backgroundColor: 'var(--bg-color)',
-              color: 'var(--text-color)',
-              boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.04)',
-            }}
-          >
-            <option value="">未選擇</option>
-            {yarns.map((y) => (
-              <option key={y.id} value={y.id}>
-                {[y.brand, y.name].filter(Boolean).join(' ') || '未命名線材'}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Needle */}
-        <div className="flex items-center gap-1">
-          <span className="font-black uppercase tracking-[0.2em] opacity-60">
-            Needle
-          </span>
-          <input
-            type="text"
-            value={currentProject.needle || ''}
-            onChange={(e) =>
-              onUpdateProject({
-                ...currentProject,
-                needle: e.target.value,
-              })
-            }
-            placeholder="4.0mm"
-            className="rounded-full px-3 py-1 w-24 outline-none"
-            style={{
-              backgroundColor: 'var(--bg-color)',
-              color: 'var(--text-color)',
-              boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.04)',
-            }}
-          />
-        </div>
-
-        {/* Cast On */}
-        <div className="flex items-center gap-1">
-          <span className="font-black uppercase tracking-[0.2em] opacity-60">
-            Cast on
-          </span>
-          <input
-            type="text"
-            value={currentProject.castOn || ''}
-            onChange={(e) =>
-              onUpdateProject({
-                ...currentProject,
-                castOn: e.target.value,
-              })
-            }
-            placeholder="例如 112"
-            className="rounded-full px-3 py-1 w-24 outline-none"
-            style={{
-              backgroundColor: 'var(--bg-color)',
-              color: 'var(--text-color)',
-              boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.04)',
-            }}
-          />
-        </div>
-      </div>
-
-      {/* === Gauge === */}
-      <div className="flex flex-wrap gap-3 text-[10px] text-theme-text/70">
-        <div className="flex items-center gap-1">
-          <span className="font-black uppercase tracking-[0.2em] opacity-60">
-            Rows / 10cm
-          </span>
-          <input
-            type="number"
-            step="0.1"
-            value={currentProject?.gauge?.rowsPer10cm ?? ''}
-            onChange={(e) => {
-              const v = e.target.value === '' ? null : parseFloat(e.target.value);
-              onUpdateProject({
-                ...currentProject,
-                gauge: { ...(currentProject.gauge || {}), rowsPer10cm: v },
-              });
-            }}
-            className="rounded-full px-3 py-1 w-20 outline-none tabular-nums"
-            style={{
-              backgroundColor: 'var(--bg-color)',
-              color: 'var(--text-color)',
-            }}
-          />
-        </div>
-
-        <div className="flex items-center gap-1">
-          <span className="font-black uppercase tracking-[0.2em] opacity-60">
-            Sts / 10cm
-          </span>
-          <input
-            type="number"
-            step="0.1"
-            value={currentProject?.gauge?.stsPer10cm ?? ''}
-            onChange={(e) => {
-              const v = e.target.value === '' ? null : parseFloat(e.target.value);
-              onUpdateProject({
-                ...currentProject,
-                gauge: { ...(currentProject.gauge || {}), stsPer10cm: v },
-              });
-            }}
-            className="rounded-full px-3 py-1 w-20 outline-none tabular-nums"
-            style={{
-              backgroundColor: 'var(--bg-color)',
-              color: 'var(--text-color)',
-            }}
-          />
-        </div>
-      </div>
-    </div>
-  </Modal>
-)}
+        </Modal>
+      )}
 
 
         {activeModal === 'instruction' && (
